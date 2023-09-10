@@ -33,9 +33,12 @@ namespace EppNet.Data
         protected internal BinaryWriter _writer;
         protected internal BinaryReader _reader;
 
+        public byte[] PackedData { internal set; get; }
+
         public BytePayload()
         {
             this.Encoder = Encoding.UTF8;
+            this.PackedData = null;
             this._stream = null;
             this._writer = null;
             this._reader = null;
@@ -46,7 +49,6 @@ namespace EppNet.Data
             _stream = RecyclableStreamMgr.GetStream(Guid.NewGuid(), "", dataIn.Length, false);
             _stream.Write(dataIn);
             _stream.Position = 0;
-            _stream.Close();
 
             _reader = new BinaryReader(_stream);
         }
@@ -56,10 +58,19 @@ namespace EppNet.Data
             if (_stream == null)
                 return null;
 
-            _writer?.Dispose();
-            _writer = null;
+            if (PackedData == null)
+            {
+                _writer?.Dispose();
+                _writer = null;
 
-            return _stream.ToArray();
+                // TODO: Replace this with a more elegant solution.
+                // Microsoft says this defeats the purpose of the RecyclableMemoryStream,
+                // but I'm unsure of how to get the byte array ENet needs otherwise :shrug:
+                // https://github.com/Microsoft/Microsoft.IO.RecyclableMemoryStream#getbuffer-and-toarray
+                this.PackedData = _stream.ToArray();
+            }
+
+            return PackedData;
         }
 
         public virtual void Dispose()
