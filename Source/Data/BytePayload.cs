@@ -139,17 +139,13 @@ namespace EppNet.Data
             WriteUInt8(input ? (byte) 1 : (byte)0);
         }
 
-        public bool ReadBool()
-        {
-            byte b = ReadUInt8();
-            return (b != 0);
-        }
+        public bool ReadBool() => (ReadUInt8() == 1);
 
         public void WriteUInt8(byte input)
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            byte[] bytes = new byte[] { input };
             _stream.Write(bytes, 0, bytes.Length);
         }
 
@@ -158,7 +154,7 @@ namespace EppNet.Data
             byte[] buffer = new byte[1];
             int read = _stream.Read(buffer, 0, 1);
 
-            byte output = (byte) IPAddress.NetworkToHostOrder(buffer[0]);
+            byte output = buffer[0];
             return output;
         }
 
@@ -169,7 +165,7 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            byte[] bytes = new byte[] { Convert.ToByte(input) };
             _stream.Write(bytes, 0, bytes.Length);
         }
 
@@ -178,7 +174,7 @@ namespace EppNet.Data
             byte[] buffer = new byte[1];
             int read = _stream.Read(buffer, 0, buffer.Length);
 
-            sbyte output = (sbyte)IPAddress.NetworkToHostOrder(Convert.ToSByte(buffer[0]));
+            sbyte output = Convert.ToSByte(buffer[0]);
             return output;
         }
 
@@ -229,7 +225,7 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            byte[] bytes = BitConverter.GetBytes((uint) IPAddress.HostToNetworkOrder((int) input));
             _stream.Write(bytes, 0, bytes.Length);
         }
 
@@ -238,7 +234,7 @@ namespace EppNet.Data
             byte[] buffer = new byte[4];
             int read = _stream.Read(buffer, 0, buffer.Length);
 
-            uint output = (uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer));
+            uint output = (uint) IPAddress.NetworkToHostOrder((int) BitConverter.ToInt32(buffer));
             return output;
         }
 
