@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Core;
+
 using Microsoft.IO;
 
 using System;
@@ -137,9 +139,7 @@ namespace EppNet.Data
         public bool ReadBool()
         {
             byte b = ReadUInt8();
-            bool output = (b != 0);
-
-            return output;
+            return (b != 0);
         }
 
         public void WriteUInt8(byte input)
@@ -335,6 +335,23 @@ namespace EppNet.Data
         }
 
         public float ReadSingle() => ReadFloat();
+
+        public void WriteTimestamp(Timestamp input)
+        {
+            _EnsureReadyToWrite();
+
+            WriteUInt8((byte)input.Type);
+            WriteLong(input.Value);
+        }
+
+        public Timestamp ReadTimestamp()
+        {
+            byte type = ReadUInt8();
+            long value = ReadLong();
+
+            TimestampType tsType = (TimestampType)Enum.ToObject(typeof(TimestampType), type);
+            return new Timestamp(tsType, false, value);
+        }
 
         public double GetSizeKB()
         {
