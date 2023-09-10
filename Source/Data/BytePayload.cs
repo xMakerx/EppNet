@@ -36,12 +36,23 @@ namespace EppNet.Data
 
         public BytePayload(byte[] dataIn) : this()
         {
-            _stream = RecyclableStreamMgr.GetStream(Guid.NewGuid(), "", dataIn.Length, true);
+            _stream = RecyclableStreamMgr.GetStream(Guid.NewGuid(), "", dataIn.Length, false);
             _stream.Write(dataIn);
             _stream.Position = 0;
             _stream.Close();
 
             _reader = new BinaryReader(_stream);
+        }
+
+        public virtual byte[] Pack()
+        {
+            if (_stream == null)
+                return null;
+
+            _writer?.Dispose();
+            _writer = null;
+
+            return _stream.ToArray();
         }
 
         public virtual void Dispose()
@@ -51,7 +62,7 @@ namespace EppNet.Data
             _stream?.Dispose();
         }
 
-        private void _EnsureReadyToWrite()
+        protected virtual void _EnsureReadyToWrite()
         {
             if (_stream == null)
                 _stream = RecyclableStreamMgr.GetStream();
