@@ -6,8 +6,6 @@
 
 using ENet;
 
-using System.IO;
-
 namespace EppNet.Data
 {
 
@@ -26,15 +24,11 @@ namespace EppNet.Data
         protected override void _EnsureReadyToWrite()
         {
             if (_stream == null)
-                _stream = RecyclableStreamMgr.GetStream();
-
-            if (_writer == null)
             {
-                _writer = new BinaryWriter(_stream, Encoder);
-
-                if (Header != 0)
-                    _writer.Write(Header);
+                _stream = ObtainStream();
+                WriteUInt8(Header);
             }
+
         }
 
     }

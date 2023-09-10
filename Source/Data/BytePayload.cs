@@ -8,6 +8,7 @@ using Microsoft.IO;
 
 using System;
 using System.IO;
+using System.Net;
 using System.Text;
 
 namespace EppNet.Data
@@ -24,14 +25,48 @@ namespace EppNet.Data
     {
 
         #region Static members
+        public static int FloatPrecision
+        {
+            set
+            {
+                if (_float_digits != value)
+                {
+                    _precision_number = -1;
+                    _GetPrecisionNumber();
+                }
+            }
+            get => _float_digits;
+        }
+
+        protected static int _float_digits = 3;
+
+        protected static int _precision_number = -1;
+
+        protected static int _GetPrecisionNumber()
+        {
+            if (_precision_number == -1)
+                _precision_number = (int)Math.Pow(10.0d, (double)FloatPrecision);
+
+            return _precision_number;
+        }
+
         public static readonly RecyclableMemoryStreamManager RecyclableStreamMgr = new RecyclableMemoryStreamManager();
+        
+        public static RecyclableMemoryStream ObtainStream()
+        {
+            return RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
+        }
+
+        public static RecyclableMemoryStream ObtainStream(byte[] buffer)
+        {
+            return RecyclableStreamMgr.GetStream(buffer) as RecyclableMemoryStream;
+        }
+        
         #endregion
 
         public Encoding Encoder;
 
-        protected internal MemoryStream _stream;
-        protected internal BinaryWriter _writer;
-        protected internal BinaryReader _reader;
+        protected internal RecyclableMemoryStream _stream;
 
         public byte[] PackedData { internal set; get; }
 
@@ -40,17 +75,11 @@ namespace EppNet.Data
             this.Encoder = Encoding.UTF8;
             this.PackedData = null;
             this._stream = null;
-            this._writer = null;
-            this._reader = null;
         }
 
         public BytePayload(byte[] dataIn) : this()
         {
-            _stream = RecyclableStreamMgr.GetStream(Guid.NewGuid(), "", dataIn.Length, false);
-            _stream.Write(dataIn);
-            _stream.Position = 0;
-
-            _reader = new BinaryReader(_stream);
+            _stream = ObtainStream(dataIn);
         }
 
         public virtual byte[] Pack()
@@ -60,14 +89,8 @@ namespace EppNet.Data
 
             if (PackedData == null)
             {
-                _writer?.Dispose();
-                _writer = null;
-
-                // TODO: Replace this with a more elegant solution.
-                // Microsoft says this defeats the purpose of the RecyclableMemoryStream,
-                // but I'm unsure of how to get the byte array ENet needs otherwise :shrug:
-                // https://github.com/Microsoft/Microsoft.IO.RecyclableMemoryStream#getbuffer-and-toarray
-                this.PackedData = _stream.ToArray();
+                this.PackedData = new byte[_stream.Length];
+                _stream.WriteTo(PackedData);
             }
 
             return PackedData;
@@ -75,18 +98,13 @@ namespace EppNet.Data
 
         public virtual void Dispose()
         {
-            _reader?.Dispose();
-            _writer?.Dispose();
             _stream?.Dispose();
         }
 
         protected virtual void _EnsureReadyToWrite()
         {
             if (_stream == null)
-                _stream = RecyclableStreamMgr.GetStream();
-
-            if (_writer == null)
-                _writer = new BinaryWriter(_stream, Encoder);
+                _stream = RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
         }
 
         public void WriteString(string input)
@@ -95,26 +113,59 @@ namespace EppNet.Data
                 throw new ArgumentOutOfRangeException($"Datagram#WriteString(string) must be between 1 and {ushort.MaxValue}.");
 
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            WriteUInt16((ushort)input.Length);
+            Span<byte> span = _stream.GetSpan(input.Length);
+            ReadOnlySpan<char> chars = input.AsSpan();
+
+            int written = Encoder.GetBytes(chars, span);
+            _stream.Advance(written);
         }
 
-        public string ReadString() => _reader.ReadString();
+        public string ReadString()
+        {
+            byte[] buffer = new byte[ReadUInt16()];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            string output = Encoder.GetString(buffer, 0, read);
+            return output;
+        }
 
         public void WriteBool(bool input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+            WriteUInt8(input ? (byte) 1 : (byte)0);
         }
 
-        public bool ReadBool() => _reader.ReadBoolean();
+        public bool ReadBool()
+        {
+            byte b = ReadUInt8();
+            bool output = false;
+
+            if (b == (byte)1)
+                output = true;
+
+            return output;
+        }
 
         public void WriteUInt8(byte input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public byte ReadUInt8() => _reader.ReadByte();
+        public byte ReadUInt8()
+        {
+            byte[] buffer = new byte[1];
+            int read = _stream.Read(buffer, 0, 1);
+
+            byte output = (byte) IPAddress.NetworkToHostOrder(buffer[0]);
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteByte(byte input) => WriteUInt8(input);
         public byte ReadByte() => ReadUInt8();
@@ -122,10 +173,21 @@ namespace EppNet.Data
         public void WriteInt8(sbyte input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public sbyte ReadInt8() => _reader.ReadSByte();
+        public sbyte ReadInt8()
+        {
+            byte[] buffer = new byte[1];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            sbyte output = (sbyte)IPAddress.NetworkToHostOrder(Convert.ToSByte(buffer[0]));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteSByte(sbyte input) => WriteInt8(input);
         public sbyte ReadSByte() => ReadInt8();
@@ -133,10 +195,21 @@ namespace EppNet.Data
         public void WriteInt16(short input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public short ReadInt16() => _reader.ReadInt16();
+        public short ReadInt16()
+        {
+            byte[] buffer = new byte[2];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            short output = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteShort(short input) => WriteInt16(input);
         public short ReadShort() => ReadInt16();
@@ -144,10 +217,21 @@ namespace EppNet.Data
         public void WriteUInt16(ushort input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes((ushort)IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public ushort ReadUInt16() => _reader.ReadUInt16();
+        public ushort ReadUInt16()
+        {
+            byte[] buffer = new byte[2];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            ushort output = (ushort) IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteUShort(ushort input) => WriteUInt16(input);
         public ushort ReadUShort() => ReadUInt16();
@@ -155,10 +239,21 @@ namespace EppNet.Data
         public void WriteUInt32(uint input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public uint ReadUInt32() => _reader.ReadUInt32();
+        public uint ReadUInt32()
+        {
+            byte[] buffer = new byte[4];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            uint output = (uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteUInt(uint input) => WriteUInt32(input);
         public uint ReadUInt() => ReadUInt32();
@@ -166,10 +261,21 @@ namespace EppNet.Data
         public void WriteInt32(int input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public int ReadInt32() => _reader.ReadInt32();
+        public int ReadInt32()
+        {
+            byte[] buffer = new byte[4];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            int output = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteInt(int input) => WriteInt32(input);
         public int ReadInt() => ReadInt32();
@@ -177,10 +283,21 @@ namespace EppNet.Data
         public void WriteUInt64(ulong input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long) input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public ulong ReadUInt64() => _reader.ReadUInt64();
+        public ulong ReadUInt64()
+        {
+            byte[] buffer = new byte[8];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            ulong output = (ulong) IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteULong(ulong input) => WriteUInt64(input);
         public ulong ReadULong() => ReadUInt64();
@@ -188,10 +305,21 @@ namespace EppNet.Data
         public void WriteInt64(long input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes, 0, bytes.Length);
         }
 
-        public long ReadInt64() => _reader.ReadInt64();
+        public long ReadInt64()
+        {
+            byte[] buffer = new byte[8];
+            int read = _stream.Read(buffer, 0, buffer.Length);
+
+            long output = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer));
+            _stream.Advance(read);
+
+            return output;
+        }
 
         public void WriteLong(long input) => WriteInt64(input);
         public long ReadLong() => ReadInt64();
@@ -199,12 +327,19 @@ namespace EppNet.Data
         public void WriteFloat(float input)
         {
             _EnsureReadyToWrite();
-            _writer.Write(input);
+
+            int i32 = (int) (Math.Round(input, FloatPrecision) * _GetPrecisionNumber());
+            WriteInt32(i32);
         }
 
         public void WriteSingle(float input) => WriteFloat(input);
 
-        public float ReadFloat() => _reader.ReadSingle();
+        public float ReadFloat()
+        {
+            int i32 = ReadInt32();
+            return ((float) i32) / _GetPrecisionNumber();
+        }
+
         public float ReadSingle() => ReadFloat();
 
         public double GetSizeKB()
