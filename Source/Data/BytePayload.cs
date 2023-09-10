@@ -79,6 +79,7 @@ namespace EppNet.Data
         public BytePayload(byte[] dataIn) : this()
         {
             _stream = ObtainStream(dataIn);
+            _stream.Seek(0, System.IO.SeekOrigin.Begin);
         }
 
         public virtual byte[] Pack()
@@ -123,7 +124,9 @@ namespace EppNet.Data
 
         public string ReadString()
         {
-            byte[] buffer = new byte[ReadUInt16()];
+            int length = ReadUInt16();
+            byte[] buffer = new byte[length];
+
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             string output = Encoder.GetString(buffer, 0, read);
@@ -156,8 +159,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, 1);
 
             byte output = (byte) IPAddress.NetworkToHostOrder(buffer[0]);
-            _stream.Advance(read);
-
             return output;
         }
 
@@ -178,8 +179,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             sbyte output = (sbyte)IPAddress.NetworkToHostOrder(Convert.ToSByte(buffer[0]));
-            _stream.Advance(read);
-
             return output;
         }
 
@@ -200,8 +199,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             short output = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer));
-            _stream.Advance(read);
-
             return output;
         }
 
@@ -212,7 +209,7 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes((ushort)IPAddress.HostToNetworkOrder(input));
+            byte[] bytes = BitConverter.GetBytes((ushort)IPAddress.HostToNetworkOrder((short) input));
             _stream.Write(bytes, 0, bytes.Length);
         }
 
@@ -220,9 +217,7 @@ namespace EppNet.Data
         {
             byte[] buffer = new byte[2];
             int read = _stream.Read(buffer, 0, buffer.Length);
-
-            ushort output = (ushort) IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer));
-            _stream.Advance(read);
+            ushort output = (ushort) IPAddress.NetworkToHostOrder((short)BitConverter.ToInt16(buffer));
 
             return output;
         }
@@ -244,8 +239,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             uint output = (uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer));
-            _stream.Advance(read);
-
             return output;
         }
 
@@ -266,7 +259,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             int output = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer));
-            _stream.Advance(read);
 
             return output;
         }
@@ -288,8 +280,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             ulong output = (ulong) IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer));
-            _stream.Advance(read);
-
             return output;
         }
 
@@ -310,8 +300,6 @@ namespace EppNet.Data
             int read = _stream.Read(buffer, 0, buffer.Length);
 
             long output = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer));
-            _stream.Advance(read);
-
             return output;
         }
 
@@ -336,7 +324,7 @@ namespace EppNet.Data
 
         public float ReadSingle() => ReadFloat();
 
-        public void WriteTimestamp(Timestamp input)
+        public void WriteTypedTimestamp(Timestamp input)
         {
             _EnsureReadyToWrite();
 
@@ -344,13 +332,26 @@ namespace EppNet.Data
             WriteLong(input.Value);
         }
 
-        public Timestamp ReadTimestamp()
+        public Timestamp ReadTypedTimestamp()
         {
             byte type = ReadUInt8();
             long value = ReadLong();
 
             TimestampType tsType = (TimestampType)Enum.ToObject(typeof(TimestampType), type);
             return new Timestamp(tsType, false, value);
+        }
+
+        public void WriteTimestamp(Timestamp input)
+        {
+            _EnsureReadyToWrite();
+
+            WriteLong(input.Value);
+        }
+
+        public Timestamp ReadTimestamp()
+        {
+            long value = ReadLong();
+            return new Timestamp() { Value = value };
         }
 
         public double GetSizeKB()

@@ -6,5 +6,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
   </ItemGroup>
 </Project>
