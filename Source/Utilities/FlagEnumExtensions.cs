@@ -19,6 +19,8 @@ namespace EppNet.Utilities
             Trace.Assert(typeof(T).IsEnum, $"Type '{typeof(T).Name}` is not a valid Enum!");
         }
 
+        /*
+
         public static bool HandleOverlappingFlags<T>(this T a, T b, Dictionary<T, T> overlappingFlags) where T : struct, IConvertible, IComparable, IFormattable
         {
             _EnsureEnum<T>();
@@ -35,7 +37,7 @@ namespace EppNet.Utilities
                 
             }
 
-        }
+        }*/
 
         public static bool IsFlagSet<T>(this T a, T b) where T : struct, IConvertible, IComparable, IFormattable
         {

@@ -13,7 +13,8 @@ namespace EppNet.Data
 
     public class Datagram : BytePayload
     {
-        protected byte Header;
+        public byte Header { internal set; get; }
+
         protected Packet? _enet_packet;
 
         public Datagram() : base()

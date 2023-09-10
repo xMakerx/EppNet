@@ -16,7 +16,7 @@ namespace EppNet.Sessions
     {
 
         /// <summary>
-        /// The socket this session is related to.
+        /// The socket this session originated from.
         /// </summary>
         public readonly Socket Socket;
 

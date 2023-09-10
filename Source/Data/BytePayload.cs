@@ -13,6 +13,13 @@ using System.Text;
 namespace EppNet.Data
 {
 
+    /// <summary>
+    /// Essentially a wrapper around a <see cref="RecyclableMemoryStream"/>,
+    /// <see cref="BinaryWriter"/>, and <see cref="BinaryReader"/>.
+    /// 
+    /// All data is handled in little endian
+    /// </summary>
+
     public class BytePayload : IDisposable
     {
 
@@ -188,6 +195,13 @@ namespace EppNet.Data
 
         public float ReadFloat() => _reader.ReadSingle();
         public float ReadSingle() => ReadFloat();
+
+        public double GetSizeKB()
+        {
+            float length = (_stream != null) ? _stream.Length : 0;
+            return Math.Round(length / 1000, 3);
+        }
+
     }
 
 }
