@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace EppNet.utilities
+namespace EppNet.Utilities
 {
 
     public static class FlagEnumExtensions

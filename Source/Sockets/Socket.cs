@@ -1,18 +1,18 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: Endpoint.cs
+/// Filename: Socket.cs
 /// Date: September 5, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
 using ENet;
 
-using EppNet.exception;
-using EppNet.utilities;
+using EppNet.Core;
+using EppNet.Exceptions;
 
 using System;
 using System.Diagnostics;
 
-namespace EppNet.core
+namespace EppNet.Sockets
 {
     public enum SocketType : byte
     {
@@ -39,7 +39,7 @@ namespace EppNet.core
         {
             internal set
             {
-                if (_status.IsFlagSet(SocketStatus.Unregistered) && _status.IsFlagSet)
+                _status = value;
             }
 
             get => _status;

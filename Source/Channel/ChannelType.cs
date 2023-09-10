@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.channel
+namespace EppNet.Channel
 {
 
     public enum ChannelType : int

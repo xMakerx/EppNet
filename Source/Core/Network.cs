@@ -6,13 +6,14 @@
 
 using ENet;
 
-using EppNet.exception;
-using EppNet.utilities;
+using EppNet.Exceptions;
+using EppNet.Sockets;
+using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
 
-namespace EppNet.core
+namespace EppNet.Core
 {
 
     public class Network
@@ -90,7 +91,7 @@ namespace EppNet.core
 
         #endregion
 
-        public Exception Error;
+        public System.Exception Error;
 
         public event Action<NetworkStatus, NetworkStatus> OnStatusChanged;
 
@@ -149,7 +150,7 @@ namespace EppNet.core
             _sockets.Clear();
         }
 
-        public void PostException(Exception exception)
+        public void PostException(System.Exception exception)
         {
             Error = exception;
             Status = _status.SetFlag(NetworkStatus.Error, true);

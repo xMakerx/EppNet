@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.core
+namespace EppNet.Core
 {
 
     public enum NetworkStatus : byte

@@ -4,11 +4,11 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.core;
+using EppNet.Core;
 
 using System;
 
-namespace EppNet.exception
+namespace EppNet.Exceptions
 {
     public class NetworkException : Exception
     {

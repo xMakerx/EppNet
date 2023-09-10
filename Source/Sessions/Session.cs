@@ -6,9 +6,10 @@
 
 using ENet;
 
-using EppNet.core;
+using EppNet.Core;
+using EppNet.Sockets;
 
-namespace EppNet.session
+namespace EppNet.Sessions
 {
 
     public class Session

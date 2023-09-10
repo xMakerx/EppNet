@@ -3,10 +3,10 @@
 /// Date: September 5, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
-using EppNet.core;
-using EppNet.exception;
+using EppNet.Core;
+using EppNet.Exceptions;
 
-namespace EppNet.endpoint
+namespace EppNet.Sockets
 {
 
     public class Server : Socket

@@ -5,7 +5,7 @@
 ///////////////////////////////////////////////////////
 using System;
 
-namespace EppNet.core
+namespace EppNet.Core
 {
 
     public enum TimestampType : byte
