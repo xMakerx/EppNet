@@ -223,7 +223,7 @@ namespace EppNet.Tests
                 bufferIn = payloadOut.Pack();
             }
 
-            float expectedOutput = (float)(FastMath.Round(input, BytePayload.FloatPrecision) * BytePayload.GetPrecisionNumber()) / BytePayload.GetPrecisionNumber();
+            float expectedOutput = (float)(FastMath.Round(input, BytePayload.FloatPrecision) * BytePayload.GetPrecisionNumber()) * BytePayload.GetPrecisionReciprocal();
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(expectedOutput, payloadIn.ReadFloat());

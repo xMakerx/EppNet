@@ -42,13 +42,20 @@ namespace EppNet.Data
 
         protected static int _precision_number = -1;
 
+        protected static float _precision_reciprocal = 0f;
+
         public static int GetPrecisionNumber()
         {
             if (_precision_number == -1)
+            {
                 _precision_number = (int)Math.Pow(10.0d, (double)FloatPrecision);
+                _precision_reciprocal = (float)Math.ReciprocalSqrtEstimate(GetPrecisionNumber() * GetPrecisionNumber());
+            }
 
             return _precision_number;
         }
+
+        public static float GetPrecisionReciprocal() => _precision_reciprocal;
 
         public static readonly RecyclableMemoryStreamManager RecyclableStreamMgr = new RecyclableMemoryStreamManager();
         
@@ -316,8 +323,7 @@ namespace EppNet.Data
         public float ReadFloat()
         {
             int i32 = ReadInt32();
-            float reciprocal = (float) Math.ReciprocalSqrtEstimate(GetPrecisionNumber() * GetPrecisionNumber());
-            return i32 * reciprocal;
+            return i32 * _precision_reciprocal;
         }
 
         public float ReadSingle() => ReadFloat();
