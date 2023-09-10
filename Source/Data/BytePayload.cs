@@ -136,7 +136,7 @@ namespace EppNet.Data
         public void WriteBool(bool input)
         {
             _EnsureReadyToWrite();
-            WriteUInt8(input ? (byte) 1 : (byte)0);
+            WriteUInt8((byte) (input ? 1 : 0));
         }
 
         public bool ReadBool() => (ReadUInt8() == 1);

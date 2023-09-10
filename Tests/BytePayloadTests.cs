@@ -32,6 +32,11 @@ namespace EppNet.Tests
                 Assert.AreEqual(input, payloadIn.ReadString());
         }
 
+        /// <summary>
+        /// NOTE: This test currently runs first; so don't be surprised if its duration is the highest out of all.
+        /// Writing booleans to the stream isn't slow, the issue is that the stream pool is being initialized.
+        /// </summary>
+
         [TestMethod]
         public void ReadAndWriteBool()
         {
