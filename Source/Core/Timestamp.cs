@@ -26,6 +26,10 @@ namespace EppNet.Core
     {
 
         #region Static members
+
+        private static readonly float _reciprocal_60 = (float) Math.ReciprocalSqrtEstimate(60);
+        private static readonly float _reciprocal_1000 = (float) Math.ReciprocalSqrtEstimate(1000);
+
         private static Timestamp _CreateMatching(Timestamp a, Timestamp b, bool alwaysNew = false)
         {
             if (a.Type == b.Type && !alwaysNew)
@@ -157,10 +161,10 @@ namespace EppNet.Core
                 case TimestampType.Milliseconds:
 
                     if (type == TimestampType.Seconds)
-                        this.Value /= 1000;
+                        this.Value = (long) ((float)Value * _reciprocal_1000);
 
                     else if (type == TimestampType.Minutes)
-                        this.Value = (Value / 1000) / 60;
+                        this.Value = (long) ((Value * _reciprocal_1000) * _reciprocal_60);
 
                     break;
 
@@ -170,7 +174,7 @@ namespace EppNet.Core
                         this.Value *= 1000;
 
                     else if (type == TimestampType.Minutes)
-                        this.Value /= 60;
+                        this.Value = (long) (this.Value * _reciprocal_60);
 
                     break;
 
