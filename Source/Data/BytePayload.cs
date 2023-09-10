@@ -7,7 +7,6 @@
 using Microsoft.IO;
 
 using System;
-using System.IO;
 using System.Net;
 using System.Text;
 
@@ -15,9 +14,7 @@ namespace EppNet.Data
 {
 
     /// <summary>
-    /// Essentially a wrapper around a <see cref="RecyclableMemoryStream"/>,
-    /// <see cref="BinaryWriter"/>, and <see cref="BinaryReader"/>.
-    /// 
+    /// Essentially a wrapper around a <see cref="RecyclableMemoryStream"/>.
     /// All data is handled in little endian
     /// </summary>
 
@@ -140,10 +137,7 @@ namespace EppNet.Data
         public bool ReadBool()
         {
             byte b = ReadUInt8();
-            bool output = false;
-
-            if (b == (byte)1)
-                output = true;
+            bool output = (b != 0);
 
             return output;
         }
