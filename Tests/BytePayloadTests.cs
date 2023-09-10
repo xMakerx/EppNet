@@ -5,8 +5,12 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Data;
+using EppNet.Utilities;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using System;
+using System.Diagnostics;
 
 namespace EppNet.Tests
 {
@@ -51,6 +55,32 @@ namespace EppNet.Tests
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(input, payloadIn.ReadBool());
+        }
+
+        [TestMethod]
+        public void ReadAndWrite1000Bool()
+        {
+
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+            {
+                byte[] bufferIn = null;
+                bool input = true;
+
+                using (BytePayload payloadOut = new BytePayload())
+                {
+                    payloadOut.WriteBool(input);
+                    bufferIn = payloadOut.Pack();
+                }
+
+                using (BytePayload payloadIn = new BytePayload(bufferIn))
+                    Assert.AreEqual(input, payloadIn.ReadBool());
+                
+            }
+
+            watch.Stop();
+            Console.WriteLine($"Read and wrote 1000 bools in {watch.ElapsedMilliseconds * 0.001} ms");
         }
 
         [TestMethod]
@@ -179,6 +209,24 @@ namespace EppNet.Tests
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(input, payloadIn.ReadInt());
+        }
+
+        [TestMethod]
+        public void ReadAndWriteFloats()
+        {
+            byte[] bufferIn = null;
+            float input = 3.14159f;
+
+            using (BytePayload payloadOut = new BytePayload())
+            {
+                payloadOut.WriteFloat(input);
+                bufferIn = payloadOut.Pack();
+            }
+
+            float expectedOutput = (float)(FastMath.Round(input, BytePayload.FloatPrecision) * BytePayload.GetPrecisionNumber()) / BytePayload.GetPrecisionNumber();
+
+            using (BytePayload payloadIn = new BytePayload(bufferIn))
+                Assert.AreEqual(expectedOutput, payloadIn.ReadFloat());
         }
 
     }

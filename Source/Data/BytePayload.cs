@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Core;
+using EppNet.Utilities;
 
 using Microsoft.IO;
 
@@ -31,17 +32,17 @@ namespace EppNet.Data
                 if (_float_digits != value)
                 {
                     _precision_number = -1;
-                    _GetPrecisionNumber();
+                    GetPrecisionNumber();
                 }
             }
             get => _float_digits;
         }
 
-        protected static int _float_digits = 3;
+        protected static int _float_digits = 4;
 
         protected static int _precision_number = -1;
 
-        protected static int _GetPrecisionNumber()
+        public static int GetPrecisionNumber()
         {
             if (_precision_number == -1)
                 _precision_number = (int)Math.Pow(10.0d, (double)FloatPrecision);
@@ -306,7 +307,7 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            int i32 = (int) (Math.Round(input, FloatPrecision) * _GetPrecisionNumber());
+            int i32 = (int)(FastMath.Round(input, FloatPrecision) * GetPrecisionNumber());
             WriteInt32(i32);
         }
 
@@ -315,7 +316,8 @@ namespace EppNet.Data
         public float ReadFloat()
         {
             int i32 = ReadInt32();
-            return ((float) i32) / _GetPrecisionNumber();
+            float reciprocal = (float) Math.ReciprocalSqrtEstimate(GetPrecisionNumber() * GetPrecisionNumber());
+            return i32 * reciprocal;
         }
 
         public float ReadSingle() => ReadFloat();
@@ -353,7 +355,7 @@ namespace EppNet.Data
         public double GetSizeKB()
         {
             float length = (_stream != null) ? _stream.Length : 0;
-            return Math.Round(length / 1000, 3);
+            return FastMath.Round(length / 1000, 3);
         }
 
     }
