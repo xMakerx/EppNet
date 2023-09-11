@@ -133,11 +133,11 @@ namespace EppNet.Data
         public string ReadString()
         {
             int length = ReadUInt16();
-            byte[] buffer = new byte[length];
+            Span<byte> buffer = stackalloc byte[length];
+            int read = _stream.Read(buffer);
 
-            int read = _stream.Read(buffer, 0, buffer.Length);
+            string output = Encoder.GetString(buffer);
 
-            string output = Encoder.GetString(buffer, 0, read);
             return output;
         }
 
@@ -153,14 +153,14 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = new byte[] { input };
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> buffer = stackalloc byte[1] { input };
+            _stream.Write(buffer);
         }
 
         public byte ReadUInt8()
         {
-            byte[] buffer = new byte[1];
-            int read = _stream.Read(buffer, 0, 1);
+            Span<byte> buffer = stackalloc byte[1];
+            int read = _stream.Read(buffer);
 
             byte output = buffer[0];
             return output;
@@ -173,14 +173,14 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = new byte[] { Convert.ToByte(input) };
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[1] { Convert.ToByte(input) };
+            _stream.Write(bytes);
         }
 
         public sbyte ReadInt8()
         {
-            byte[] buffer = new byte[1];
-            int read = _stream.Read(buffer, 0, buffer.Length);
+            Span<byte> buffer = stackalloc byte[1];
+            int read = _stream.Read(buffer);
 
             sbyte output = Convert.ToSByte(buffer[0]);
             return output;
@@ -193,14 +193,15 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[2];
+            BitConverter.TryWriteBytes(bytes, IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes);
         }
 
         public short ReadInt16()
         {
-            byte[] buffer = new byte[2];
-            int read = _stream.Read(buffer, 0, buffer.Length);
+            Span<byte> buffer = stackalloc byte[2];
+            int read = _stream.Read(buffer);
 
             short output = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer));
             return output;
@@ -213,15 +214,16 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes((ushort)IPAddress.HostToNetworkOrder((short) input));
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[2];
+            BitConverter.TryWriteBytes(bytes, IPAddress.HostToNetworkOrder((short)input));
+            _stream.Write(bytes);
         }
 
         public ushort ReadUInt16()
         {
-            byte[] buffer = new byte[2];
-            int read = _stream.Read(buffer, 0, buffer.Length);
-            ushort output = (ushort) IPAddress.NetworkToHostOrder((short)BitConverter.ToInt16(buffer));
+            Span<byte> buffer = stackalloc byte[2];
+            int read = _stream.Read(buffer);
+            ushort output = (ushort) IPAddress.NetworkToHostOrder((short) BitConverter.ToInt16(buffer));
 
             return output;
         }
@@ -233,16 +235,17 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes((uint) IPAddress.HostToNetworkOrder((int) input));
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[4];
+            BitConverter.TryWriteBytes(bytes, (uint) IPAddress.HostToNetworkOrder((int)input));
+            _stream.Write(bytes);
         }
 
         public uint ReadUInt32()
         {
-            byte[] buffer = new byte[4];
-            int read = _stream.Read(buffer, 0, buffer.Length);
+            Span<byte> buffer = stackalloc byte[4];
+            int read = _stream.Read(buffer);
+            uint output = (uint)IPAddress.NetworkToHostOrder((int)BitConverter.ToInt32(buffer));
 
-            uint output = (uint) IPAddress.NetworkToHostOrder((int) BitConverter.ToInt32(buffer));
             return output;
         }
 
@@ -253,15 +256,15 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[4];
+            BitConverter.TryWriteBytes(bytes, IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes);
         }
 
         public int ReadInt32()
         {
-            byte[] buffer = new byte[4];
-            int read = _stream.Read(buffer, 0, buffer.Length);
-
+            Span<byte> buffer = stackalloc byte[4];
+            int read = _stream.Read(buffer);
             int output = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer));
 
             return output;
@@ -274,16 +277,17 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder((long) input));
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[8];
+            BitConverter.TryWriteBytes(bytes, IPAddress.HostToNetworkOrder((long)input));
+            _stream.Write(bytes);
         }
 
         public ulong ReadUInt64()
         {
-            byte[] buffer = new byte[8];
-            int read = _stream.Read(buffer, 0, buffer.Length);
-
+            Span<byte> buffer = stackalloc byte[8];
+            int read = _stream.Read(buffer);
             ulong output = (ulong) IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer));
+
             return output;
         }
 
@@ -294,16 +298,17 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            byte[] bytes = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(input));
-            _stream.Write(bytes, 0, bytes.Length);
+            Span<byte> bytes = stackalloc byte[8];
+            BitConverter.TryWriteBytes(bytes, IPAddress.HostToNetworkOrder(input));
+            _stream.Write(bytes);
         }
 
         public long ReadInt64()
         {
-            byte[] buffer = new byte[8];
-            int read = _stream.Read(buffer, 0, buffer.Length);
-
+            Span<byte> buffer = stackalloc byte[8];
+            int read = _stream.Read(buffer);
             long output = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer));
+
             return output;
         }
 
@@ -361,7 +366,7 @@ namespace EppNet.Data
         public double GetSizeKB()
         {
             float length = (_stream != null) ? _stream.Length : 0;
-            return FastMath.Round(length / 1000, 3);
+            return FastMath.Round(length * 0.001, 3);
         }
 
     }

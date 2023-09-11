@@ -64,23 +64,10 @@ namespace EppNet.Tests
             Stopwatch watch = Stopwatch.StartNew();
 
             for (int i = 0; i < 1000; i++)
-            {
-                byte[] bufferIn = null;
-                bool input = true;
-
-                using (BytePayload payloadOut = new BytePayload())
-                {
-                    payloadOut.WriteBool(input);
-                    bufferIn = payloadOut.Pack();
-                }
-
-                using (BytePayload payloadIn = new BytePayload(bufferIn))
-                    Assert.AreEqual(input, payloadIn.ReadBool());
-                
-            }
+                ReadAndWriteBool();
 
             watch.Stop();
-            Console.WriteLine($"Read and wrote 1000 bools in {watch.ElapsedMilliseconds * 0.001} ms");
+            Console.WriteLine($"Average time to read and write a bool: {watch.ElapsedMilliseconds * 0.001} ms");
         }
 
         [TestMethod]
@@ -100,6 +87,18 @@ namespace EppNet.Tests
         }
 
         [TestMethod]
+        public void ReadAndWrite1000Byte()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteByte();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a byte: {watch.ElapsedMilliseconds * 0.001} ms");
+        }
+
+        [TestMethod]
         public void ReadAndWriteSByte()
         {
             byte[] bufferIn = null;
@@ -113,6 +112,18 @@ namespace EppNet.Tests
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(input, payloadIn.ReadSByte());
+        }
+
+        [TestMethod]
+        public void ReadAndWrite1000SByte()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteSByte();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a sbyte: {watch.ElapsedMilliseconds * 0.001} ms");
         }
 
         [TestMethod]
@@ -132,6 +143,18 @@ namespace EppNet.Tests
         }
 
         [TestMethod]
+        public void ReadAndWrite1000Short()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteShort();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a short: {watch.ElapsedMilliseconds * 0.001} ms");
+        }
+
+        [TestMethod]
         public void ReadAndWriteUShort()
         {
             byte[] bufferIn = null;
@@ -145,6 +168,18 @@ namespace EppNet.Tests
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(input, payloadIn.ReadUShort());
+        }
+
+        [TestMethod]
+        public void ReadAndWrite1000UShort()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteUShort();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a ushort: {watch.ElapsedMilliseconds * 0.001} ms");
         }
 
         [TestMethod]
@@ -164,6 +199,18 @@ namespace EppNet.Tests
         }
 
         [TestMethod]
+        public void ReadAndWrite1000ULong()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteULong();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a ulong: {watch.ElapsedMilliseconds * 0.001} ms");
+        }
+
+        [TestMethod]
         public void ReadAndWriteLong()
         {
             byte[] bufferIn = null;
@@ -177,6 +224,18 @@ namespace EppNet.Tests
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(input, payloadIn.ReadLong());
+        }
+
+        [TestMethod]
+        public void ReadAndWrite1000Long()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteLong();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a long: {watch.ElapsedMilliseconds * 0.001} ms");
         }
 
         [TestMethod]
@@ -196,6 +255,18 @@ namespace EppNet.Tests
         }
 
         [TestMethod]
+        public void ReadAndWrite1000UInt()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteUInt();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a uint: {watch.ElapsedMilliseconds * 0.001} ms");
+        }
+
+        [TestMethod]
         public void ReadAndWriteInt()
         {
             byte[] bufferIn = null;
@@ -212,7 +283,19 @@ namespace EppNet.Tests
         }
 
         [TestMethod]
-        public void ReadAndWriteFloats()
+        public void ReadAndWrite1000Int()
+        {
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteInt();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a int: {watch.ElapsedMilliseconds * 0.001} ms");
+        }
+
+        [TestMethod]
+        public void ReadAndWriteFloat()
         {
             byte[] bufferIn = null;
             float input = 3.14159f;
@@ -227,6 +310,20 @@ namespace EppNet.Tests
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(expectedOutput, payloadIn.ReadFloat());
+        }
+
+        [TestMethod]
+        public void ReadAndWrite1000Floats()
+        {
+
+            Stopwatch watch = Stopwatch.StartNew();
+
+            for (int i = 0; i < 1000; i++)
+                ReadAndWriteFloat();
+
+            watch.Stop();
+            Console.WriteLine($"Average time to read and write a float: {watch.ElapsedMilliseconds * 0.001} ms");
+
         }
 
     }
