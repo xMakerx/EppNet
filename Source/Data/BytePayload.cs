@@ -47,7 +47,8 @@ namespace EppNet.Data
 
         public static float FloatToNetFloat(float input)
         {
-            return (float) (FastMath.RoundInt(input, FloatPrecision) * FastMath.GetReciprocal(FloatPrecision));
+            int a = (int)(FastMath.Round(input, FloatPrecision) * FastMath.GetTenPow(FloatPrecision));
+            return (float)a / (float)FastMath.GetTenPow(FloatPrecision);
         }
         
         #endregion
@@ -300,7 +301,7 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            int i32 = FastMath.RoundInt(input, FloatPrecision);
+            int i32 = (int) (FastMath.Round(input, FloatPrecision) * FastMath.GetTenPow(FloatPrecision));
             WriteInt32(i32);
         }
 
@@ -308,8 +309,8 @@ namespace EppNet.Data
 
         public float ReadFloat()
         {
-            int i32 = ReadInt32();
-            return i32 * (float)FastMath.GetReciprocal(FloatPrecision);
+            float i32 = (float) ReadInt32();
+            return i32 / (float) FastMath.GetTenPow(FloatPrecision);
         }
 
         public float ReadSingle() => ReadFloat();

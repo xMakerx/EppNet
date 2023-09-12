@@ -300,13 +300,15 @@ namespace EppNet.Tests
             byte[] bufferIn = null;
             float input = 3.14159f;
 
+            BytePayload.FloatPrecision = 4;
+
             using (BytePayload payloadOut = new BytePayload())
             {
                 payloadOut.WriteFloat(input);
                 bufferIn = payloadOut.Pack();
             }
 
-            float expectedOutput = BytePayload.FloatToNetFloat(input);
+            float expectedOutput = 3.1416f;
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
                 Assert.AreEqual(expectedOutput, payloadIn.ReadFloat());
