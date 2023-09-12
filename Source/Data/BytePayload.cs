@@ -25,37 +25,7 @@ namespace EppNet.Data
     {
 
         #region Static members
-        public static int FloatPrecision
-        {
-            set
-            {
-                if (_float_digits != value)
-                {
-                    _precision_number = -1;
-                    GetPrecisionNumber();
-                }
-            }
-            get => _float_digits;
-        }
-
-        protected static int _float_digits = 4;
-
-        protected static int _precision_number = -1;
-
-        protected static float _precision_reciprocal = 0f;
-
-        public static int GetPrecisionNumber()
-        {
-            if (_precision_number == -1)
-            {
-                _precision_number = (int)Math.Pow(10.0d, (double)FloatPrecision);
-                _precision_reciprocal = (float)Math.ReciprocalSqrtEstimate(GetPrecisionNumber() * GetPrecisionNumber());
-            }
-
-            return _precision_number;
-        }
-
-        public static float GetPrecisionReciprocal() => _precision_reciprocal;
+        public static int FloatPrecision = 4;
 
         public static readonly RecyclableMemoryStreamManager RecyclableStreamMgr = new RecyclableMemoryStreamManager();
         
@@ -67,6 +37,17 @@ namespace EppNet.Data
         public static RecyclableMemoryStream ObtainStream(byte[] buffer)
         {
             return RecyclableStreamMgr.GetStream(buffer) as RecyclableMemoryStream;
+        }
+
+        /// <summary>
+        /// Converts a local float to a remote float (i.e. a float with the precision specified by <see cref="FloatPrecision"/>)
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+
+        public static float FloatToNetFloat(float input)
+        {
+            return (float) (FastMath.RoundInt(input, FloatPrecision) * FastMath.GetReciprocal(FloatPrecision));
         }
         
         #endregion
@@ -319,7 +300,7 @@ namespace EppNet.Data
         {
             _EnsureReadyToWrite();
 
-            int i32 = (int)(FastMath.Round(input, FloatPrecision) * GetPrecisionNumber());
+            int i32 = FastMath.RoundInt(input, FloatPrecision);
             WriteInt32(i32);
         }
 
@@ -328,7 +309,7 @@ namespace EppNet.Data
         public float ReadFloat()
         {
             int i32 = ReadInt32();
-            return i32 * _precision_reciprocal;
+            return i32 * (float)FastMath.GetReciprocal(FloatPrecision);
         }
 
         public float ReadSingle() => ReadFloat();
