@@ -52,14 +52,14 @@ namespace EppNet.Core
         {
             get
             {
-                Timestamp a = new Timestamp(TimestampType.Milliseconds, true, 0);
-
                 if (Instance != null && Instance._enet_initialized)
-                    a.Value = ENet.Library.Time;
+                    _monotonicTimestamp.Set(MonotonicTime);
 
-                return a;
+                return _monotonicTimestamp;
             }
         }
+
+        private static Timestamp _monotonicTimestamp = new Timestamp(TimestampType.Milliseconds, true, 0L);
 
         /// <summary>
         /// Shorthand for <see cref="MonotonicTimestamp"/>

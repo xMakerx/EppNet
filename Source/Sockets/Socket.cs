@@ -103,6 +103,7 @@ namespace EppNet.Sockets
                 throw new NetworkException("Socket is not valid!");
 
             bool polled = false;
+
             while (!polled)
             {
                 if (_enet_host.CheckEvents(out _enet_event) <= 0)

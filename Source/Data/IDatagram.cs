@@ -4,17 +4,20 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.Source.Data
+using EppNet.Connections;
+
+namespace EppNet.Data
 {
 
     public interface IDatagram
     {
 
-        public uint Header { internal set; get; }
-
         public void Read();
 
         public void WriteHeader();
+        public byte GetHeader();
+        public byte GetChannelID();
+        public Connection GetSender();
 
     }
 

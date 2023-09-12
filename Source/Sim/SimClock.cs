@@ -7,7 +7,7 @@
 using System;
 using EppNet.Core;
 
-namespace EppNet.Simulation
+namespace EppNet.Sim
 {
     
     public class SimClock
@@ -108,6 +108,7 @@ namespace EppNet.Simulation
             _latency_arr_index = 0;
 
             _decimal_collector = 0f;
+            _initialized = true;
         }
 
         public void Tick(float delta)

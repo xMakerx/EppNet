@@ -50,6 +50,16 @@ namespace EppNet.Core
             return nts;
         }
 
+        public static Timestamp FromMonoNow()
+        {
+            return new Timestamp()
+            {
+                Type = TimestampType.Milliseconds,
+                Monotonic = true,
+                Value = Network.MonotonicTime
+            };
+        }
+
         /// <summary>
         /// Creates a new monotonic timestamp representing 0 seconds.
         /// </summary>

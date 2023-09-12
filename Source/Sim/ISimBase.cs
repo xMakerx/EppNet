@@ -4,17 +4,15 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.Simulation
+using EppNet.Sockets;
+
+namespace EppNet.Sim
 {
 
     public interface ISimBase
     {
-        /// <summary>
-        /// Submits a request to synchronize clocks
-        /// </summary>
-        
-        public void RequestSync();
         public SimClock GetClock();
+        public Socket GetSocket();
 
     }
 

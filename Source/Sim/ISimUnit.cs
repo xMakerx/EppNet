@@ -6,7 +6,7 @@
 /// Simulation units are components that propagate updates
 /// on the network
 
-namespace EppNet.Simulation
+namespace EppNet.Sim
 {
 
     public interface ISimUnit

@@ -1,0 +1,17 @@
+﻿///////////////////////////////////////////////////////
+/// Filename: MessageDirector.cs
+/// Date: September 12, 2023
+/// Author: Maverick Liberty
+///////////////////////////////////////////////////////
+
+namespace EppNet.Data
+{
+
+    public class MessageDirector
+    {
+
+
+
+    }
+
+}

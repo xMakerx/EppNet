@@ -8,7 +8,7 @@
 
 using System.Collections.Generic;
 
-namespace EppNet.Simulation
+namespace EppNet.Sim
 {
     public interface ISimViewer
     {
