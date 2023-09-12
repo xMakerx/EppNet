@@ -20,7 +20,7 @@ namespace EppNet.Tests
     {
 
         [TestMethod]
-        public void ReadAndWriteString()
+        public void ReadAndWriteString8()
         {
 
             byte[] bufferIn = null;
@@ -28,12 +28,12 @@ namespace EppNet.Tests
 
             using (BytePayload payloadOut = new BytePayload())
             {
-                payloadOut.WriteString(input);
+                payloadOut.WriteString8(input);
                 bufferIn = payloadOut.Pack();
             }
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
-                Assert.AreEqual(input, payloadIn.ReadString());
+                Assert.AreEqual(input, payloadIn.ReadString8());
         }
 
         /// <summary>
