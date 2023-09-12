@@ -58,7 +58,7 @@ namespace EppNet.Data
             int a = (int)(FastMath.Round(input, FloatPrecision) * FastMath.GetTenPow(FloatPrecision));
             return (float)a / (float)FastMath.GetTenPow(FloatPrecision);
         }
-        
+
         #endregion
 
         /// <summary>
@@ -68,16 +68,15 @@ namespace EppNet.Data
         /// on this payload as that's unexpected behavior.
         /// </summary>
 
-        public Encoding Encoder;
-
-        protected internal RecyclableMemoryStream _stream;
+        public Encoding Encoder = Encoding.UTF8;
 
         /// <summary>
         /// A byte array representing the data held by the internal <see cref="RecyclableMemoryStream"/>.<br/>
         /// This is populated by <see cref="Pack"/>.
         /// </summary>
-
         public byte[] PackedData { internal set; get; }
+
+        protected internal RecyclableMemoryStream _stream;
 
         /// <summary>
         /// Initializes an empty new BytePayload. A memory stream is not fetched from the pool
@@ -86,7 +85,6 @@ namespace EppNet.Data
 
         public BytePayload()
         {
-            this.Encoder = Encoding.UTF8;
             this.PackedData = null;
             this._stream = null;
         }
@@ -159,7 +157,6 @@ namespace EppNet.Data
         {
             _stream?.Dispose();
         }
-
 
         /// <summary>
         /// Reads a string in the encoding specified by <see cref="Encoder"/>. <br/>

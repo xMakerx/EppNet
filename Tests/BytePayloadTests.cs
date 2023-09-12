@@ -5,7 +5,6 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Data;
-using EppNet.Utilities;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
