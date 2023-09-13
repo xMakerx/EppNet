@@ -27,7 +27,7 @@ namespace EppNet.Tests
         [TestMethod]
         public void TestPingDatagramGen()
         {
-            IDatagram d = (IDatagram) _reg.Get(0x1).NewGenericInstance();
+            IDatagram d = (IDatagram) _reg.Get(0x1).NewInstance();
 
             Assert.IsTrue(d is PingDatagram, "Did not instantiate new ping datagram properly!");
         }
