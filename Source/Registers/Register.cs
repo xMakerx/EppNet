@@ -20,10 +20,18 @@ namespace EppNet.Registers
             this._lookupTable = new Dictionary<TKey, IRegistrationBase>();
         }
 
+        /// <summary>
+        /// Checks if the given key can be added to the internal lookup table.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+
+        public virtual bool IsValidKey(TKey key) => !_lookupTable.ContainsKey(key);
+
         public bool Add<T>(TKey key) where T : BaseType
         {
 
-            if (!_lookupTable.ContainsKey(key))
+            if (IsValidKey(key))
             {
                 _lookupTable.Add(key, new Registration<T>());
                 return true;

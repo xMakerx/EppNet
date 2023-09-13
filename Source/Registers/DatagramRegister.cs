@@ -19,6 +19,14 @@ namespace EppNet.Registers
         {
             Add<PingDatagram>(0x1);
         }
+
+        public override bool IsValidKey(byte key)
+        {
+            if (key < 1)
+                throw new System.ArgumentException($"{GetType().Name} requires keys greater than 1!");
+
+            return base.IsValidKey(key);
+        }
     }
 
 }
