@@ -1,0 +1,37 @@
+﻿///////////////////////////////////////////////////////
+/// Filename: RegisterTests.cs
+/// Date: September 13, 2023
+/// Author: Maverick Liberty
+///////////////////////////////////////////////////////
+
+using EppNet.Data;
+using EppNet.Registers;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace EppNet.Tests
+{
+
+    [TestClass]
+    public class RegisterTests
+    {
+
+        private DatagramRegister _reg;
+
+        public RegisterTests()
+        {
+            this._reg = DatagramRegister.Get();
+            _reg.CompileAll();
+        }
+
+        [TestMethod]
+        public void TestPingDatagramGen()
+        {
+            IDatagram d = (IDatagram) _reg.Get(0x1).NewGenericInstance();
+
+            Assert.IsTrue(d is PingDatagram, "Did not instantiate new ping datagram properly!");
+        }
+
+    }
+
+}

@@ -75,7 +75,7 @@ namespace EppNet.Registers
 
         public bool IsCompiled() => _compiled;
 
-        public T Instance(params object[] args)
+        public object NewGenericInstance(params object[] args)
         {
             if (!_compiled)
                 throw new Exception($"{this.GetType().Name} has not been compiled!");
@@ -108,8 +108,10 @@ namespace EppNet.Registers
                 }
             }
 
-            return default(T);
+            return null;
         }
+
+        public T Instance(params object[] args) => (T)NewGenericInstance(args);
 
         /// <summary>
         /// Disposes of compiled expressions.

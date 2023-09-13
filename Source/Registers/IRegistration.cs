@@ -18,6 +18,8 @@ namespace EppNet.Registers
     {
         public bool Compile();
         public bool IsCompiled();
+
+        public object NewGenericInstance(params object[] args);
     }
 
 }

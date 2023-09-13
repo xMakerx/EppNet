@@ -18,6 +18,8 @@ namespace EppNet.Data
         {
             byte[] received_data = new byte[packet.Length];
             packet.CopyTo(received_data);
+
+            
         }
 
     }
