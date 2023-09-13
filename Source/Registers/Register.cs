@@ -20,8 +20,9 @@ namespace EppNet.Registers
             this._lookupTable = new Dictionary<TKey, IRegistrationBase>();
         }
 
-        public bool Add<T>(TKey key)
+        public bool Add<T>(TKey key) where T : BaseType
         {
+
             if (!_lookupTable.ContainsKey(key))
             {
                 _lookupTable.Add(key, new Registration<T>());
@@ -29,6 +30,12 @@ namespace EppNet.Registers
             }
 
             return false;
+        }
+
+        public IRegistrationBase Get(TKey key)
+        {
+            _lookupTable.TryGetValue(key, out IRegistrationBase registration);
+            return registration;
         }
 
         public int CompileAll()
