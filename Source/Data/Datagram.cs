@@ -4,8 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using ENet;
-
 using EppNet.Connections;
 
 namespace EppNet.Data

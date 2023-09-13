@@ -9,7 +9,7 @@ using EppNet.Data;
 namespace EppNet.Registers
 {
 
-    public class DatagramRegister : Register<byte, IDatagram>
+    public class DatagramRegister : Register<byte, Datagram>
     {
 
         public static readonly DatagramRegister Instance = new DatagramRegister();
