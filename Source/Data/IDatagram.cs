@@ -14,6 +14,10 @@ namespace EppNet.Data
 
         public void Read();
 
+        public void Write();
+
+        public byte[] Pack();
+
         public void WriteHeader();
         public byte GetHeader();
         public byte GetChannelID();

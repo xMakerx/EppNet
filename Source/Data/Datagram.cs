@@ -28,17 +28,11 @@ namespace EppNet.Data
             this.Sender = null;
         }
 
-        protected override void _EnsureReadyToWrite()
-        {
-            if (_stream == null)
-            {
-                _stream = ObtainStream();
-                WriteHeader();
-            }
-
-        }
-
         public virtual void Read() { }
+        public virtual void Write()
+        {
+            WriteHeader();
+        }
 
         public virtual void WriteHeader() => WriteUInt8(Header);
 

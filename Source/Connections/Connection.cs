@@ -11,6 +11,12 @@ using EppNet.Data;
 
 namespace EppNet.Connections
 {
+    /// <summary>
+    /// Yes, UDP doesn't have the concept of "connections" but
+    /// for simplicity's sake we use the term to describe "known
+    /// computers that have sent us datagrams" and keep who's
+    /// who organized.
+    /// </summary>
 
     public class Connection
     {
@@ -46,15 +52,27 @@ namespace EppNet.Connections
             this.IsAuthenticated = false;
         }
 
-        public void Send(Datagram datagram, PacketFlags flags)
+        /// <summary>
+        /// Packages a <see cref="IDatagram"/> (Calls <see cref="IDatagram.Pack"/>) and
+        /// sends it with the specified <see cref="PacketFlags"/>.
+        /// </summary>
+        /// <param name="datagram"></param>
+        /// <param name="flags"></param>
+
+        public void Send(IDatagram datagram, PacketFlags flags)
         {
             Packet enet_packet = new Packet();
             enet_packet.Create(datagram.Pack(), flags);
 
-            _enet_peer.Send(datagram.ChannelID, ref enet_packet);
+            _enet_peer.Send(datagram.GetChannelID(), ref enet_packet);
         }
 
-        public void SendInstant(Datagram datagram) => Send(datagram, PacketFlags.Instant);
+        /// <summary>
+        /// Sends a <see cref="IDatagram"/> with <see cref="PacketFlags.Instant"/>.
+        /// </summary>
+        /// <param name="datagram"></param>
+
+        public void SendInstant(IDatagram datagram) => Send(datagram, PacketFlags.Instant);
 
         /// <summary>
         /// The server always receives ID 0.

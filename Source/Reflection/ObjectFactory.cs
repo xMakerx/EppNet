@@ -74,7 +74,8 @@ namespace EppNet.Reflection
 
         private void __Setup()
         {
-            if (_setup) return;
+            if (_setup)
+                return;
 
             ConstructorInfo[] ctors = _type.GetConstructors();
 

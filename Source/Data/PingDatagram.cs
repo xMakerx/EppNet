@@ -20,6 +20,13 @@ namespace EppNet.Data
             this.ChannelID = 0x0;
         }
 
+        public override void Write()
+        {
+            base.Write();
+            WriteULong(SentTime);
+            WriteULong(ReceivedTime);
+        }
+
         public override void Read()
         {
             base.Read();
@@ -35,8 +42,7 @@ namespace EppNet.Data
             {
                 // This happens on the server
                 PingDatagram pong = new PingDatagram();
-                pong.WriteULong(SentTime);
-                pong.WriteULong(ReceivedTime);
+                pong.Write();
 
                 // Send an acknowledgement!
                 Sender.SendInstant(pong);
