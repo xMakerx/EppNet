@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dgSpecHash": "QKrQlf0Gtm9HbqsB5fNNLMIS3yzC4ZCfWLMF8ltlHeJDi4sMpk55TK86Pwq2KxhMWzBQB61IzdEdfrzAdyI9wA==",
+  "success": true,
+  "projectFilePath": "D:\\CIO\\EppNet\\Epp Net.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\maver\\.nuget\\packages\\disruptor\\5.0.0\\disruptor.5.0.0.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\enet-csharp\\2.4.8\\enet-csharp.2.4.8.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\microsoft.codecoverage\\17.7.2\\microsoft.codecoverage.17.7.2.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\microsoft.io.recyclablememorystream\\2.3.2\\microsoft.io.recyclablememorystream.2.3.2.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\microsoft.net.test.sdk\\17.7.2\\microsoft.net.test.sdk.17.7.2.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\microsoft.testplatform.objectmodel\\17.7.2\\microsoft.testplatform.objectmodel.17.7.2.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\microsoft.testplatform.testhost\\17.7.2\\microsoft.testplatform.testhost.17.7.2.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\mstest.testadapter\\3.1.1\\mstest.testadapter.3.1.1.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\mstest.testframework\\3.1.1\\mstest.testframework.3.1.1.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\nuget.frameworks\\6.5.0\\nuget.frameworks.6.5.0.nupkg.sha512",
+    "C:\\Users\\maver\\.nuget\\packages\\system.reflection.metadata\\1.6.0\\system.reflection.metadata.1.6.0.nupkg.sha512"
+  ],
+  "logs": []
+}
