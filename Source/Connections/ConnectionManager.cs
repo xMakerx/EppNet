@@ -17,8 +17,8 @@ namespace EppNet.Connections
     public class ConnectionManager
     {
 
-        public event Action<Connection> ConnectionEstablished;
-        public event Action<DisconnectEvent> ConnectionLost;
+        public event Action<Connection> OnConnectionEstablished;
+        public event Action<DisconnectEvent> OnConnectionLost;
 
         internal readonly Socket _socket;
         protected readonly IDictionary<uint, Connection> _connections;
@@ -38,7 +38,7 @@ namespace EppNet.Connections
                 Connection conn = new Connection(this, enetPeer);
                 _connections.Add(enetPeer.ID, conn);
 
-                ConnectionEstablished?.Invoke(conn);
+                OnConnectionEstablished?.Invoke(conn);
             }
 
             return isNew;
@@ -51,7 +51,7 @@ namespace EppNet.Connections
             if (conn != null)
             {
                 _connections.Remove(enetPeer.ID);
-                ConnectionLost?.Invoke(new DisconnectEvent(conn, reason));
+                OnConnectionLost?.Invoke(new DisconnectEvent(conn, reason));
             }
 
             return (conn != null);

@@ -25,6 +25,8 @@ namespace EppNet.Data
 
         static Channel()
         {
+            // The connectivity channel
+            // Handles ping datagrams
             new Channel(0x0, ChannelFlags.ProcessImmediately);
         }
 
@@ -59,7 +61,7 @@ namespace EppNet.Data
             lock (_s_lock)
             {
                 if (_channels.ContainsKey(id))
-                    throw new System.Exception($"Channel ID {id} has already been registered!!");
+                    throw new Exception($"Channel ID {id} has already been registered!!");
 
                 _channels.Add(id, channel);
             }
