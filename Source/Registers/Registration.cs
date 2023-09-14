@@ -30,11 +30,8 @@ namespace EppNet.Registers
             this._compiled = false;
         }
 
-        public bool Compile()
+        protected void _Internal_CompileConstructors()
         {
-            if (IsCompiled())
-                return false;
-
             ConstructorInfo[] ctors = typeof(T).GetConstructors();
 
             for (int i = 0; i < ctors.Length; i++)
@@ -68,8 +65,16 @@ namespace EppNet.Registers
                 ObjectActivator<T> compiled = (ObjectActivator<T>)lambda.Compile();
                 _ctorsDict.Add(types, compiled);
             }
+        }
 
+        public virtual bool Compile()
+        {
+            if (IsCompiled())
+                return false;
+
+            _Internal_CompileConstructors();
             _compiled = true;
+
             return true;
         }
 

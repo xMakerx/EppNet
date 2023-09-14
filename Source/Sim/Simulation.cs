@@ -4,9 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
 using EppNet.Sockets;
-
-using System;
 
 namespace EppNet.Sim
 {
@@ -20,6 +19,7 @@ namespace EppNet.Sim
         public static ulong Time => (_instance != null ? _instance.Clock.Time : 0);
 
         public readonly Socket Socket;
+        public readonly MessageDirector MessageDirector;
         public readonly SimClock Clock;
 
         public Simulation(Socket socket)
@@ -29,6 +29,7 @@ namespace EppNet.Sim
 
             Simulation._instance = this;
             this.Socket = socket;
+            this.MessageDirector = new MessageDirector();
             this.Clock = new SimClock(this);
         }
 

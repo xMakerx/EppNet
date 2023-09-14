@@ -32,6 +32,14 @@ namespace EppNet.Tests
             Assert.IsTrue(d is PingDatagram, "Did not instantiate new ping datagram properly!");
         }
 
+        [TestMethod]
+        public void TestAttributes()
+        {
+
+
+
+        }
+
     }
 
 }

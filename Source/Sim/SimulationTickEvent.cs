@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
+using EppNet.Core;
+
 namespace EppNet.Sim
 {
     /// <summary>
@@ -17,7 +19,7 @@ namespace EppNet.Sim
         /// The sequence ID within the disruptor.
         /// </summary>
         public int ID { private set; get; }
-        public ulong Time { private set; get; }
+        public Timestamp Time { private set; get; }
 
         /// <summary>
         /// These events are reused so we use this to initialize our
@@ -26,10 +28,10 @@ namespace EppNet.Sim
         /// <param name="sequenceId"></param>
         /// <param name="time"></param>
 
-        public void Initialize(int sequenceId, ulong time)
+        public void Initialize(int sequenceId, Timestamp timestamp)
         {
             this.ID = sequenceId;
-            this.Time = time;
+            this.Time = timestamp;
         }
 
     }
