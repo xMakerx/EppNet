@@ -3,18 +3,16 @@
 /// Date: September 13, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Running;
 
-using EppNet.Data;
 using EppNet.Registers;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using System;
 using System.Diagnostics;
 using System.Reflection;
-
-using System;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 
 namespace EppNet.Tests
 {

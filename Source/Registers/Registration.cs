@@ -41,9 +41,6 @@ namespace EppNet.Registers
                 ParameterInfo[] paramsInfo = ctor.GetParameters();
                 Type[] types = new Type[paramsInfo.Length];
 
-                for (int j = 0; j < paramsInfo.Length; j++)
-                    types[j] = paramsInfo[j].ParameterType;
-
                 Type dType = ctor.DeclaringType;
 
                 ParameterExpression param = Expression.Parameter(typeof(object[]), "args");
@@ -52,12 +49,13 @@ namespace EppNet.Registers
                 for (int k = 0; k < paramsInfo.Length; k++)
                 {
                     Expression index = Expression.Constant(k);
-                    Type paramType = types[k];
+                    Type paramType = paramsInfo[k].ParameterType;
 
                     Expression accessorExp = Expression.ArrayIndex(param, index);
 
                     Expression paramCastExp = Expression.Convert(accessorExp, paramType);
                     argsExp[i] = paramCastExp;
+                    types[k] = paramType;
                 }
 
                 NewExpression newExp = Expression.New(ctor, argsExp);
