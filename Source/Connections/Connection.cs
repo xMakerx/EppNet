@@ -64,6 +64,10 @@ namespace EppNet.Connections
             Packet enet_packet = new Packet();
             enet_packet.Create(datagram.Pack(), flags);
 
+            uint channelID = datagram.GetChannelID();
+            Channel channel = Channel.GetById(channelID);
+            channel.DatagramsSent++;
+
             _enet_peer.Send(datagram.GetChannelID(), ref enet_packet);
         }
 

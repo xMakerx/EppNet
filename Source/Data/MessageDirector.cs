@@ -38,16 +38,32 @@ namespace EppNet.Data
             if (registration == null)
                 throw new ArgumentException($"Received unknown Datagram of ID {header}. Did you forget to register it?");
 
-            Datagram datagram = (Datagram) registration.NewInstance(received_data);
-            datagram.ChannelID = channelID;
-            datagram.Sender = sender;
-            datagram.Read();
+            bool datagram_valid = false;
+            Datagram datagram;
+
+            try
+            {
+                datagram = (Datagram)registration.NewInstance(received_data);
+                datagram.ChannelID = channelID;
+                datagram.Sender = sender;
+                datagram.Read();
+
+                datagram_valid = true;
+            }
+            catch (Exception e)
+            {
+
+            }
+            finally
+            {
+                // Let's dispose of the native ENet packet.
+                packet.Dispose();
+            }
+
 
             // Direct the datagram to where it needs to be!
             OnDatagramReceived?.Invoke(datagram);
 
-            // Let's dispose of the native ENet packet.
-            packet.Dispose();
         }
 
     }
