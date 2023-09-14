@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Core;
+
 using System;
 
 namespace EppNet.Attributes
@@ -13,8 +15,14 @@ namespace EppNet.Attributes
     public class NetworkAttribute : Attribute
     {
 
+        public NetworkFlags Flags { internal set; get; }
 
+        public NetworkAttribute() : this(NetworkFlags.None) { }
 
+        public NetworkAttribute(NetworkFlags flags)
+        {
+            this.Flags = flags;
+        }
     }
 
 }

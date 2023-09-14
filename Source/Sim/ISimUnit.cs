@@ -12,8 +12,6 @@ namespace EppNet.Sim
     public interface ISimUnit
     {
 
-        public uint ID { internal set; get; }
-
     }
 
 }

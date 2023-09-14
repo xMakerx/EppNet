@@ -17,6 +17,7 @@ namespace EppNet.Registers
     {
 
         public delegate T ObjectActivator<T>(params object[] args);
+        public delegate void ObjectMethodCall<T>(T instance, params object[] args);
 
         public readonly Type Type;
         protected internal IDictionary<Type[], ObjectActivator<T>> _ctorsDict;

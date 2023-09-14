@@ -3,8 +3,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>EppNet</RootNamespace>
+    <StartupObject>EppNet.Tests.NetworkObjTests</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
     <PackageReference Include="Disruptor" Version="5.0.0" />
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
     <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.3.2" />

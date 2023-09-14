@@ -13,9 +13,9 @@ namespace EppNet.Sim
     public interface ISimViewer
     {
 
-        public bool HasInterestIn(ISimUnit unit) => HasInterestIn(unit.ID);
+        //public bool HasInterestIn(ISimUnit unit) => HasInterestIn(unit.ID);
 
-        public bool HasInterestIn(ISimUnit unit, int recursionDepth) => HasInterestIn(unit.ID, recursionDepth);
+        //public bool HasInterestIn(ISimUnit unit, int recursionDepth) => HasInterestIn(unit.ID, recursionDepth);
 
         public bool HasInterestIn(uint id, int recursionDepth = 0)
         {
@@ -45,7 +45,7 @@ namespace EppNet.Sim
             return dict.Remove(id);
         }
 
-        public bool RemoveInterest(ISimUnit unit) => RemoveInterest(unit.ID);
+        //public bool RemoveInterest(ISimUnit unit) => RemoveInterest(unit.ID);
 
         /// <summary>
         /// Retrieves dictionary containing the units we're interested in.
