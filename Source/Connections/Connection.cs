@@ -8,6 +8,7 @@ using ENet;
 using EppNet.Core;
 using EppNet.Sockets;
 using EppNet.Data;
+using System.Buffers;
 
 namespace EppNet.Connections
 {

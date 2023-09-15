@@ -89,10 +89,5 @@ namespace EppNet.Tests
             }
         }
 
-        public static void Main(string[] args)
-        {
-            var summary = BenchmarkRunner.Run<NetworkObjTests>();
-        }
-
     }
 }

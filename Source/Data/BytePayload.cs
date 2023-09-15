@@ -156,6 +156,7 @@ namespace EppNet.Data
         public virtual void Dispose()
         {
             _stream?.Dispose();
+            _stream = null;
         }
 
         /// <summary>
