@@ -8,10 +8,6 @@ using EppNet.Data;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using System;
-using System.Buffers;
-using System.Diagnostics;
-
 namespace EppNet.Tests
 {
 

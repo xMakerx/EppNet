@@ -10,9 +10,7 @@ namespace EppNet.Core
     public enum NetworkFlags : byte
     {
         /// <summary>
-        /// "If a tree falls in the forest and no one's there to hear it, does it make a sound?"
-        /// The answer in this case is no. Only parties interested in the object at the time
-        /// of the method call will be informed. Server is solely in charge of updates.
+        /// Method calls orchestrated by the server.
         /// </summary>
         None                = 0,
 
@@ -22,7 +20,9 @@ namespace EppNet.Core
         Required            = 1 << 0,
 
         /// <summary>
-        /// Method will be propagated to other interested parties.
+        /// "If a tree falls in the forest and no one's there to hear it, does it make a sound?"
+        /// The answer in this case is no. Only parties interested in the object at the time
+        /// of the method call will be informed. Server is solely in charge of updates.
         /// </summary>
         Broadcast           = 1 << 1,
 
@@ -40,7 +40,15 @@ namespace EppNet.Core
         /// Method call is stored so it can be propagated to parties
         /// that gain interest in the object after the update.
         /// </summary>
-        Persistant          = 1 << 4
+        Persistant          = 1 << 4,
+
+        /// <summary>
+        /// Data passed to this method is recorded for interpolation and extrapolation between
+        /// ticks. In addition, the current value is queried every tick to detect changes and
+        /// propagate them. Implies <see cref="Persistant"/> as the latest snapshot value is
+        /// sent to new parties that gain interest.
+        /// </summary>
+        Snapshot            = 1 << 5,
 
     }
 

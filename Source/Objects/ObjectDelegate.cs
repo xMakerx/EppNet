@@ -6,6 +6,8 @@
 
 using EppNet.Sim;
 
+using System.Collections.Generic;
+
 namespace EppNet.Objects
 {
 
@@ -19,6 +21,7 @@ namespace EppNet.Objects
     {
 
         public readonly T UserObject;
+        public Dictionary<>
 
         public ObjectDelegate(T user_object)
         {

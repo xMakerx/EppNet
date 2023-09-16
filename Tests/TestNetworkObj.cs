@@ -22,7 +22,7 @@ namespace EppNet.Tests
             this.Apples = apples;
         }
 
-        [Network()]
+        [NetworkMethod()]
         public void Say(string message, int number)
         {
             string r = message + number;

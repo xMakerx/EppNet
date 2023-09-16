@@ -102,30 +102,138 @@ namespace EppNet.Data
         }
 
         /// <summary>
-        /// Ensures a <see cref="RecyclableMemoryStream"/> is ready to be written to.
+        /// Tries to write an object of unknown type.
+        /// Returns true if a successful companion write function was called or
+        /// false if unable to find the correct function.
         /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
 
-        protected virtual void _EnsureReadyToWrite()
+        public virtual bool TryWrite(object input)
         {
-            if (_stream == null)
-                _stream = RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
+
+            if (input is str16)
+            {
+                WriteString16((str16)input);
+                return true;
+            }
+
+            if (input is str8)
+            {
+                WriteString8((str8)input);
+                return true;
+            }
+
+            if (input is bool)
+            {
+                WriteBool((bool)input);
+                return true;
+            }
+
+            if (input is byte)
+            {
+                WriteByte((byte)input);
+                return true;
+            }
+
+            if (input is sbyte)
+            {
+                WriteSByte((sbyte)input);
+                return true;
+            }
+
+            if (input is short)
+            {
+                WriteShort((short)input);
+                return true;
+            }
+
+            if (input is ushort)
+            {
+                WriteUShort((ushort)input);
+                return true;
+            }
+
+            if (input is int)
+            {
+                WriteInt((int)input);
+                return true;
+            }
+
+            if (input is uint)
+            {
+                WriteUInt((uint)input);
+                return true;
+            }
+
+            if (input is long)
+            {
+                WriteLong((long)input);
+                return true;
+            }
+
+            if (input is ulong)
+            {
+                WriteULong((ulong)input);
+                return true;
+            }
+
+            if (input is float)
+            {
+                WriteFloat((float)input);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
-        /// Directly writes a string to the stream. Call AFTER writing the length
-        /// of the string being written. See <see cref="WriteString8(string)"/> and <see cref="WriteString16(string)"/>
-        /// for the intended approach. <br/>If your string is larger than 65,535 characters, you should reconsider what
-        /// you're doing as it's incredibly wasteful to send a string that large over the wire.
+        /// Locates the proper read function for the specified type, calls it,
+        /// and returns the result.
+        /// If no companion function is located to call, null is returned.
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="type"></param>
+        /// <returns>Result of companion #Read?() function or null</returns>
 
-        protected void _Internal_WriteString(string input)
+        public virtual object TryRead(Type type)
         {
-            Span<byte> span = _stream.GetSpan(input.Length);
-            ReadOnlySpan<char> chars = input.AsSpan();
+            if (type == typeof(str16))
+                return ReadString16();
 
-            int written = Encoder.GetBytes(chars, span);
-            _stream.Advance(written);
+            if (type == typeof(str8))
+                return ReadString8();
+
+            if (type == typeof(bool))
+                return ReadBool();
+
+            if (type == typeof(byte))
+                return ReadByte();
+
+            if (type == typeof(sbyte))
+                return ReadSByte();
+
+            if (type == typeof(short))
+                return ReadShort();
+
+            if (type == typeof(ushort))
+                return ReadUShort();
+
+            if (type == typeof(int))
+                return ReadInt();
+
+            if (type == typeof(uint))
+                return ReadUInt();
+
+            if (type == typeof(long))
+                return ReadLong();
+
+            if (type == typeof(ulong))
+                return ReadULong();
+
+            if (type == typeof(float))
+                return ReadFloat();
+
+            return null;
         }
 
         /// <summary>
@@ -682,6 +790,33 @@ namespace EppNet.Data
         {
             float length = (_stream != null) ? _stream.Length : 0;
             return FastMath.Round(length * 0.001, 3);
+        }
+
+        /// <summary>
+        /// Ensures a <see cref="RecyclableMemoryStream"/> is ready to be written to.
+        /// </summary>
+
+        protected virtual void _EnsureReadyToWrite()
+        {
+            if (_stream == null)
+                _stream = RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
+        }
+
+        /// <summary>
+        /// Directly writes a string to the stream. Call AFTER writing the length
+        /// of the string being written. See <see cref="WriteString8(string)"/> and <see cref="WriteString16(string)"/>
+        /// for the intended approach. <br/>If your string is larger than 65,535 characters, you should reconsider what
+        /// you're doing as it's incredibly wasteful to send a string that large over the wire.
+        /// </summary>
+        /// <param name="input"></param>
+
+        protected void _Internal_WriteString(string input)
+        {
+            Span<byte> span = _stream.GetSpan(input.Length);
+            ReadOnlySpan<char> chars = input.AsSpan();
+
+            int written = Encoder.GetBytes(chars, span);
+            _stream.Advance(written);
         }
 
     }

@@ -5,9 +5,7 @@
 ///////////////////////////////////////////////////////
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-
-using EppNet.Registers;
-
+using EppNet.Source.Objects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
