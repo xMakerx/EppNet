@@ -10,6 +10,7 @@ using System.Linq.Expressions;
 
 using System.Reflection;
 
+# pragma warning disable 0693
 namespace EppNet.Registers
 {
 
@@ -128,3 +129,5 @@ namespace EppNet.Registers
     }
 
 }
+
+#pragma warning restore 0693
