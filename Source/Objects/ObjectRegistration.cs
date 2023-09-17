@@ -1,12 +1,11 @@
 ﻿///////////////////////////////////////////////////////
 /// Filename: ObjectRegistration.cs
-/// Date: September 14, 2022
+/// Date: September 14, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
 using EppNet.Attributes;
 using EppNet.Registers;
-using EppNet.Sim;
 
 using System;
 using System.Collections.Generic;
