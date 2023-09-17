@@ -1,6 +1,6 @@
 ﻿///////////////////////////////////////////////////////
 /// Filename: StringTypes.cs
-/// Date: September 14, 2022
+/// Date: September 14, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
@@ -12,25 +12,25 @@ namespace EppNet.Data
     /// like 16-bit strings to be used for wire communications.
     /// </summary>
 
-    public struct str16
+    public struct Str16
     {
 
         public string Value;
 
-        public str16(string value)
+        public Str16(string value)
         {
             this.Value = value;
         }
 
-        public static implicit operator str16(string value)
+        public static implicit operator Str16(string value)
         {
             if (value == null)
                 return null;
 
-            return new str16(value);
+            return new Str16(value);
         }
 
-        public static implicit operator string(str16 a) => a.Value;
+        public static implicit operator string(Str16 a) => a.Value;
 
     }
 
@@ -39,25 +39,25 @@ namespace EppNet.Data
     /// like 8-bit strings to be used for wire communications.
     /// </summary>
 
-    public struct str8
+    public struct Str8
     {
 
         public string Value;
 
-        public str8(string value)
+        public Str8(string value)
         {
             this.Value = value;
         }
 
-        public static implicit operator str8(string value)
+        public static implicit operator Str8(string value)
         {
             if (value == null)
                 return null;
 
-            return new str8(value);
+            return new Str8(value);
         }
 
-        public static implicit operator string(str8 a) => a.Value;
+        public static implicit operator string(Str8 a) => a.Value;
 
     }
 

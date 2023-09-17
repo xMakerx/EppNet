@@ -21,6 +21,7 @@ using Microsoft.IO;
 
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Text;
 
 namespace EppNet.Data
@@ -30,12 +31,31 @@ namespace EppNet.Data
     {
 
         #region Static members
+        public static readonly RecyclableMemoryStreamManager RecyclableStreamMgr = new RecyclableMemoryStreamManager();
+
+        private static readonly Dictionary<Type, IResolver> _resolvers = new Dictionary<Type, IResolver>();
+
+        static BytePayload()
+        {
+            AddResolver(typeof(Loc3), new Loc3Resolver());
+            AddResolver(typeof(Loc2), new Loc2Resolver());
+        }
+
+        public static void AddResolver(Type type, IResolver resolver)
+        {
+            _resolvers.Add(type, resolver);
+        }
+
+        public static IResolver GetResolver(Type type)
+        {
+            _resolvers.TryGetValue(type, out IResolver result);
+            return result;
+        }
+
         /// <summary>
         /// The decimal precision of floating point numbers.
         /// </summary>
         public static int FloatPrecision = 4;
-
-        public static readonly RecyclableMemoryStreamManager RecyclableStreamMgr = new RecyclableMemoryStreamManager();
         
         public static RecyclableMemoryStream ObtainStream()
         {
@@ -101,6 +121,15 @@ namespace EppNet.Data
             _stream.Seek(0, System.IO.SeekOrigin.Begin);
         }
 
+        public bool Advance(int byteLength)
+        {
+            if (_stream == null)
+                return false;
+
+            _stream.Advance(byteLength);
+            return true;
+        }
+
         /// <summary>
         /// Tries to write an object of unknown type.
         /// Returns true if a successful companion write function was called or
@@ -112,15 +141,15 @@ namespace EppNet.Data
         public virtual bool TryWrite(object input)
         {
 
-            if (input is str16)
+            if (input is Str16)
             {
-                WriteString16((str16)input);
+                WriteString16((Str16)input);
                 return true;
             }
 
-            if (input is str8)
+            if (input is Str8)
             {
-                WriteString8((str8)input);
+                WriteString8((Str8)input);
                 return true;
             }
 
@@ -184,6 +213,14 @@ namespace EppNet.Data
                 return true;
             }
 
+            IResolver resolver = GetResolver(input.GetType());
+
+            if (resolver != null)
+            {
+                resolver.Write(this, input);
+                return true;
+            }
+
             return false;
         }
 
@@ -197,10 +234,10 @@ namespace EppNet.Data
 
         public virtual object TryRead(Type type)
         {
-            if (type == typeof(str16))
+            if (type == typeof(Str16))
                 return ReadString16();
 
-            if (type == typeof(str8))
+            if (type == typeof(Str8))
                 return ReadString8();
 
             if (type == typeof(bool))
@@ -232,6 +269,14 @@ namespace EppNet.Data
 
             if (type == typeof(float))
                 return ReadFloat();
+
+            IResolver resolver = GetResolver(type);
+
+            if (resolver != null)
+            {
+                resolver.Read(this, out object output);
+                return output;
+            }
 
             return null;
         }
@@ -295,7 +340,7 @@ namespace EppNet.Data
             if (input.Length == 0 || input.Length > byte.MaxValue)
                 throw new ArgumentOutOfRangeException($"BytePayload#WriteString8(string) must be between 1 and {byte.MaxValue}.");
 
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             WriteUInt8((byte)input.Length);
             _Internal_WriteString(input);
@@ -327,7 +372,7 @@ namespace EppNet.Data
             if (input.Length == 0 || input.Length > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException($"BytePayload#WriteString16(string) must be between 1 and {ushort.MaxValue}.");
 
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             WriteUInt16((ushort)input.Length);
             _Internal_WriteString(input);
@@ -353,7 +398,7 @@ namespace EppNet.Data
 
         public void WriteBool(bool input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
             WriteUInt8((byte) (input ? 1 : 0));
         }
 
@@ -372,7 +417,7 @@ namespace EppNet.Data
 
         public void WriteUInt8(byte input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             Span<byte> buffer = stackalloc byte[1] { input };
             _stream.Write(buffer);
@@ -412,7 +457,7 @@ namespace EppNet.Data
 
         public void WriteInt8(sbyte input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             Span<byte> bytes = stackalloc byte[1] { Convert.ToByte(input) };
             _stream.Write(bytes);
@@ -451,7 +496,7 @@ namespace EppNet.Data
 
         public void WriteInt16(short input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
             BinaryPrimitives.WriteInt16LittleEndian(_stream.GetSpan(2), input);
             _stream.Advance(2);
         }
@@ -489,7 +534,7 @@ namespace EppNet.Data
 
         public void WriteUInt16(ushort input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             BinaryPrimitives.WriteUInt16LittleEndian(_stream.GetSpan(2), input);
             _stream.Advance(2);
@@ -530,7 +575,7 @@ namespace EppNet.Data
 
         public void WriteUInt32(uint input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             BinaryPrimitives.WriteUInt32LittleEndian(_stream.GetSpan(4), input);
             _stream.Advance(4);
@@ -571,7 +616,7 @@ namespace EppNet.Data
 
         public void WriteInt32(int input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             BinaryPrimitives.WriteInt32LittleEndian(_stream.GetSpan(4), input);
             _stream.Advance(4);
@@ -611,7 +656,7 @@ namespace EppNet.Data
 
         public void WriteUInt64(ulong input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             BinaryPrimitives.WriteUInt64LittleEndian(_stream.GetSpan(8), input);
             _stream.Advance(8);
@@ -652,7 +697,7 @@ namespace EppNet.Data
 
         public void WriteInt64(long input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             BinaryPrimitives.WriteInt64LittleEndian(_stream.GetSpan(8), input);
             _stream.Advance(8);
@@ -694,7 +739,7 @@ namespace EppNet.Data
 
         public void WriteFloat(float input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             int i32 = (int) (FastMath.Round(input, FloatPrecision) * FastMath.GetTenPow(FloatPrecision));
             WriteInt32(i32);
@@ -736,7 +781,7 @@ namespace EppNet.Data
 
         public void WriteTypedTimestamp(Timestamp input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             WriteUInt8((byte)input.Type);
             WriteLong(input.Value);
@@ -764,7 +809,7 @@ namespace EppNet.Data
 
         public void WriteTimestamp(Timestamp input)
         {
-            _EnsureReadyToWrite();
+            EnsureReadyToWrite();
 
             WriteLong(input.Value);
         }
@@ -793,10 +838,10 @@ namespace EppNet.Data
         }
 
         /// <summary>
-        /// Ensures a <see cref="RecyclableMemoryStream"/> is ready to be written to.
+        /// Ensures the internal <see cref="RecyclableMemoryStream"/> is ready to be written to.
         /// </summary>
 
-        protected virtual void _EnsureReadyToWrite()
+        public virtual void EnsureReadyToWrite()
         {
             if (_stream == null)
                 _stream = RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
