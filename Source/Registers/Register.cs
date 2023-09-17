@@ -10,14 +10,18 @@ using System.Collections.Generic;
 namespace EppNet.Registers
 {
 
-    public abstract class Register<TKey, BaseType> : IDisposable
+    public abstract class Register<TKey, BaseType> : ICompilable, IDisposable
     {
 
-        protected internal IDictionary<TKey, IRegistrationBase> _lookupTable;
+        protected internal IDictionary<TKey, IRegistration> _lookupTable;
+        protected internal Dictionary<Type, TKey> _type2Keys;
+        protected bool _compiled;
 
         public Register()
         {
-            this._lookupTable = new Dictionary<TKey, IRegistrationBase>();
+            this._lookupTable = new Dictionary<TKey, IRegistration>();
+            this._type2Keys = new Dictionary<Type, TKey>();
+            this._compiled = false;
         }
 
         /// <summary>
@@ -28,44 +32,76 @@ namespace EppNet.Registers
 
         public virtual bool IsValidKey(TKey key) => !_lookupTable.ContainsKey(key);
 
-        public bool Add<T>(TKey key) where T : BaseType
+        public bool Add<T>(TKey key) where T : BaseType => Add(key, typeof(T));
+
+        public bool Add(TKey key, Type type)
         {
+            if (!typeof(BaseType).IsAssignableFrom(type))
+                throw new ArgumentException($"Type {type.Name} is not supported.");
 
             if (IsValidKey(key))
             {
-                _lookupTable.Add(key, new Registration<T>());
+                Registration r = new Registration(type);
+                _lookupTable.Add(key, r);
+                _type2Keys.Add(type, key);
                 return true;
             }
 
             return false;
         }
 
-        public IRegistrationBase Get(TKey key)
+        public bool Add(TKey key, Registration r)
         {
-            _lookupTable.TryGetValue(key, out IRegistrationBase registration);
+            if (!typeof(BaseType).IsAssignableFrom(r.Type))
+                throw new ArgumentException($"Type {r.Type} is not supported.");
+
+            if (IsValidKey(key))
+            {
+                _lookupTable.Add(key, r);
+                _type2Keys.Add(r.Type, key);
+                return true;
+            }
+
+            return false;
+        }
+
+        public virtual IRegistration Get(TKey key)
+        {
+            _lookupTable.TryGetValue(key, out IRegistration registration);
             return registration;
         }
 
-        public int CompileAll()
+        public virtual IRegistration Get(Type type)
         {
-            int compiled = 0;
+            _type2Keys.TryGetValue(type, out TKey key);
 
-            foreach (IRegistrationBase registration in _lookupTable.Values)
-            {
-                if (registration.Compile())
-                    compiled++;
-            }
+            if (key == null)
+                return null;
 
-            return compiled;
+            return _lookupTable[key];
         }
+
+        public virtual bool Compile()
+        {
+            if (_compiled)
+                return false;
+
+            foreach (IRegistration registration in _lookupTable.Values)
+                registration.Compile();
+
+            _compiled = true;
+            return _compiled;
+        }
+
+        public bool IsCompiled() => _compiled;
 
         /// <summary>
         /// Disposes and unregisters all types.
         /// </summary>
 
-        public void Dispose()
+        public virtual void Dispose()
         {
-            foreach (IRegistrationBase registration in _lookupTable.Values)
+            foreach (IRegistration registration in _lookupTable.Values)
                 registration.Dispose();
 
             _lookupTable.Clear();

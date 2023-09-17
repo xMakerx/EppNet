@@ -9,16 +9,8 @@ using System;
 namespace EppNet.Registers
 {
 
-    public interface IRegistration<T> : IRegistrationBase
+    public interface IRegistration : ICompilable, IDisposable
     {
-        public T Instance(params object[] args);
-    }
-
-    public interface IRegistrationBase : IDisposable
-    {
-        public bool Compile();
-        public bool IsCompiled();
-
         public object NewInstance(params object[] args);
     }
 

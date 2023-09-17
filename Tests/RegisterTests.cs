@@ -21,7 +21,7 @@ namespace EppNet.Tests
         public RegisterTests()
         {
             this._reg = DatagramRegister.Get();
-            _reg.CompileAll();
+            _reg.Compile();
         }
 
         [TestMethod]

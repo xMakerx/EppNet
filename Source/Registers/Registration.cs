@@ -10,30 +10,29 @@ using System.Linq.Expressions;
 
 using System.Reflection;
 
-# pragma warning disable 0693
 namespace EppNet.Registers
 {
 
-    public class Registration<T> : IRegistration<T>
+    public class Registration : IRegistration
     {
 
-        public delegate T ObjectActivator<T>(params object[] args);
+        public delegate object ObjectGenerator(params object[] args);
 
         public readonly Type Type;
-        protected internal IDictionary<Type[], ObjectActivator<T>> _ctorsDict;
+        protected internal IDictionary<Type[], ObjectGenerator> _ctorsDict;
 
         protected internal bool _compiled;
 
-        public Registration()
+        public Registration(Type type)
         {
-            this.Type = typeof(T);
-            this._ctorsDict = new Dictionary<Type[], ObjectActivator<T>>();
+            this.Type = type;
+            this._ctorsDict = new Dictionary<Type[], ObjectGenerator>();
             this._compiled = false;
         }
 
         protected void _Internal_CompileConstructors()
         {
-            ConstructorInfo[] ctors = typeof(T).GetConstructors();
+            ConstructorInfo[] ctors = Type.GetConstructors();
 
             for (int i = 0; i < ctors.Length; i++)
             {
@@ -59,9 +58,9 @@ namespace EppNet.Registers
                 }
 
                 NewExpression newExp = Expression.New(ctor, argsExp);
-                LambdaExpression lambda = Expression.Lambda(typeof(ObjectActivator<T>), newExp, param);
+                LambdaExpression lambda = Expression.Lambda(typeof(ObjectGenerator), newExp, param);
 
-                ObjectActivator<T> compiled = (ObjectActivator<T>)lambda.Compile();
+                ObjectGenerator compiled = (ObjectGenerator)lambda.Compile();
                 _ctorsDict.Add(types, compiled);
             }
         }
@@ -84,13 +83,13 @@ namespace EppNet.Registers
             if (!_compiled)
                 throw new Exception($"{this.GetType().Name} has not been compiled!");
 
-            ObjectActivator<T> activator;
+            ObjectGenerator generator;
 
             foreach (Type[] ktArr in _ctorsDict.Keys)
             {
                 if (ktArr.Length == args.Length)
                 {
-                    activator = _ctorsDict[ktArr];
+                    generator = _ctorsDict[ktArr];
 
                     for (int i = 0; i < ktArr.Length; i++)
                     {
@@ -102,20 +101,18 @@ namespace EppNet.Registers
 
                         if (!b.IsAssignableFrom(a))
                         {
-                            activator = null;
+                            generator = null;
                             break;
                         }
                     }
 
-                    if (activator != null)
-                        return activator.Invoke(args);
+                    if (generator != null)
+                        return generator.Invoke(args);
                 }
             }
 
             return null;
         }
-
-        public T Instance(params object[] args) => (T)NewInstance(args);
 
         /// <summary>
         /// Disposes of compiled expressions.
@@ -130,4 +127,3 @@ namespace EppNet.Registers
 
 }
 
-#pragma warning restore 0693

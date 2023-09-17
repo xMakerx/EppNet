@@ -6,26 +6,25 @@
 
 using EppNet.Attributes;
 using EppNet.Core;
-using EppNet.Sim;
 
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-#pragma warning disable 0693
 namespace EppNet.Objects
 {
 
-    public class ObjectMethodDefinition<T> where T : ISimUnit
+    public class ObjectMethodDefinition
     {
 
-        public delegate void ObjectMethodCall<T>(T instance, params object[] args);
+        public delegate void ObjectMethodCall(object instance, params object[] args);
 
+        public readonly Type ClassType;
         public readonly string Name;
         public readonly NetworkMethodAttribute Attribute;
         public readonly NetworkFlags Flags;
         public readonly Type[] ParameterTypes;
-        public readonly ObjectMethodCall<T> Activator;
+        public readonly ObjectMethodCall Activator;
 
         /// <summary>
         /// The index of our method within the sorted names of our object's
@@ -33,8 +32,9 @@ namespace EppNet.Objects
         /// </summary>
         public int Index { internal set; get; }
 
-        public ObjectMethodDefinition(MethodInfo method, NetworkMethodAttribute netAttr)
+        public ObjectMethodDefinition(Type classType, MethodInfo method, NetworkMethodAttribute netAttr)
         {
+            this.ClassType = classType;
             this.Name = method.Name;
             this.Attribute = netAttr;
             this.Flags = netAttr.Flags;
@@ -59,12 +59,12 @@ namespace EppNet.Objects
                 types[i] = paramType;
             }
 
-            var instanceExp = Expression.Parameter(typeof(T));
+            var instanceExp = Expression.Parameter(ClassType);
             var callExp = Expression.Call(instanceExp, method, parameters);
             ParameterExpression[] outerParams = new[] { instanceExp, argsExp };
             this.ParameterTypes = types;
 
-            ObjectMethodCall<T> compiled = (ObjectMethodCall<T>)Expression.Lambda(typeof(ObjectMethodCall<T>),
+            ObjectMethodCall compiled = (ObjectMethodCall)Expression.Lambda(typeof(ObjectMethodCall),
                 callExp, outerParams).Compile();
             this.Activator = compiled;
 
@@ -75,10 +75,9 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="instance"></param>
         /// <param name="args"></param>
-        public void Invoke(T instance, params object[] args) => Activator.Invoke(instance, args);
+        public void Invoke(object instance, params object[] args) => Activator.Invoke(instance, args);
 
     }
 
 }
 
-#pragma warning restore 0693

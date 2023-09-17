@@ -19,7 +19,7 @@ namespace EppNet.Tests
     public class NetworkObjTests
     {
 
-        private ObjectRegistration<TestNetworkObj> _test_reg;
+        private ObjectRegistration _test_reg;
         private TestNetworkObj obj;
 
         private int Runs = 10000;

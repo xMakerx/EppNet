@@ -16,13 +16,13 @@ using System.Reflection;
 namespace EppNet.Objects
 {
 
-    public class ObjectRegistration<T> : Registration<T> where T : ISimUnit
+    public class ObjectRegistration : Registration
     {
 
         public readonly NetworkObjectAttribute ObjectAttribute;
-        protected internal ObjectMethodDefinition<T>[] _methods;
+        protected internal ObjectMethodDefinition[] _methods;
 
-        public ObjectRegistration(NetworkObjectAttribute attribute) : base()
+        public ObjectRegistration(Type type, NetworkObjectAttribute attribute) : base(type)
         {
             this.ObjectAttribute = attribute;
             this._methods = null;
@@ -30,8 +30,8 @@ namespace EppNet.Objects
 
         protected void _Internal_CompileMethods()
         {
-            MethodInfo[] methods = typeof(T).GetMethods();
-            Dictionary<string, ObjectMethodDefinition<T>> methodDict = new Dictionary<string, ObjectMethodDefinition<T>>();
+            MethodInfo[] methods = Type.GetMethods();
+            Dictionary<string, ObjectMethodDefinition> methodDict = new Dictionary<string, ObjectMethodDefinition>();
             
             foreach (MethodInfo method in methods)
             {
@@ -40,7 +40,7 @@ namespace EppNet.Objects
                 foreach (Attribute attribute in attributes)
                 {
                     if (attribute is NetworkMethodAttribute netAttr)
-                        methodDict.Add(method.Name, new ObjectMethodDefinition<T>(method, netAttr));
+                        methodDict.Add(method.Name, new ObjectMethodDefinition(Type, method, netAttr));
                 }
             }
 
@@ -49,7 +49,7 @@ namespace EppNet.Objects
             Array.Sort(methodNames);
 
             // Now we can initialize the indexed methods array
-            _methods = new ObjectMethodDefinition<T>[methodNames.Length];
+            _methods = new ObjectMethodDefinition[methodNames.Length];
 
             // Indices are simply the position of the method name in the
             // sorted method names list.
@@ -68,9 +68,9 @@ namespace EppNet.Objects
         /// <param name="index"></param>
         /// <returns></returns>
 
-        public ObjectMethodDefinition<T> GetMethod(int index)
+        public ObjectMethodDefinition GetMethod(int index)
         {
-            ObjectMethodDefinition<T> definition = null;
+            ObjectMethodDefinition definition = null;
 
             if (-1 < index && index < _methods.Length)
                 definition = _methods[index];

@@ -111,7 +111,7 @@ namespace EppNet.Data
 
             byte header = received_data[0];
 
-            IRegistrationBase registration = _datagram_register.Get(header);
+            IRegistration registration = _datagram_register.Get(header);
 
             if (registration == null)
                 throw new ArgumentException($"Received unknown Datagram of ID {header}. Did you forget to register it?");
@@ -143,7 +143,7 @@ namespace EppNet.Data
                 }
                 catch (Exception) { }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // The data received was malformed.
             }

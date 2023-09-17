@@ -17,13 +17,13 @@ namespace EppNet.Objects
     /// </summary>
     /// <typeparam name="T"></typeparam>
 
-    public class ObjectDelegate<T> where T : ISimUnit
+    public class ObjectDelegate
     {
 
-        public readonly T UserObject;
-        protected readonly ObjectRegistration<T> _metadata;
+        public readonly ISimUnit UserObject;
+        protected readonly ObjectRegistration _metadata;
 
-        public ObjectDelegate(T user_object)
+        public ObjectDelegate(ISimUnit user_object)
         {
             this.UserObject = user_object;
 
