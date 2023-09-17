@@ -19,18 +19,19 @@ namespace EppNet.Objects
     public class ObjectRegistration<T> : Registration<T> where T : ISimUnit
     {
 
-        protected internal Dictionary<string, ObjectMethodDefinition<T>> _methods;
-        protected internal ObjectMethodDefinition<T>[] _indexed_methods;
+        public readonly NetworkObjectAttribute ObjectAttribute;
+        protected internal ObjectMethodDefinition<T>[] _methods;
 
-        public ObjectRegistration() : base()
+        public ObjectRegistration(NetworkObjectAttribute attribute) : base()
         {
-            this._methods = new Dictionary<string, ObjectMethodDefinition<T>>();
-            this._indexed_methods = null;
+            this.ObjectAttribute = attribute;
+            this._methods = null;
         }
 
         protected void _Internal_CompileMethods()
         {
             MethodInfo[] methods = typeof(T).GetMethods();
+            Dictionary<string, ObjectMethodDefinition<T>> methodDict = new Dictionary<string, ObjectMethodDefinition<T>>();
             
             foreach (MethodInfo method in methods)
             {
@@ -39,24 +40,24 @@ namespace EppNet.Objects
                 foreach (Attribute attribute in attributes)
                 {
                     if (attribute is NetworkMethodAttribute netAttr)
-                        _methods.Add(method.Name, new ObjectMethodDefinition<T>(method, netAttr));
+                        methodDict.Add(method.Name, new ObjectMethodDefinition<T>(method, netAttr));
                 }
             }
 
             // Let's sort our methods and assign ids.
-            string[] methodNames = _methods.Keys.ToArray<string>();
+            string[] methodNames = methodDict.Keys.ToArray();
             Array.Sort(methodNames);
 
             // Now we can initialize the indexed methods array
-            _indexed_methods = new ObjectMethodDefinition<T>[methodNames.Length];
+            _methods = new ObjectMethodDefinition<T>[methodNames.Length];
 
             // Indices are simply the position of the method name in the
             // sorted method names list.
             for (int i = 0; i < methodNames.Length; i++)
             {
-                var definition = _methods[methodNames[i]];
+                var definition = methodDict[methodNames[i]];
                 definition.Index = i;
-                _indexed_methods[i] = definition;
+                _methods[i] = definition;
             }
 
         }
@@ -71,8 +72,8 @@ namespace EppNet.Objects
         {
             ObjectMethodDefinition<T> definition = null;
 
-            if (-1 < index && index < _indexed_methods.Length)
-                definition = _indexed_methods[index];
+            if (-1 < index && index < _methods.Length)
+                definition = _methods[index];
 
             return definition;
         }

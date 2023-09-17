@@ -21,7 +21,7 @@ namespace EppNet.Objects
     {
 
         public readonly T UserObject;
-        public Dictionary<>
+        protected readonly ObjectRegistration<T> _metadata;
 
         public ObjectDelegate(T user_object)
         {
