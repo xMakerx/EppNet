@@ -1,4 +1,5 @@
 # E++Net
+![Test Status](https://github.com/xMakerx/EppNet/actions/workflows/dotnet.yml/badge.svg)
 
 Not to be confused as an implementation of ENet in C++, E++Net is a C# networking library built on top
 of [ENet-CSharp](https://github.com/nxrighthere/ENet-CSharp/), an independent implementation of ENet with additional features
