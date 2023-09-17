@@ -22,11 +22,12 @@ namespace EppNet.Zones
         public ZoneDelegate(ISimUnit userObject) : base(userObject)
         {
             this.Zone = (IZone)userObject;
-            this._children = (Zone.GetCellSize().X > 0) ? new HashSet<ZoneDelegate>() : null;
+            this._children = (Zone.GetCellSize().Length() > 0) ? new HashSet<ZoneDelegate>() : null;
         }
 
         public bool AddChildZone(ZoneDelegate zone)
         {
+            // Ensure our cell size is greater than 0
             if (!(_children != null && zone != null && zone != this))
                 return false;
 
