@@ -22,6 +22,7 @@ using Microsoft.IO;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace EppNet.Data
@@ -37,8 +38,9 @@ namespace EppNet.Data
 
         static BytePayload()
         {
-            AddResolver(typeof(Loc3), new Loc3Resolver());
-            AddResolver(typeof(Loc2), new Loc2Resolver());
+            AddResolver(typeof(Vector2), new Vector2Resolver());
+            AddResolver(typeof(Vector3), new Vector3Resolver());
+            AddResolver(typeof(Vector4), new Vector4Resolver());
         }
 
         public static void AddResolver(Type type, IResolver resolver)

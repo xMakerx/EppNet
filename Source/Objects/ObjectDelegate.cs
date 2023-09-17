@@ -6,8 +6,6 @@
 
 using EppNet.Sim;
 
-using System.Collections.Generic;
-
 namespace EppNet.Objects
 {
 
@@ -23,9 +21,13 @@ namespace EppNet.Objects
         public readonly ISimUnit UserObject;
         protected readonly ObjectRegistration _metadata;
 
-        public ObjectDelegate(ISimUnit user_object)
+        public int TicksUntilDeletion { internal set; get; } = -1;
+
+        public long ID { internal set; get; }
+
+        public ObjectDelegate(ISimUnit userObject)
         {
-            this.UserObject = user_object;
+            this.UserObject = userObject;
 
         }
 
