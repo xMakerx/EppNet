@@ -20,9 +20,11 @@ using EppNet.Utilities;
 using Microsoft.IO;
 
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace EppNet.Data
@@ -32,12 +34,24 @@ namespace EppNet.Data
     {
 
         #region Static members
-        public static readonly RecyclableMemoryStreamManager RecyclableStreamMgr = new RecyclableMemoryStreamManager();
+        public static RecyclableMemoryStreamManager RecyclableStreamMgr { private set; get; }
 
         private static readonly Dictionary<Type, IResolver> _resolvers = new Dictionary<Type, IResolver>();
 
         static BytePayload()
         {
+            RecyclableStreamMgr = new RecyclableMemoryStreamManager(
+                512, // 0.5KB blocks
+                2048, // Large buffers are multiples of 2KB
+                12 * 1024 * 1024, // 12MB is too large to be repooled
+                false, // Use linear growth
+                64 * 1024 * 1024, // 64MB is the max for small pools,
+                128 * 1024 * 1024 // 128MB is the max for large pools
+            );
+
+            // Kills performance when enabled.
+            RecyclableStreamMgr.GenerateCallStacks = false;
+
             AddResolver(typeof(Vector2), new Vector2Resolver());
             AddResolver(typeof(Vector3), new Vector3Resolver());
             AddResolver(typeof(Vector4), new Vector4Resolver());
@@ -420,9 +434,11 @@ namespace EppNet.Data
         public void WriteUInt8(byte input)
         {
             EnsureReadyToWrite();
+            _stream.WriteByte(input);
 
+            /*
             Span<byte> buffer = stackalloc byte[1] { input };
-            _stream.Write(buffer);
+            _stream.Write(buffer);*/
         }
 
         /// <summary>
@@ -432,10 +448,12 @@ namespace EppNet.Data
 
         public byte ReadUInt8()
         {
+            /*
             Span<byte> buffer = stackalloc byte[1];
             int read = _stream.Read(buffer);
 
-            byte output = buffer[0];
+            byte output = buffer[0];*/
+            byte output = (byte)_stream.ReadByte();
             return output;
         }
 
@@ -460,9 +478,13 @@ namespace EppNet.Data
         public void WriteInt8(sbyte input)
         {
             EnsureReadyToWrite();
+            _stream.WriteByte((byte)input);
 
-            Span<byte> bytes = stackalloc byte[1] { Convert.ToByte(input) };
-            _stream.Write(bytes);
+            /*
+
+            Span<byte> span = _stream.GetSpan(sizeof(sbyte));
+            MemoryMarshal.Write(span, ref input);
+            _stream.Advance(sizeof(sbyte));*/
         }
 
         /// <summary>
@@ -472,9 +494,11 @@ namespace EppNet.Data
 
         public sbyte ReadInt8()
         {
-            Span<byte> buffer = stackalloc byte[1];
+            /*
+            Span<byte> buffer = stackalloc byte[sizeof(sbyte)];
             int read = _stream.Read(buffer);
-            sbyte output = Convert.ToSByte(buffer[0]);
+            sbyte output = unchecked((sbyte)buffer[0]);*/
+            sbyte output = (sbyte)_stream.ReadByte();
             return output;
         }
 
@@ -860,7 +884,7 @@ namespace EppNet.Data
         protected void _Internal_WriteString(string input)
         {
             Span<byte> span = _stream.GetSpan(input.Length);
-            ReadOnlySpan<char> chars = input.AsSpan();
+            ReadOnlySequence<char> chars = new(input.AsMemory());
 
             int written = Encoder.GetBytes(chars, span);
             _stream.Advance(written);

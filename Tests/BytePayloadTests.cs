@@ -73,7 +73,7 @@ namespace EppNet.Tests
         public void ReadAndWriteSByte()
         {
             byte[] bufferIn = null;
-            sbyte input = 4;
+            sbyte input = -4;
 
             using (BytePayload payloadOut = new BytePayload())
             {

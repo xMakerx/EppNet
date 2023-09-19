@@ -47,16 +47,14 @@ namespace EppNet.Attributes
         /// </summary>
         public bool Global;
 
+        public Distribution Dist;
+
         public NetworkObjectAttribute()
         {
             this.Creator = null;
             this.Destructor = null;
-        }
-
-        public NetworkObjectAttribute(Func<object> creator, Action destructor)
-        {
-            this.Creator = creator;
-            this.Destructor = destructor;
+            this.Global = false;
+            this.Dist = Distribution.Both;
         }
 
     }
