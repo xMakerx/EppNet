@@ -43,8 +43,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -54,8 +54,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteBool(true);
+                payloadOut.WriteBool(true);
+                payloadOut.Reset();
             }
         }
 
@@ -74,8 +74,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -85,8 +85,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteByte(3);
+                payloadOut.WriteByte(3);
+                payloadOut.Reset();
             }
         }
 
@@ -105,8 +105,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -116,8 +116,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteSByte(-8);
+                payloadOut.WriteSByte(-8);
+                payloadOut.Reset();
             }
         }
 
@@ -136,8 +136,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -147,8 +147,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteInt(-277);
+                payloadOut.WriteInt(-277);
+                payloadOut.Reset();
             }
         }
 
@@ -167,8 +167,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -178,8 +178,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteUInt(777);
+                payloadOut.WriteUInt(777);
+                payloadOut.Reset();
             }
         }
 
@@ -198,8 +198,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -209,8 +209,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteULong(12812);
+                payloadOut.WriteULong(12812);
+                payloadOut.Reset();
             }
         }
 
@@ -229,8 +229,8 @@ namespace EppNet.Tests
 
                 if (result == input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -240,8 +240,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteLong(-273812);
+                payloadOut.WriteLong(-273812);
+                payloadOut.Reset();
             }
         }
 
@@ -259,8 +259,8 @@ namespace EppNet.Tests
 
                 if (result == str8Input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -270,8 +270,8 @@ namespace EppNet.Tests
         {
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteString8(str8Input);
+                payloadOut.WriteString8(str8Input);
+                payloadOut.Reset();
             }
         }
 
@@ -289,8 +289,8 @@ namespace EppNet.Tests
 
                 if (result == str16Input)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -301,8 +301,8 @@ namespace EppNet.Tests
 
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteString16(str16Input);
+                payloadOut.WriteString16(str16Input);
+                payloadOut.Reset();
             }
         }
 
@@ -323,8 +323,8 @@ namespace EppNet.Tests
 
                 if (result == 3.1416f)
                 {
-                    payloadOut.Dispose();
-                    payloadIn.Dispose();
+                    payloadOut.Reset();
+                    payloadIn.Reset();
                 }
             }
         }
@@ -338,8 +338,8 @@ namespace EppNet.Tests
 
             for (int i = 0; i < Runs; i++)
             {
-                using (payloadOut)
-                    payloadOut.WriteFloat(input);
+                payloadOut.WriteFloat(input);
+                payloadOut.Reset();
             }
         }
 

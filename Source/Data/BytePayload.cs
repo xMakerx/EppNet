@@ -316,6 +316,18 @@ namespace EppNet.Data
             return PackedData;
         }
 
+        public virtual void Reset()
+        {
+            if (_stream != null)
+            {
+                //byte[] buffer = _stream.GetBuffer();
+                //Array.Clear(buffer, 0, buffer.Length);
+                _stream.SetLength(0);
+            }
+
+            PackedData = null;
+        }
+
         /// <summary>
         /// Disposes of the internal <see cref="RecyclableMemoryStream"/>.
         /// <br/>DO NOT call unless you're sure you're done reading and writing from this payload.
