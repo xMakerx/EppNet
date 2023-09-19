@@ -7,11 +7,11 @@
 using EppNet.Attributes;
 using EppNet.Objects;
 using EppNet.Sim;
+using EppNet.Utilities;
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+
+using static EppNet.Utilities.AttributeFetcher;
 
 namespace EppNet.Registers
 {
@@ -27,33 +27,18 @@ namespace EppNet.Registers
             if (_compiled)
                 return false;
 
-            Assembly assembly = Assembly.GetExecutingAssembly();
+            var list = AttributeFetcher.GetTypes<NetworkObjectAttribute>();
+            AttributeWrapper[] wrappers = list.Values.ToArray();
 
-            Dictionary<string, ObjectRegistration> regs = new Dictionary<string, ObjectRegistration>();
-
-            foreach (Type type in assembly.GetTypes())
+            for (int i = 0; i < wrappers.Length; i++)
             {
+                AttributeWrapper wrapper = wrappers[i];
+                NetworkObjectAttribute attr = wrapper.Attribute as NetworkObjectAttribute;
 
-                if (!(type.IsClass && type is ISimUnit))
-                    throw new ArgumentException("NetworkObjectAttributes must be attached to classes that inherit ISimUnit!");
-
-                foreach (Attribute attr in type.GetCustomAttributes(false))
-                {
-                    if (attr is NetworkObjectAttribute netAttr)
-                    {
-                        ObjectRegistration r = new ObjectRegistration(type, netAttr);
-                        r.Compile();
-
-                        regs.Add(type.Name, r);
-                    }
-                }
+                ObjectRegistration r = new ObjectRegistration(wrapper.Type, attr);
+                r.Compile();
+                Add(i, r);
             }
-
-            string[] sortedNames = regs.Keys.ToArray();
-            Array.Sort(sortedNames);
-
-            for (int i = 0; i <  sortedNames.Length; i++)
-                Add(i, regs[sortedNames[i]]);
 
             _compiled = true;
             return _compiled;

@@ -30,7 +30,7 @@ namespace EppNet.Objects
         protected void _Internal_CompileMethods()
         {
             MethodInfo[] methods = Type.GetMethods();
-            Dictionary<string, ObjectMethodDefinition> methodDict = new Dictionary<string, ObjectMethodDefinition>();
+            SortedList<string, ObjectMethodDefinition> sortedList = new SortedList<string, ObjectMethodDefinition>();
             
             foreach (MethodInfo method in methods)
             {
@@ -39,25 +39,12 @@ namespace EppNet.Objects
                 foreach (Attribute attribute in attributes)
                 {
                     if (attribute is NetworkMethodAttribute netAttr)
-                        methodDict.Add(method.Name, new ObjectMethodDefinition(Type, method, netAttr));
+                        sortedList.Add(method.Name, new ObjectMethodDefinition(Type, method, netAttr));
                 }
             }
 
-            // Let's sort our methods and assign ids.
-            string[] methodNames = methodDict.Keys.ToArray();
-            Array.Sort(methodNames);
-
             // Now we can initialize the indexed methods array
-            _methods = new ObjectMethodDefinition[methodNames.Length];
-
-            // Indices are simply the position of the method name in the
-            // sorted method names list.
-            for (int i = 0; i < methodNames.Length; i++)
-            {
-                var definition = methodDict[methodNames[i]];
-                definition.Index = i;
-                _methods[i] = definition;
-            }
+            _methods = sortedList.Values.ToArray();
 
         }
 

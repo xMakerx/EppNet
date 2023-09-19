@@ -4,6 +4,9 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Sim;
+using EppNet.Utilities;
+
 using System;
 
 namespace EppNet.Attributes
@@ -12,6 +15,14 @@ namespace EppNet.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class NetworkObjectAttribute : Attribute
     {
+
+        static NetworkObjectAttribute()
+        {
+            AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
+            {
+                return type.IsClass && typeof(ISimUnit).IsAssignableFrom(type);
+            });
+        }
 
         public enum Distribution : int
         {
