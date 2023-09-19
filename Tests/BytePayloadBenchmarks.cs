@@ -20,7 +20,7 @@ namespace EppNet.Tests
     public class BytePayloadBenchmarks
     {
 
-        public const int Runs = 100000;
+        public const int Runs = 1000000;
 
         public BytePayload payloadIn = new BytePayload();
         public BytePayload payloadOut = new BytePayload();
@@ -28,7 +28,7 @@ namespace EppNet.Tests
         public readonly string str8Input = "Hello World!";
         public readonly string str16Input = "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a";
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteBool()
         {
             bool input = true;
@@ -49,17 +49,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]//(OperationsPerInvoke = Runs)]
         public void WriteBool()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteBool(true);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteBool(true);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteByte()
         {
             byte input = 7;
@@ -80,17 +77,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]
         public void WriteByte()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteByte(3);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteByte(3);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteSByte()
         {
             sbyte input = -4;
@@ -111,17 +105,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]//(OperationsPerInvoke = Runs)]
         public void WriteSByte()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteSByte(-8);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteSByte(-8);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteInt()
         {
             int input = -697;
@@ -142,17 +133,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]//(OperationsPerInvoke = Runs)]
         public void WriteInt()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteInt(-277);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteInt(-277);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteUInt()
         {
             uint input = 799;
@@ -173,17 +161,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]
         public void WriteUInt()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteUInt(777);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteUInt(777);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteULong()
         {
             ulong input = 987827;
@@ -204,17 +189,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]//(OperationsPerInvoke = Runs)]
         public void WriteULong()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteULong(12812);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteULong(12812);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteLong()
         {
             long input = -273812;
@@ -235,17 +217,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]
         public void WriteLong()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteLong(-273812);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteLong(-273812);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteString8()
         {
 
@@ -265,17 +244,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]//(OperationsPerInvoke = Runs)]
         public void WriteString8()
         {
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteString8(str8Input);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteString8(str8Input);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteString16()
         {
 
@@ -295,18 +271,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]
         public void WriteString16()
         {
-
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteString16(str16Input);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteString16(str16Input);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public void ReadAndWriteFloat()
         {
             float input = 3.14159f;
@@ -329,21 +301,14 @@ namespace EppNet.Tests
             }
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        [Benchmark]
         public void WriteFloat()
         {
-            float input = 3.14159f;
-
-            BytePayload.FloatPrecision = 4;
-
-            for (int i = 0; i < Runs; i++)
-            {
-                payloadOut.WriteFloat(input);
-                payloadOut.Reset();
-            }
+            payloadOut.WriteFloat(3.14159f);
+            payloadOut.Reset();
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public int ResolveUsingIf()
         {
             object input = new Vector2(0f, 0f);
@@ -358,7 +323,7 @@ namespace EppNet.Tests
             return f;
         }
 
-        [Benchmark(OperationsPerInvoke = Runs)]
+        //[Benchmark(OperationsPerInvoke = Runs)]
         public int ResolveUsingDict()
         {
             int f = 0;
