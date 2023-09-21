@@ -11,6 +11,8 @@ using EppNet.Utilities;
 
 using Serilog;
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using static EppNet.Utilities.AttributeFetcher;
@@ -23,6 +25,11 @@ namespace EppNet.Registers
 
         public static readonly ObjectRegister Instance = new ObjectRegister();
         public static ObjectRegister Get() => Instance;
+
+        protected List<ObjectRegistration> _clientObjs = new List<ObjectRegistration>();
+        protected List<ObjectRegistration> _serverObjs = new List<ObjectRegistration>();
+
+        public ObjectRegister() : base() { }
 
         public override bool Compile()
         {
@@ -41,7 +48,15 @@ namespace EppNet.Registers
                 Log.Verbose($"[ObjectRegister#Compile()] Compiling {wrapper.Type.Name}...");
                 r.Compile();
                 Add(i, r);
+
+                if (attr.Dist == NetworkObjectAttribute.Distribution.Server)
+                    _serverObjs.Add(r);
+                else if (attr.Dist == NetworkObjectAttribute.Distribution.Client)
+                    _clientObjs.Add(r);
             }
+
+            if (_clientObjs.Count != _serverObjs.Count)
+                Log.Fatal($"[ObjectRegister#Compile()] Objects not marked as Distribution.Both must have an individual client and server representation.");
 
             _compiled = true;
             return _compiled;

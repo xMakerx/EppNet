@@ -6,6 +6,7 @@
 
 using ENet;
 
+using EppNet.Attributes;
 using EppNet.Core;
 using EppNet.Data;
 using EppNet.Registers;
@@ -14,26 +15,16 @@ using EppNet.Utilities;
 
 using Serilog;
 
+using System;
+
 namespace EppNet.Sim
 {
 
     public class Simulation : ISimBase
     {
 
-        protected static Simulation _instance;
+        protected static Simulation _instance = null;
         public static Simulation Get() => _instance;
-
-        static Simulation()
-        {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-            #if DEBUG
-                .MinimumLevel.Debug()
-            #else
-                .MinimumLevel.Warning()
-            #endif
-                .CreateLogger();
-        }
 
         /// <summary>
         /// Fetches the monotonic time as a <see cref="Timestamp"/> or returns 0 if ENet hasn't been initialized.
@@ -94,6 +85,9 @@ namespace EppNet.Sim
             if (Simulation._instance != null)
                 return;
 
+            Serilog.Debugging.SelfLog.Enable(Console.Error);
+            Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Debug().CreateLogger();
+
             Simulation._instance = this;
             this.Socket = socket;
             this.MessageDirector = new MessageDirector();
@@ -107,6 +101,16 @@ namespace EppNet.Sim
                 Serilog.Events.LogEventLevel.Warning, 
                 "[Simulation#Initialize()] Called initialize twice?"))
                 return;
+
+            AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
+            {
+                bool isValid = type.IsClass && typeof(ISimUnit).IsAssignableFrom(type);
+
+                if (!isValid)
+                    Log.Error($"[{type.Name}] Invalid use of NetworkObjectAttribute. Provided type does not extend ISimUnit!!");
+
+                return isValid;
+            });
 
             if (enet_callbacks != null)
             {
@@ -128,6 +132,12 @@ namespace EppNet.Sim
                 Log.Information("[Simulation#Initialize()] Compiling custom object expression trees...");
                 ObjectRegister.Get().Compile();
             }
+        }
+
+        public static void Main(string[] args)
+        {
+            var sim = new Simulation(null);
+            sim.Initialize();
         }
 
         public SimClock GetClock() => Clock;

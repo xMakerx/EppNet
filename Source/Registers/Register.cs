@@ -50,7 +50,7 @@ namespace EppNet.Registers
             return false;
         }
 
-        public bool Add(TKey key, Registration r)
+        public virtual bool Add(TKey key, Registration r)
         {
             if (!typeof(BaseType).IsAssignableFrom(r.Type))
                 throw new ArgumentException($"Type {r.Type} is not supported.");

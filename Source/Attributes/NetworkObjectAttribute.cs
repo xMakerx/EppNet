@@ -4,11 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Sim;
-using EppNet.Utilities;
-
-using Serilog;
-
 using System;
 
 namespace EppNet.Attributes
@@ -17,19 +12,6 @@ namespace EppNet.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class NetworkObjectAttribute : Attribute
     {
-
-        static NetworkObjectAttribute()
-        {
-            AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
-            {
-                bool isValid = type.IsClass && typeof(ISimUnit).IsAssignableFrom(type);
-
-                if (!isValid)
-                    Log.Error($"[{type.Name}] Invalid use of NetworkObjectAttribute. Provided type does not extend ISimUnit!!");
-
-                return isValid;
-            });
-        }
 
         public enum Distribution : int
         {

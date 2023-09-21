@@ -3,7 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>EppNet</RootNamespace>
-    <StartupObject>EppNet.Tests.BytePayloadBenchmarks</StartupObject>
+    <StartupObject>EppNet.Sim.Simulation</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
