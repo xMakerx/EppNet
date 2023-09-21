@@ -7,6 +7,8 @@
 using EppNet.Sim;
 using EppNet.Utilities;
 
+using Serilog;
+
 using System;
 
 namespace EppNet.Attributes
@@ -20,7 +22,12 @@ namespace EppNet.Attributes
         {
             AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
             {
-                return type.IsClass && typeof(ISimUnit).IsAssignableFrom(type);
+                bool isValid = type.IsClass && typeof(ISimUnit).IsAssignableFrom(type);
+
+                if (!isValid)
+                    Log.Error($"[{type.Name}] Invalid use of NetworkObjectAttribute. Provided type does not extend ISimUnit!!");
+
+                return isValid;
             });
         }
 

@@ -3,8 +3,6 @@
 /// Date: September 5, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
-using EppNet.Core;
-using EppNet.Exceptions;
 
 namespace EppNet.Sockets
 {
@@ -20,14 +18,12 @@ namespace EppNet.Sockets
         protected override bool Create()
         {
             _createTimeMs.SetToMonoNow();
-            Network.Instance.Status = NetworkStatus.Online;
+            //Network.Instance.Status = NetworkStatus.Online;
             return true;
         }
 
         public bool Start(int port, int maxClients)
         {
-            if (Network.IsOnline())
-                throw new NetworkException("You cannot have more than one endpoint!");
 
             _enet_addr.Port = (ushort)port;
             _enet_host.Create(_enet_addr, maxClients);

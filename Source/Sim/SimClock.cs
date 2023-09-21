@@ -130,7 +130,7 @@ namespace EppNet.Sim
                 _decimal_collector--;
             }
 
-            _last_tick.Value.Set(Network.MonotonicTime);
+            _last_tick.Value.Set(Simulation.MonotonicTime);
         }
 
         public bool ShouldSynchronize()
@@ -139,7 +139,7 @@ namespace EppNet.Sim
                 return false;
 
             // Client simulations usually want to resync from time-to-time.
-            long elapsed_time = Network.MonotonicTime - _last_sync.Value.Get();
+            long elapsed_time = Simulation.MonotonicTime - _last_sync.Value.Get();
 
             return elapsed_time > 0 && elapsed_time > ResyncIntervalMs;
         }
@@ -153,7 +153,7 @@ namespace EppNet.Sim
         {
             // E.T. phone home
             // TODO: Send ping datagram
-            _last_ping.Value.Set(Network.MonotonicTime);
+            _last_ping.Value.Set(Simulation.MonotonicTime);
         }
 
         /// <summary>
@@ -168,13 +168,13 @@ namespace EppNet.Sim
             if (ShouldSynchronize())
             {
                 // The time it took for us to ping and get a response.
-                RoundTripTime = (ulong) (Network.MonotonicTime - _last_ping.Value.Get());
+                RoundTripTime = (ulong) (Simulation.MonotonicTime - _last_ping.Value.Get());
 
                 // Update our time to be the provided remote time plus our round trip time.
                 Time = remote_time + RoundTripTime;
 
                 // Set the last time we synchronized
-                _last_sync.Value.Set((ulong)Network.MonotonicTime);
+                _last_sync.Value.Set((ulong)Simulation.MonotonicTime);
             }
 
             float avg_delta = (float)(remote_time - local_time) / 2;

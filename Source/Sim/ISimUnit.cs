@@ -8,8 +8,6 @@
 
 using EppNet.Objects;
 
-using System;
-
 namespace EppNet.Sim
 {
 
@@ -20,6 +18,11 @@ namespace EppNet.Sim
         public void Generate();
 
         public bool SendUpdate(string methodName, params object[] args);
+
+        /// <summary>
+        /// Recalculates what zone this unit is in.
+        /// </summary>
+        public void RecalculateZoneBounds() { }
 
         public bool RequestDelete();
 

@@ -3,6 +3,8 @@
 /// Date: September 10, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
+using EppNet.Sim;
+
 using System;
 
 namespace EppNet.Core
@@ -56,7 +58,7 @@ namespace EppNet.Core
             {
                 Type = TimestampType.Milliseconds,
                 Monotonic = true,
-                Value = Network.MonotonicTime
+                Value = Simulation.MonotonicTime
             };
         }
 
@@ -136,11 +138,11 @@ namespace EppNet.Core
         {
             if (this._type == TimestampType.None || this._type == TimestampType.Milliseconds)
             {
-                Set(Network.MonotonicTime);
+                Set(Simulation.MonotonicTime);
                 return;
             }
 
-            Timestamp b = _CreateMatching(this, Network.MonotonicTimestamp);
+            Timestamp b = _CreateMatching(this, Simulation.MonotonicTimestamp);
             Set(b.Value);
         }
 

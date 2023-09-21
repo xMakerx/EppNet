@@ -15,7 +15,7 @@ namespace EppNet.Exceptions
 
         public NetworkException(string message) : base(message)
         {
-            Network.Instance?.PostException(this);
+            //Network.Instance?.PostException(this);
         }
 
     }

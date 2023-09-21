@@ -8,9 +8,9 @@ using ENet;
 
 using EppNet.Core;
 using EppNet.Exceptions;
+using EppNet.Sim;
 
 using System;
-using System.Diagnostics;
 
 namespace EppNet.Sockets
 {
@@ -61,9 +61,6 @@ namespace EppNet.Sockets
 
         public Socket()
         {
-            if (Network.CanRegisterSockets())
-                throw new NetworkException("You must initialize the Network first!");
-
             _createTimeMs = Timestamp.ZeroMonotonicMs();
             _lastPollTimeMs = Timestamp.ZeroMonotonicMs();
 
@@ -72,14 +69,6 @@ namespace EppNet.Sockets
             this._enet_host = null;
             this._enet_addr = default(Address);
             this._enet_event = default(Event);
-        }
-
-        public bool Register()
-        {
-            Trace.Assert(_type != SocketType.Unknown, "Socket#Register() is trying to register a Socket of Unknown type.");
-            Trace.Assert(Network.CanRegisterSockets(), "Socket#Register() requires that the Network singleton is setup and initialized.");
-
-            return Network.Instance.RegisterSocket(this);
         }
 
         /// <summary>
@@ -99,7 +88,7 @@ namespace EppNet.Sockets
 
         public virtual void Poll(int timeoutMs = 0)
         {
-            if (_enet_host == null || !Network.IsOnline())
+            if (_enet_host == null)
                 throw new NetworkException("Socket is not valid!");
 
             bool polled = false;
@@ -112,7 +101,7 @@ namespace EppNet.Sockets
                         break;
 
                     polled = true;
-                    _lastPollTimeMs.Set(Network.MonoTime);
+                    _lastPollTimeMs.Set(Simulation.MonoTime);
                 }
 
                 switch (_enet_event.Type)
@@ -157,7 +146,6 @@ namespace EppNet.Sockets
             if (IsOpen())
             {
                 _enet_host.Dispose();
-                Network.Instance.UnregisterSocket(this);
             }
         }
 

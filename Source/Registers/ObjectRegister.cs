@@ -9,6 +9,8 @@ using EppNet.Objects;
 using EppNet.Sim;
 using EppNet.Utilities;
 
+using Serilog;
+
 using System.Linq;
 
 using static EppNet.Utilities.AttributeFetcher;
@@ -36,6 +38,7 @@ namespace EppNet.Registers
                 NetworkObjectAttribute attr = wrapper.Attribute as NetworkObjectAttribute;
 
                 ObjectRegistration r = new ObjectRegistration(wrapper.Type, attr);
+                Log.Verbose($"[ObjectRegister#Compile()] Compiling {wrapper.Type.Name}...");
                 r.Compile();
                 Add(i, r);
             }
