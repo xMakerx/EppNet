@@ -5,16 +5,16 @@
 ///////////////////////////////////////////////////////
 
 using ENet;
+
 using EppNet.Core;
-using EppNet.Sockets;
 using EppNet.Data;
-using System.Buffers;
+using EppNet.Sockets;
 
 namespace EppNet.Connections
 {
     /// <summary>
     /// Yes, UDP doesn't have the concept of "connections" but
-    /// for simplicity's sake we use the term to describe "known
+    /// for simplicity's sake we use the term to describe<br/> "known
     /// computers that have sent us datagrams" and keep who's
     /// who organized.
     /// </summary>

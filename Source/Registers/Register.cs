@@ -50,15 +50,17 @@ namespace EppNet.Registers
             return false;
         }
 
-        public virtual bool Add(TKey key, Registration r)
+        public virtual bool Add(TKey key, IRegistration r)
         {
-            if (!typeof(BaseType).IsAssignableFrom(r.Type))
-                throw new ArgumentException($"Type {r.Type} is not supported.");
+            Type regType = r.GetRegisteredType();
+
+            if (!typeof(BaseType).IsAssignableFrom(regType))
+                throw new ArgumentException($"Type {regType} is not supported.");
 
             if (IsValidKey(key))
             {
                 _lookupTable.Add(key, r);
-                _type2Keys.Add(r.Type, key);
+                _type2Keys.Add(regType, key);
                 return true;
             }
 

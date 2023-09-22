@@ -4,6 +4,9 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Core;
+using EppNet.Sim;
+
 using System;
 
 namespace EppNet.Attributes
@@ -13,29 +16,10 @@ namespace EppNet.Attributes
     public class NetworkObjectAttribute : Attribute
     {
 
-        public enum Distribution : int
-        {
-            /// <summary>
-            /// Both the server and the client use this class for instances
-            /// of the object.
-            /// </summary>
-            Both = 0,
-
-            /// <summary>
-            /// This object is only created on the server.
-            /// </summary>
-            Server = 1,
-
-            /// <summary>
-            /// This object is only created on the client.
-            /// </summary>
-            Client = 2
-        }
-
         /// <summary>
         /// Specify a creator method for generating a new instance of this object.
         /// </summary>
-        public Func<object> Creator;
+        public Func<ISimUnit> Creator;
 
         /// <summary>
         /// Specify a destructor method for ensuring the object is cleaned up properly.
@@ -54,7 +38,7 @@ namespace EppNet.Attributes
             this.Creator = null;
             this.Destructor = null;
             this.Global = false;
-            this.Dist = Distribution.Both;
+            this.Dist = Distribution.Shared;
         }
 
     }

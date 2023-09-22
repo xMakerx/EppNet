@@ -12,6 +12,8 @@ namespace EppNet.Registers
     public interface IRegistration : ICompilable, IDisposable
     {
         public object NewInstance(params object[] args);
+
+        public Type GetRegisteredType();
     }
 
 }

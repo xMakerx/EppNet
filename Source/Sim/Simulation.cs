@@ -78,6 +78,8 @@ namespace EppNet.Sim
         public readonly MessageDirector MessageDirector;
         public readonly SimClock Clock;
 
+        public Distribution DistroType { internal set; get; }
+
         protected bool _initialized;
 
         public Simulation(Socket socket)
