@@ -114,6 +114,8 @@ namespace EppNet.Registers
             return null;
         }
 
+        public Type GetRegisteredType() => Type;
+
         /// <summary>
         /// Disposes of compiled expressions.
         /// </summary>

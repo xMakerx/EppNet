@@ -38,25 +38,66 @@ namespace EppNet.Objects
             this._objects = new Dictionary<long, ObjectDelegate>();
         }
 
+        protected ObjectDelegate _Internal_CreateObject(ObjectRegistration reg, long id = -1)
+        {
+            ISimUnit unit = null;
+            ObjectDelegate objDel = null;
+            string distroName = Simulation.Get().DistroType.ToString();
+
+            if (reg == null)
+            {
+                if (id != -1)
+                    Log.Fatal($"[ObjectManager#CreateObject()] Unable to create object with ID {id}. Is it registered? Does it have a {distroName} Distribution? IdAvailable={IsIdAvailable(id)}");
+                else
+                    Log.Fatal($"[ObjectManager#CreateObject()] Unable to create object. Is it registered? Does it have a {distroName} Distribution?");
+
+                return null;
+            }
+
+            Type type = reg.GetRegisteredType();
+            string typeName = type.Name;
+
+            if (id != -1 && !IsIdAvailable(id))
+            {
+                Log.Fatal($"[ObjectManager#CreateObject()] Cannot create object of Type {typeName} with ID {id} as the ID is unavailable!");
+                return null;
+            }
+
+            try
+            {
+                bool customGenerator = reg.ObjectAttribute.Creator != null;
+
+                if (customGenerator)
+                    // The user has specified a generator
+                    unit = reg.ObjectAttribute.Creator();
+                else
+                    unit = reg.NewInstance() as ISimUnit;
+
+                if (unit != null)
+                {
+                    objDel = new ObjectDelegate(unit);
+                    objDel.ID = (id == -1 ? _AllocateId() : id);
+
+                    _objects.Add(id, objDel);
+                    Log.Verbose($"[ObjectManager#CreateObject()] Created new Object Instance of Type {typeName} assigned with ID {id}.");
+                    return objDel;
+                }
+
+                // Something went wrong and we didn't get a valid unit back.
+                Log.Fatal($"[ObjectManager#CreateObject()] Failed to create new instance of Type {typeName}. ISimUnit is null. Custom Constructor: {customGenerator}.");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal($"[ObjectManager#CreateObject()] Failed to create new instance of Type {typeName}. Exception: {ex.Message}");
+            }
+
+            return objDel;
+        }
+
         public ObjectDelegate CreateObject<T>() where T : ISimUnit
         {
             ObjectRegistration reg = ObjectRegister.Get().Get(typeof(T)) as ObjectRegistration;
-
-            if (reg == null)
-                Log.Fatal($"[ObjectManager#CreateObject<T>()] Tried to create unknown object of Type {typeof(T).Name}.");
-
-            long id = _AllocateId();
-            ISimUnit unit = null;
-
-            if (reg.ObjectAttribute.Creator != null)
-                // The user has specified a generator
-                unit = reg.ObjectAttribute.Creator();
-            else
-                unit = reg.NewInstance() as ISimUnit;
-
-            ObjectDelegate objDel = new ObjectDelegate(unit);
-            objDel.ID = id;
-            return objDel;
+            return _Internal_CreateObject(reg);
         }
 
         protected long _AllocateId()
@@ -65,10 +106,12 @@ namespace EppNet.Objects
             do
             {
                 id = Random.Shared.NextInt64();
-            } while (_objects.ContainsKey(id));
+            } while (!IsIdAvailable(id));
 
             return id;
         }
+
+        public bool IsIdAvailable(long id) => !_objects.ContainsKey(id);
 
         public ObjectDelegate GetObject(long id)
         {
