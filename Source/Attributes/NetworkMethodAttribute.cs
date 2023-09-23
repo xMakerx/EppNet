@@ -21,7 +21,7 @@ namespace EppNet.Attributes
         /// <see cref="NetworkFlags.Snapshot"/> requires a getter method to
         /// retrieve the current value.
         /// </summary>
-        public Action<object> Getter { internal set; get; }
+        public Func<object> Getter { internal set; get; }
 
         public NetworkMethodAttribute() : this(NetworkFlags.None) { }
 

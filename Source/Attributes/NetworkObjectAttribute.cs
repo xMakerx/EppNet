@@ -12,6 +12,12 @@ using System;
 namespace EppNet.Attributes
 {
 
+    /// <summary>
+    /// Denotes a class as a network object which can communicate updates
+    /// across the wire. This attribute is NOT inherited and must be added
+    /// to the exact class you want distributed.
+    /// </summary>
+
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class NetworkObjectAttribute : Attribute
     {

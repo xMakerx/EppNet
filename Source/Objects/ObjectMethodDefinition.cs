@@ -18,6 +18,7 @@ namespace EppNet.Objects
     {
 
         public delegate void ObjectMethodCall(object instance, params object[] args);
+        public delegate object ObjectMethodGetter(object instance);
 
         public readonly Type ClassType;
         public readonly string Name;
@@ -26,13 +27,15 @@ namespace EppNet.Objects
         public readonly Type[] ParameterTypes;
         public readonly ObjectMethodCall Activator;
 
+        public readonly ObjectMethodGetter GetterActivator;
+
         /// <summary>
         /// The index of our method within the sorted names of our object's
         /// network methods.
         /// </summary>
         public int Index { internal set; get; }
 
-        public ObjectMethodDefinition(Type classType, MethodInfo method, NetworkMethodAttribute netAttr)
+        public ObjectMethodDefinition(Type classType, MethodInfo method, NetworkMethodAttribute netAttr, MethodInfo getterMethod = null)
         {
             this.ClassType = classType;
             this.Name = method.Name;
@@ -68,6 +71,18 @@ namespace EppNet.Objects
                 callExp, outerParams).Compile();
             this.Activator = compiled;
 
+            if (getterMethod == null)
+            {
+                this.GetterActivator = null;
+                return;
+            }
+
+            var getterCallExp = Expression.Call(instanceExp, getterMethod);
+            ObjectMethodGetter compiledGetter = (ObjectMethodGetter)Expression.Lambda(
+                typeof(ObjectMethodGetter), getterCallExp).Compile();
+
+            this.GetterActivator = compiledGetter;
+
         }
 
         /// <summary>
@@ -76,6 +91,14 @@ namespace EppNet.Objects
         /// <param name="instance"></param>
         /// <param name="args"></param>
         public void Invoke(object instance, params object[] args) => Activator.Invoke(instance, args);
+
+        public object InvokeGetter(object instance)
+        {
+            if (GetterActivator == null)
+                return Attribute.Getter.Invoke();
+
+            return GetterActivator.Invoke(instance);
+        }
 
     }
 

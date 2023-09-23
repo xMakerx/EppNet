@@ -89,6 +89,7 @@ namespace EppNet.Objects
             catch (Exception ex)
             {
                 Log.Fatal($"[ObjectManager#CreateObject()] Failed to create new instance of Type {typeName}. Exception: {ex.Message}");
+                Log.Fatal($"[ObjectManager#CreateObject()] Exception Stack Trace: {ex.StackTrace}");
             }
 
             return objDel;
