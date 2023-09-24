@@ -151,21 +151,30 @@ namespace EppNet.Objects
 
         }
 
+        protected ObjectMemberDefinition _GetMember(int index, ref ObjectMemberDefinition[] array)
+        {
+            ObjectMemberDefinition definition = null;
+
+            if (-1 < index && index < array.Length)
+                definition = array[index];
+
+            return definition;
+        }
+
         /// <summary>
-        /// Fetches the <see cref="ObjectMemberDefinition"/> by index.
+        /// Fetches a method's <see cref="ObjectMemberDefinition"/> by index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
 
-        public ObjectMemberDefinition GetMethod(int index)
-        {
-            ObjectMemberDefinition definition = null;
+        public ObjectMemberDefinition GetMethod(int index) => _GetMember(index, ref _methods);
 
-            if (-1 < index && index < _methods.Length)
-                definition = _methods[index];
-
-            return definition;
-        }
+        /// <summary>
+        /// Fetches a property's <see cref="ObjectMemberDefinition"/> by index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public ObjectMemberDefinition GetProperty(int index) => _GetMember(index, ref _props);
 
         public override bool Compile()
         {
