@@ -6,6 +6,8 @@
 
 using EppNet.Sim;
 
+using System.Collections.Generic;
+
 namespace EppNet.Objects
 {
 
@@ -13,22 +15,32 @@ namespace EppNet.Objects
     /// To make things as simple as possible for the end user, we abstract the
     /// innerworkings of objects in the system into this class.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
 
     public class ObjectDelegate
     {
 
         public readonly ISimUnit UserObject;
-        protected readonly ObjectRegistration _metadata;
+        public readonly ObjectRegistration Metadata;
+        public readonly long ID;
 
-        public int TicksUntilDeletion { internal set; get; } = -1;
+        public int TicksUntilDeletion { internal set; get; }
 
-        public long ID { internal set; get; }
+        internal SortedDictionary<ulong, ObjectState> _savedStates;
 
-        public ObjectDelegate(ISimUnit userObject)
+        internal ObjectDelegate(ObjectRegistration registration, ISimUnit userObject, long id)
         {
+            this.Metadata = registration;
             this.UserObject = userObject;
+            this.ID = id;
 
+            this.TicksUntilDeletion = -1;
+            this._savedStates = new SortedDictionary<ulong, ObjectState>();
+        }
+
+        public ObjectState GetStateAt(ulong time)
+        {
+            _savedStates.TryGetValue(time, out ObjectState state);
+            return state;
         }
 
     }

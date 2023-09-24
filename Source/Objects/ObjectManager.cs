@@ -75,8 +75,8 @@ namespace EppNet.Objects
 
                 if (unit != null)
                 {
-                    objDel = new ObjectDelegate(unit);
-                    objDel.ID = (id == -1 ? _AllocateId() : id);
+                    id = (id == -1) ? _AllocateId() : id;
+                    objDel = new ObjectDelegate(reg, unit, id);
 
                     _objects.Add(id, objDel);
                     Log.Verbose($"[ObjectManager#CreateObject()] Created new Object Instance of Type {typeName} assigned with ID {id}.");

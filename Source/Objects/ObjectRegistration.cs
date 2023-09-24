@@ -10,7 +10,6 @@ using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace EppNet.Objects
@@ -20,8 +19,8 @@ namespace EppNet.Objects
     {
 
         public readonly NetworkObjectAttribute ObjectAttribute;
-        protected internal ObjectMemberDefinition[] _methods;
-        protected internal ObjectMemberDefinition[] _props;
+        protected internal SortedList<string, ObjectMemberDefinition> _methods;
+        protected internal SortedList<string, ObjectMemberDefinition> _props;
 
         public ObjectRegistration(Type type, NetworkObjectAttribute attribute) : base(type)
         {
@@ -55,9 +54,6 @@ namespace EppNet.Objects
 
             } while (index < members.Length);
 
-            SortedList<string, ObjectMemberDefinition> sortedMethods = new SortedList<string, ObjectMemberDefinition>();
-            SortedList<string, ObjectMemberDefinition> sortedProps = new SortedList<string, ObjectMemberDefinition>();
-
             foreach (MemberInfo member in members)
             {
 
@@ -84,7 +80,11 @@ namespace EppNet.Objects
                             }
 
                             ObjectMemberDefinition pDef = new ObjectMemberDefinition(propInfo, netAttr);
-                            sortedProps.Add(propInfo.Name, pDef);
+
+                            if (_props == null)
+                                _props = new SortedList<string, ObjectMemberDefinition>(StringComparer.OrdinalIgnoreCase);
+
+                            _props.Add(propInfo.Name, pDef);
                         }
                         else
                         {
@@ -130,35 +130,58 @@ namespace EppNet.Objects
                             }
 
                             ObjectMemberDefinition mDef = new ObjectMemberDefinition(method, netAttr, getterMthd);
-                            sortedMethods.Add(method.Name, mDef);
+
+                            if (_methods == null)
+                                _methods = new SortedList<string, ObjectMemberDefinition>(StringComparer.OrdinalIgnoreCase);
+
+                            _methods.Add(method.Name, mDef);
                         }
 
                     }
                 }
             }
 
-            // Now we can initialize the indexed methods array
-            _methods = sortedMethods.Values.ToArray();
-            _props = sortedProps.Values.ToArray();
+            if (_methods != null)
+            {
+                for (int i = 0; i < _methods.Values.Count; i++)
+                {
+                    ObjectMemberDefinition def = _methods.GetValueAtIndex(i);
+                    def.Index = i;
+                }
+            }
 
-            // Let's set the indices for the method definitions
-            for (int i = 0; i < _methods.Length; i++)
-                _methods[i].Index = i;
-
-            // Let's set the indices for the property definitions
-            for (int i = 0; i < _props.Length; i++)
-                _props[i].Index = i;
+            if (_props != null)
+            {
+                for (int i = 0; i < _props.Values.Count; i++)
+                {
+                    ObjectMemberDefinition def = _props.GetValueAtIndex(i);
+                    def.Index = i;
+                }
+            }
 
         }
 
-        protected ObjectMemberDefinition _GetMember(int index, ref ObjectMemberDefinition[] array)
+        protected ObjectMemberDefinition _GetMember(int index, ref SortedList<string, ObjectMemberDefinition> list)
         {
             ObjectMemberDefinition definition = null;
 
-            if (-1 < index && index < array.Length)
-                definition = array[index];
+            if (-1 < index && index < list.Count)
+                definition = list.GetValueAtIndex(index);
 
             return definition;
+        }
+
+        protected ObjectMemberDefinition GetMemberByName(string name)
+        {
+            if (name == null || name?.Length == 0)
+                return null;
+
+            _methods.TryGetValue(name, out ObjectMemberDefinition def);
+
+            if (def == null)
+                _props.TryGetValue(name, out def);
+
+            return def;
         }
 
         /// <summary>

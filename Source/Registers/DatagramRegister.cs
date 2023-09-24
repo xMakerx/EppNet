@@ -8,7 +8,6 @@ using EppNet.Data;
 
 namespace EppNet.Registers
 {
-
     public class DatagramRegister : Register<byte, Datagram>
     {
 

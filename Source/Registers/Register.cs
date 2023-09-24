@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EppNet.Registers
 {
@@ -81,6 +82,18 @@ namespace EppNet.Registers
                 return null;
 
             return _lookupTable[key];
+        }
+
+        public virtual TKey GetKeyFromValue(IRegistration registration)
+        {
+
+            foreach (KeyValuePair<TKey, IRegistration> pair in _lookupTable)
+            {
+                if (ReferenceEquals(pair.Value, registration))
+                    return pair.Key;
+            }
+
+            return default(TKey);
         }
 
         public virtual bool Compile()

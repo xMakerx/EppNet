@@ -6,6 +6,7 @@
 
 using EppNet.Attributes;
 using EppNet.Core;
+using EppNet.Sim;
 
 using System;
 using System.Linq.Expressions;
@@ -17,8 +18,8 @@ namespace EppNet.Objects
     public class ObjectMemberDefinition
     {
 
-        public delegate void ObjectMethodCall(object instance, params object[] args);
-        public delegate object ObjectMethodGetter(object instance);
+        public delegate void ObjectMethodCall(ISimUnit instance, params object[] args);
+        public delegate object ObjectMethodGetter(ISimUnit instance);
 
         public readonly Type ClassType;
         public readonly string Name;
@@ -95,9 +96,11 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="instance"></param>
         /// <param name="args"></param>
-        public void Invoke(object instance, params object[] args) => Activator.Invoke(instance, args);
+        public void Invoke(ISimUnit instance, params object[] args) => Activator.Invoke(instance, args);
+        public void Invoke(ObjectDelegate instance, params object[] args) => Activator.Invoke(instance.UserObject, args);
 
-        public object InvokeGetter(object instance) => GetterActivator?.Invoke(instance);
+        public object InvokeGetter(ISimUnit instance) => GetterActivator?.Invoke(instance);
+        public object InvokeGetter(ObjectDelegate instance) => GetterActivator?.Invoke(instance.UserObject);
 
         public bool IsMethod() => MemberInfo.MemberType == MemberTypes.Method;
         public bool IsProperty() => MemberInfo.MemberType == MemberTypes.Property;
