@@ -7,21 +7,20 @@
 using EppNet.Core;
 
 using System;
+using System.Reflection;
 
 namespace EppNet.Attributes
 {
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class NetworkMethodAttribute : Attribute
+    public class NetworkMethodAttribute : NetworkMemberAttribute
     {
-
-        public NetworkFlags Flags { internal set; get; }
 
         /// <summary>
         /// <see cref="NetworkFlags.Snapshot"/> requires a getter method to
         /// retrieve the current value.
         /// </summary>
-        public Func<object> Getter { internal set; get; }
+        public MethodInfo Getter { internal set; get; }
 
         public NetworkMethodAttribute() : this(NetworkFlags.None) { }
 

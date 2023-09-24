@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: ObjectMethodDefinition.cs
+/// Filename: ObjectMemberDefinition.cs
 /// Date: September 15, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
@@ -14,7 +14,7 @@ using System.Reflection;
 namespace EppNet.Objects
 {
 
-    public class ObjectMethodDefinition
+    public class ObjectMemberDefinition
     {
 
         public delegate void ObjectMethodCall(object instance, params object[] args);
@@ -22,23 +22,29 @@ namespace EppNet.Objects
 
         public readonly Type ClassType;
         public readonly string Name;
-        public readonly NetworkMethodAttribute Attribute;
+        public readonly NetworkMemberAttribute Attribute;
         public readonly NetworkFlags Flags;
         public readonly Type[] ParameterTypes;
         public readonly ObjectMethodCall Activator;
 
         public readonly ObjectMethodGetter GetterActivator;
+        public readonly MemberInfo MemberInfo;
 
         /// <summary>
-        /// The index of our method within the sorted names of our object's
-        /// network methods.
+        /// The index of our member within the appropriate sorted member
+        /// array of our object.
         /// </summary>
         public int Index { internal set; get; }
 
-        public ObjectMethodDefinition(Type classType, MethodInfo method, NetworkMethodAttribute netAttr, MethodInfo getterMethod = null)
+        public ObjectMemberDefinition(PropertyInfo propInfo, NetworkMemberAttribute netAttr) : this(propInfo, netAttr, propInfo.SetMethod, propInfo.GetMethod) { }
+
+        public ObjectMemberDefinition(MethodInfo method, NetworkMemberAttribute netAttr, MethodInfo getterMethod = null) : this(method, netAttr, method, getterMethod) { }
+
+        private ObjectMemberDefinition(MemberInfo memberInfo, NetworkMemberAttribute netAttr, MethodInfo method, MethodInfo getterMethod = null)
         {
-            this.ClassType = classType;
-            this.Name = method.Name;
+            this.ClassType = memberInfo.DeclaringType;
+            this.MemberInfo = memberInfo;
+            this.Name = memberInfo.Name;
             this.Attribute = netAttr;
             this.Flags = netAttr.Flags;
             this.Index = -1;
@@ -82,7 +88,6 @@ namespace EppNet.Objects
                 typeof(ObjectMethodGetter), getterCallExp).Compile();
 
             this.GetterActivator = compiledGetter;
-
         }
 
         /// <summary>
@@ -92,13 +97,10 @@ namespace EppNet.Objects
         /// <param name="args"></param>
         public void Invoke(object instance, params object[] args) => Activator.Invoke(instance, args);
 
-        public object InvokeGetter(object instance)
-        {
-            if (GetterActivator == null)
-                return Attribute.Getter.Invoke();
+        public object InvokeGetter(object instance) => GetterActivator?.Invoke(instance);
 
-            return GetterActivator.Invoke(instance);
-        }
+        public bool IsMethod() => MemberInfo.MemberType == MemberTypes.Method;
+        public bool IsProperty() => MemberInfo.MemberType == MemberTypes.Property;
 
     }
 
