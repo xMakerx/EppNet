@@ -28,6 +28,8 @@ namespace EppNet.Objects
         /// </summary>
         protected Dictionary<long, ObjectDelegate> _objects;
 
+        protected Dictionary<ISimUnit, ObjectDelegate> _unit2Delegate;
+
         public ObjectManager()
         {
             if (_instance != null)
@@ -36,6 +38,28 @@ namespace EppNet.Objects
             ObjectManager._instance = this;
             this._sim = Simulation.Get();
             this._objects = new Dictionary<long, ObjectDelegate>();
+            this._unit2Delegate = new Dictionary<ISimUnit, ObjectDelegate>();
+        }
+
+        public bool Delete(ObjectDelegate objDelegate)
+        {
+            if (objDelegate == null)
+                return false;
+
+            long id = objDelegate.ID;
+            bool removed = _objects.Remove(id);
+            _unit2Delegate.Remove(objDelegate.UserObject);
+
+            return removed;
+        }
+
+        public ObjectDelegate GetDelegateFor(ISimUnit unit)
+        {
+            if (unit == null)
+                return null;
+
+            _unit2Delegate.TryGetValue(unit, out ObjectDelegate objDelegate);
+            return objDelegate;
         }
 
         protected ObjectDelegate _Internal_CreateObject(ObjectRegistration reg, long id = -1)
@@ -79,6 +103,7 @@ namespace EppNet.Objects
                     objDel = new ObjectDelegate(reg, unit, id);
 
                     _objects.Add(id, objDel);
+                    _unit2Delegate.Add(unit, objDel);
                     Log.Verbose($"[ObjectManager#CreateObject()] Created new Object Instance of Type {typeName} assigned with ID {id}.");
                     return objDel;
                 }

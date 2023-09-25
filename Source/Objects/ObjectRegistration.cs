@@ -171,7 +171,7 @@ namespace EppNet.Objects
             return definition;
         }
 
-        protected ObjectMemberDefinition GetMemberByName(string name)
+        public ObjectMemberDefinition GetMemberByName(string name)
         {
             if (name == null || name?.Length == 0)
                 return null;

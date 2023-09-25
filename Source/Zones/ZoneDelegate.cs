@@ -20,7 +20,7 @@ namespace EppNet.Zones
         public ZoneDelegate ParentZone { internal set; get; }
         protected internal HashSet<ZoneDelegate> _children;
 
-        public ZoneDelegate(ISimUnit userObject) : base(userObject)
+        public ZoneDelegate(ObjectRegistration reg, IZone userObject, long id) : base(reg, userObject, id)
         {
             this.Zone = (IZone)userObject;
             this.ParentZone = null;

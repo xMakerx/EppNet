@@ -14,17 +14,45 @@ namespace EppNet.Sim
     public interface ISimUnit
     {
 
-        public void AnnounceGenerate();
-        public void Generate();
+        public void AnnounceGenerate() { }
+        public void OnGenerate() { }
 
-        public bool SendUpdate(string methodName, params object[] args);
+        public bool SendUpdate(string memberName, params object[] args)
+        {
+            ObjectDelegate myDelegate = GetObjectDelegate();
+            ObjectRegistration reg = myDelegate.Metadata;
+            ObjectMemberDefinition mDef = reg.GetMemberByName(memberName);
+
+            if (mDef == null)
+                throw new System.ArgumentNullException($"[ISimUnit#SendUpdate()] for Object of Type {reg.GetRegisteredType().Name} with ID {GetID()} does not have an update called {memberName}!");
+
+            // Let's validate the arguments.
+            if (args.Length != mDef.ParameterTypes.Length)
+                throw new System.ArgumentNullException($"[ISimUnit#SendUpdate()] Update {memberName} was provided {args.Length} arguments; expected {mDef.ParameterTypes.Length}");
+
+            myDelegate._enqueuedUpdates.Enqueue(Update.For(myDelegate, mDef, args));
+            return true;
+        }
 
         /// <summary>
         /// Recalculates what zone this unit is in.
         /// </summary>
         public void RecalculateZoneBounds() { }
 
-        public bool RequestDelete();
+        public bool RequestDelete()
+        {
+            ObjectDelegate objDelegate = GetObjectDelegate();
+
+            if (objDelegate.TicksUntilDeletion == -1)
+            {
+                objDelegate.TicksUntilDeletion = 0;
+                return true;
+            }
+
+            return false;
+        }
+
+        public void OnDelete() { }
 
         public bool IsDeleteRequested()
         {
@@ -32,11 +60,13 @@ namespace EppNet.Sim
             return (d != null && d.TicksUntilDeletion > -1);
         }
 
-        internal void SetObjectDelegate(ObjectDelegate oDelegate);
-        public ObjectDelegate GetObjectDelegate();
+        public ObjectDelegate GetObjectDelegate() => ObjectManager.Get().GetDelegateFor(this);
 
-        internal void SetID(long id);
-        public long GetID();
+        public long GetID()
+        {
+            ObjectDelegate d = GetObjectDelegate();
+            return (d != null ? d.ID : -1);
+        }
 
     }
 

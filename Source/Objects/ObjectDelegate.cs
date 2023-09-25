@@ -26,6 +26,7 @@ namespace EppNet.Objects
         public int TicksUntilDeletion { internal set; get; }
 
         internal SortedDictionary<ulong, ObjectState> _savedStates;
+        internal Queue<Update> _enqueuedUpdates;
 
         internal ObjectDelegate(ObjectRegistration registration, ISimUnit userObject, long id)
         {
@@ -35,6 +36,7 @@ namespace EppNet.Objects
 
             this.TicksUntilDeletion = -1;
             this._savedStates = new SortedDictionary<ulong, ObjectState>();
+            this._enqueuedUpdates = new Queue<Update>();
         }
 
         public ObjectState GetStateAt(ulong time)
