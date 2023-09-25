@@ -6,7 +6,7 @@
 
 using EppNet.Sim;
 
-namespace EppNet.Data
+namespace EppNet.Data.Datagrams
 {
 
     public class PingDatagram : Datagram

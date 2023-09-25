@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using EppNet.Data.Datagrams;
 
 namespace EppNet.Data
 {

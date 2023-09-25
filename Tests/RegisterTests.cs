@@ -4,9 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Data;
 using EppNet.Registers;
-
+using EppNet.Data.Datagrams;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace EppNet.Tests

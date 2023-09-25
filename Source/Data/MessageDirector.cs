@@ -11,6 +11,7 @@ using ENet;
 using EppNet.Connections;
 using EppNet.Registers;
 using EppNet.Sim;
+using EppNet.Data.Datagrams;
 using EppNet.Utilities;
 
 using System;

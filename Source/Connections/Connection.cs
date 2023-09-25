@@ -9,6 +9,7 @@ using ENet;
 using EppNet.Core;
 using EppNet.Data;
 using EppNet.Sockets;
+using EppNet.Data.Datagrams;
 
 namespace EppNet.Connections
 {

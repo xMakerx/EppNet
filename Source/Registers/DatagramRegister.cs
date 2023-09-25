@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
-using EppNet.Data;
+using EppNet.Data.Datagrams;
 
 namespace EppNet.Registers
 {

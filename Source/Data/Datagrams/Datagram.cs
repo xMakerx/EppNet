@@ -6,7 +6,7 @@
 
 using EppNet.Connections;
 
-namespace EppNet.Data
+namespace EppNet.Data.Datagrams
 {
 
     public class Datagram : BytePayload, IDatagram

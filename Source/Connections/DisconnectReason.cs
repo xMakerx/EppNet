@@ -16,12 +16,28 @@ namespace EppNet.Connections
 
         public static DisconnectReason[] Reasons = { Unknown, TimedOut, Ejected, Quit };
 
+        public static DisconnectReason? GetFromID(byte id)
+        {
+            foreach (var reason in Reasons)
+            {
+                if (reason.ID == id)
+                    return reason;
+            }
+
+            return null;
+        }
+
         public readonly byte ID;
         public string Message { internal set; get; }
 
         public DisconnectReason(byte id, string message)
         {
             this.ID = id;
+            this.Message = message;
+        }
+
+        public void SetMessage(string message)
+        {
             this.Message = message;
         }
 
