@@ -15,10 +15,7 @@ namespace EppNet.Objects
     public class Update : IPoolable
     {
 
-        public static readonly int DefaultPoolCapacity = 100;
-        public static readonly int MaxPoolCapacity = 500;
-
-        private static UpdatePool _updatePool = new UpdatePool(DefaultPoolCapacity, MaxPoolCapacity);
+        private static UpdatePool _updatePool = new UpdatePool();
 
         /// <summary>
         /// See <see cref="ObjectPool{T}.SetCapacity(int)"/>
@@ -68,22 +65,27 @@ namespace EppNet.Objects
             if (mDef == null)
                 throw new ArgumentException($"[Update#From()] Could not deserialize update for Object of Type {reg.GetRegisteredType().Name} with ID {objDelegate.ID}. No member definition found!");
 
-            byte dgArgs = datagram.ReadByte();
             int numArgs = mDef.ParameterTypes.Length;
+            object[] args = null;
 
-            if (dgArgs != numArgs)
-                throw new ArgumentException($"[Update#From()] Could not deserialize update for Object of Type {reg.GetRegisteredType().Name} with ID {objDelegate.ID}. Incompatible arguments!");
-
-            object[] args = new object[numArgs];
-            for (int i = 0; i < numArgs; i++)
+            if (numArgs > 0)
             {
-                Type type = mDef.ParameterTypes[i];
-                object o = datagram.TryRead(type);
+                args = new object[numArgs];
+                int dgArgs = datagram.ReadByte();
 
-                if (o == null)
-                    throw new FormatException($"[Update#WriteTo()] Datagram does not know how to deserialize {type.Name}!");
+                if (dgArgs != numArgs)
+                    throw new ArgumentException($"[Update#From()] Could not deserialize update for Object of Type {reg.GetRegisteredType().Name} with ID {objDelegate.ID}. Incompatible arguments!");
 
-                args[i] = o;
+                for (int i = 0; i < numArgs; i++)
+                {
+                    Type type = mDef.ParameterTypes[i];
+                    object o = datagram.TryRead(type);
+
+                    if (o == null)
+                        throw new FormatException($"[Update#WriteTo()] Datagram does not know how to deserialize {type.Name}!");
+
+                    args[i] = o;
+                }
             }
 
             Update update = _GetFromPoolOrInstantiate();
