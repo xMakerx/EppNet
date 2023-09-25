@@ -17,6 +17,7 @@ namespace EppNet.Objects
     {
 
         public static readonly int DefaultPoolCapacity = 100;
+        public static readonly int MinimumMaxPoolCapacity = 100;
         public static readonly int MaxPoolCapacity = 500;
 
         private static Queue<Update> _updatePool;
@@ -35,9 +36,28 @@ namespace EppNet.Objects
                 _updatePool.Enqueue(new Update());
         }
 
-        public static void SetMaxPoolCapacity(int capacity)
+        /// <summary>
+        /// Sets the maximum amount of instances in the object pool.
+        /// NOTE: If the object pool has already been instantiated and the new maximum capacity
+        /// is greater than the amount in the pool, the extras will be dequeued.
+        /// </summary>
+        /// <param name="maxCapacity"></param>
+        /// <exception cref="ArgumentOutOfRangeException">Maximum capacity is less than <see cref="MinimumMaxPoolCapacity"/></exception>
+
+        public static void SetMaxPoolCapacity(int maxCapacity)
         {
-            _maxPoolCapacity = capacity;
+            if (maxCapacity < MinimumMaxPoolCapacity)
+                throw new ArgumentOutOfRangeException($"Update Pool Maximum Capacity must be at least {MinimumMaxPoolCapacity}!");
+
+            _maxPoolCapacity = maxCapacity;
+
+            if (_updatePool != null && _maxPoolCapacity < _updatePool.Count)
+            {
+                int toRemove = _updatePool.Count - _maxPoolCapacity;
+
+                for (int i = 0; i < toRemove; i++)
+                    _updatePool.Dequeue();
+            }
         }
 
         private static Update _GetFromPoolOrInstantiate()
