@@ -8,83 +8,38 @@ using EppNet.Data.Datagrams;
 using EppNet.Utilities;
 
 using System;
-using System.Collections.Generic;
 
 namespace EppNet.Objects
 {
 
-    public class Update : IDisposable
+    public class Update : IPoolable
     {
 
         public static readonly int DefaultPoolCapacity = 100;
-        public static readonly int MinimumMaxPoolCapacity = 100;
         public static readonly int MaxPoolCapacity = 500;
 
-        private static Queue<Update> _updatePool;
-        private static int _maxPoolCapacity = MaxPoolCapacity;
+        private static UpdatePool _updatePool = new UpdatePool(DefaultPoolCapacity, MaxPoolCapacity);
 
         /// <summary>
-        /// Sets the capacity of the update pool and fills it
+        /// See <see cref="ObjectPool{T}.SetCapacity(int)"/>
         /// </summary>
         /// <param name="capacity"></param>
 
-        public static void SetPoolCapacity(int capacity)
-        {
-            _updatePool = new Queue<Update>(capacity);
+        public static void SetPoolCapacity(int capacity) => _updatePool.SetCapacity(capacity);
 
-            for (int i = 0; i < capacity; i++)
-                _updatePool.Enqueue(new Update());
-        }
 
         /// <summary>
-        /// Sets the maximum amount of instances in the object pool.
-        /// NOTE: If the object pool has already been instantiated and the new maximum capacity
-        /// is greater than the amount in the pool, the extras will be dequeued.
+        /// See <see cref="ObjectPool{T}.SetMaxCapacity(int)"/>
         /// </summary>
         /// <param name="maxCapacity"></param>
-        /// <exception cref="ArgumentOutOfRangeException">Maximum capacity is less than <see cref="MinimumMaxPoolCapacity"/></exception>
 
-        public static void SetMaxPoolCapacity(int maxCapacity)
-        {
-            if (maxCapacity < MinimumMaxPoolCapacity)
-                throw new ArgumentOutOfRangeException($"Update Pool Maximum Capacity must be at least {MinimumMaxPoolCapacity}!");
+        public static void SetMaxPoolCapacity(int maxCapacity) => _updatePool.SetMaxCapacity(maxCapacity);
 
-            _maxPoolCapacity = maxCapacity;
-
-            if (_updatePool != null && _maxPoolCapacity < _updatePool.Count)
-            {
-                int toRemove = _updatePool.Count - _maxPoolCapacity;
-
-                for (int i = 0; i < toRemove; i++)
-                    _updatePool.Dequeue();
-            }
-        }
-
-        private static Update _GetFromPoolOrInstantiate()
-        {
-            if (_updatePool == null)
-                SetPoolCapacity(DefaultPoolCapacity);
-
-            if (_updatePool.Count == 0)
-                return new Update();
-            else
-                return _updatePool.Dequeue();
-        }
-
-        private static void _TryEnqueue(Update update)
-        {
-            if (update == null)
-                return;
-
-            if (_updatePool == null)
-            {
-                SetPoolCapacity(DefaultPoolCapacity - 1);
-                _updatePool.Enqueue(update);
-            }
-
-            if (_updatePool.Count < _maxPoolCapacity)
-                _updatePool.Enqueue(update);
-        }
+        /// <summary>
+        /// See <see cref="ObjectPool{T}.Get"/>
+        /// </summary>
+        /// <returns></returns>
+        private static Update _GetFromPoolOrInstantiate() => _updatePool.Get() as Update;
 
         public static Update For(ObjectDelegate objDelegate, ObjectMemberDefinition mDef, object[] args)
         {
@@ -148,7 +103,7 @@ namespace EppNet.Objects
 
         private bool _initialized;
 
-        private Update()
+        internal Update()
         {
             this.ObjectDelegate = null;
             this.Registration = null;
@@ -222,6 +177,8 @@ namespace EppNet.Objects
             }
         }
 
+        public bool IsInitialized() => _initialized;
+
         public void Dispose()
         {
             this.ObjectDelegate = null;
@@ -231,7 +188,7 @@ namespace EppNet.Objects
             this._initialized = false;
 
             // Let's try to add back to the pool.
-            _TryEnqueue(this);
+            _updatePool.TryReturnToPool(this);
         }
 
     }
