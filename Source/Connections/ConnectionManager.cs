@@ -10,6 +10,8 @@ using EppNet.Sockets;
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace EppNet.Connections
 {
@@ -21,7 +23,7 @@ namespace EppNet.Connections
         public event Action<DisconnectEvent> OnConnectionLost;
 
         internal readonly Socket _socket;
-        protected readonly IDictionary<uint, Connection> _connections;
+        protected readonly Dictionary<uint, Connection> _connections;
 
         public ConnectionManager(Socket socket)
         {
@@ -31,14 +33,15 @@ namespace EppNet.Connections
 
         public bool HandleNewConnection(Peer enetPeer)
         {
-            bool isNew = !_connections.ContainsKey(enetPeer.ID);
+
+            // Prevents an add'l hash lookup
+            ref Connection valOrNew = ref CollectionsMarshal.GetValueRefOrAddDefault(_connections,
+                enetPeer.ID, out bool isNew);
 
             if (isNew)
             {
-                Connection conn = new Connection(this, enetPeer);
-                _connections.Add(enetPeer.ID, conn);
-
-                OnConnectionEstablished?.Invoke(conn);
+                valOrNew = new Connection(this, enetPeer);
+                OnConnectionEstablished?.Invoke(valOrNew);
             }
 
             return isNew;
@@ -46,15 +49,17 @@ namespace EppNet.Connections
 
         public bool HandleConnectionLost(Peer enetPeer, DisconnectReason reason)
         {
-            _connections.TryGetValue(enetPeer.ID, out Connection conn);
+            // Prevents an add'l hash lookup
+            ref Connection valOrNull = ref CollectionsMarshal.GetValueRefOrNullRef(_connections, enetPeer.ID);
 
-            if (conn != null)
+            if (!Unsafe.IsNullRef(ref valOrNull))
             {
                 _connections.Remove(enetPeer.ID);
-                OnConnectionLost?.Invoke(new DisconnectEvent(conn, reason));
+                OnConnectionLost?.Invoke(new DisconnectEvent(valOrNull, reason));
+                return true;
             }
 
-            return (conn != null);
+            return false;
         }
 
         public Connection Get(uint id)

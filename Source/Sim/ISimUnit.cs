@@ -30,7 +30,7 @@ namespace EppNet.Sim
             if (args.Length != mDef.ParameterTypes.Length)
                 throw new System.ArgumentNullException($"[ISimUnit#SendUpdate()] Update {memberName} was provided {args.Length} arguments; expected {mDef.ParameterTypes.Length}");
 
-            myDelegate._enqueuedUpdates.Enqueue(Update.For(myDelegate, mDef, args));
+            myDelegate.EnqueueUpdate(Update.For(myDelegate, mDef, args));
             return true;
         }
 

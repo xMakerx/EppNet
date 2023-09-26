@@ -144,7 +144,10 @@ namespace EppNet.Objects
             if (!_initialized)
                 throw new ArgumentException("Update has not been initialized correct! Did you forget to call #Initialize()?");
 
-            this.MemberDefinition.Invoke(ObjectDelegate, Arguments);
+            if (Arguments == null)
+                MemberDefinition.Invoke(ObjectDelegate);
+            else
+                MemberDefinition.Invoke(ObjectDelegate, Arguments);
         }
 
         public void WriteTo(Datagram datagramIn)
