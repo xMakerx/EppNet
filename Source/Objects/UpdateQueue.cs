@@ -4,29 +4,23 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
 using EppNet.Utilities;
-
-using System.Collections.Generic;
 
 namespace EppNet.Objects
 {
 
-    public class UpdateQueue
+    public class UpdateQueue : LockQueue<Update>
     {
 
         public readonly bool IsSnapshotQueue;
 
-        protected Queue<Update> _queue;
-        protected object _lock;
-
         public UpdateQueue(bool isSnapshotQueue = false)
         {
             this.IsSnapshotQueue = isSnapshotQueue;
-            this._queue = new Queue<Update>();
-            this._lock = new object();
         }
 
-        public bool TryEnqueue(Update item)
+        public override bool TryEnqueue(Update item)
         {
             if (item == null)
                 return false;
@@ -39,29 +33,16 @@ namespace EppNet.Objects
 
                 if ((snapshotUpdate && IsSnapshotQueue) || (!snapshotUpdate && !IsSnapshotQueue))
                 {
-                    if (_queue.Contains(item))
+                    if (Contains(item))
                         return false;
 
-                    _queue.Enqueue(item);
+                    Enqueue(item);
                     return true;
                 }
 
                 return false;
             }
 
-        }
-
-        public List<Update> FlushQueue()
-        {
-            lock (_lock)
-            {
-                List<Update> updates = new List<Update>();
-                
-                for (int i = 0; i < _queue.Count; i++)
-                    updates.Add(_queue.Dequeue());
-
-                return updates;
-            }
         }
 
     }

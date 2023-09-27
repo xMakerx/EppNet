@@ -7,11 +7,10 @@
 using ENet;
 
 using EppNet.Sockets;
+using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace EppNet.Connections
 {
@@ -33,34 +32,21 @@ namespace EppNet.Connections
 
         public bool HandleNewConnection(Peer enetPeer)
         {
+            Connection conn = new Connection(this, enetPeer);
+            bool added = _connections.TryAddEntry(enetPeer.ID, conn);
 
-            // Prevents an add'l hash lookup
-            ref Connection valOrNew = ref CollectionsMarshal.GetValueRefOrAddDefault(_connections,
-                enetPeer.ID, out bool exists);
+            if (added)
+                OnConnectionEstablished?.Invoke(conn);
 
-            if (!exists)
-            {
-                valOrNew = new Connection(this, enetPeer);
-                OnConnectionEstablished?.Invoke(valOrNew);
-            }
-
-            return !exists;
+            return added;
         }
 
-        public bool HandleConnectionLost(Peer enetPeer, DisconnectReason reason)
-        {
-            // Prevents an add'l hash lookup
-            ref Connection valOrNull = ref CollectionsMarshal.GetValueRefOrNullRef(_connections, enetPeer.ID);
-
-            if (!Unsafe.IsNullRef(ref valOrNull))
+        public bool HandleConnectionLost(Peer enetPeer, DisconnectReason reason) =>
+            _connections.ExecuteIfExists(enetPeer.ID, (id, conn) =>
             {
-                _connections.Remove(enetPeer.ID);
-                OnConnectionLost?.Invoke(new DisconnectEvent(valOrNull, reason));
-                return true;
-            }
-
-            return false;
-        }
+                OnConnectionLost?.Invoke(new DisconnectEvent(conn, reason));
+                _connections.Remove(id);
+            });
 
         public Connection Get(uint id)
         {
