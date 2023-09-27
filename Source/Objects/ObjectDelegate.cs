@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using EppNet.Sim;
+using EppNet.Utilities;
 
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace EppNet.Objects
 {
@@ -27,9 +27,9 @@ namespace EppNet.Objects
         public int TicksUntilDeletion { internal set; get; }
 
         internal SortedDictionary<ulong, ObjectState> _savedStates;
-        protected Queue<Update> _enqueuedUpdates;
 
-        protected object _queueLock;
+        public UpdateQueue OutgoingReliableUpdates { protected set; get; }
+        public UpdateQueue OutgoingSnapshotUpdates { protected set; get; }
 
         internal ObjectDelegate(ObjectRegistration registration, ISimUnit userObject, long id)
         {
@@ -39,38 +39,21 @@ namespace EppNet.Objects
 
             this.TicksUntilDeletion = -1;
             this._savedStates = new SortedDictionary<ulong, ObjectState>();
-            this._enqueuedUpdates = new Queue<Update>();
-            this._queueLock = new object();
+            this.OutgoingReliableUpdates = new UpdateQueue();
+            this.OutgoingSnapshotUpdates = new UpdateQueue(isSnapshotQueue: true);
         }
 
-        public bool EnqueueUpdate(Update update)
+        public bool EnqueueOutgoing(Update update)
         {
             if (update == null)
                 return false;
 
-            lock (_queueLock)
-            {
-                if (_enqueuedUpdates.Contains(update))
-                    return false;
+            bool addedToReliable = OutgoingReliableUpdates.TryEnqueue(update);
 
-                _enqueuedUpdates.Enqueue(update);
-                return true;
-            }
+            if (!addedToReliable)
+                return OutgoingSnapshotUpdates.TryEnqueue(update);
 
-        }
-
-        public List<Update> GetAndClearUpdateQueue()
-        {
-            lock (_queueLock)
-            {
-                List<Update> updates = new List<Update>();
-                int queued = _enqueuedUpdates.Count;
-
-                for (int i = 0; i < queued; i++)
-                    updates.Add(_enqueuedUpdates.Dequeue());
-
-                return updates;
-            }
+            return addedToReliable;
         }
 
         public ObjectState GetStateAt(ulong time)

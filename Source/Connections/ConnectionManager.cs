@@ -36,15 +36,15 @@ namespace EppNet.Connections
 
             // Prevents an add'l hash lookup
             ref Connection valOrNew = ref CollectionsMarshal.GetValueRefOrAddDefault(_connections,
-                enetPeer.ID, out bool isNew);
+                enetPeer.ID, out bool exists);
 
-            if (isNew)
+            if (!exists)
             {
                 valOrNew = new Connection(this, enetPeer);
                 OnConnectionEstablished?.Invoke(valOrNew);
             }
 
-            return isNew;
+            return !exists;
         }
 
         public bool HandleConnectionLost(Peer enetPeer, DisconnectReason reason)

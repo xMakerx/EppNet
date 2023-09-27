@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: EjectDatagram.cs
+/// Filename: DisconnectDatagram.cs
 /// Date: September 25, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
@@ -12,12 +12,11 @@ namespace EppNet.Data.Datagrams
 
     public class DisconnectDatagram : Datagram
     {
-
         public DisconnectReason Reason { internal set; get; } 
 
         public DisconnectDatagram()
         {
-            this.Reason = DisconnectReason.Ejected;
+            this.Reason = DisconnectReason.Quit;
             this.Header = 0x2;
             this.ChannelID = 0x0;
         }
@@ -72,6 +71,12 @@ namespace EppNet.Data.Datagrams
             }
             else
                 this.Reason = new DisconnectReason(reasonId, reasonMessage);
+        }
+
+        public override void Dispose()
+        {
+            this.Reason = default;
+            base.Dispose();
         }
 
     }
