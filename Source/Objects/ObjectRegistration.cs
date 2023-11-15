@@ -8,11 +8,8 @@ using EppNet.Attributes;
 using EppNet.Registers;
 using EppNet.Utilities;
 
-using Microsoft.Diagnostics.Tracing.Parsers.ClrPrivate;
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 using Notify = EppNet.Utilities.LoggingExtensions;
@@ -22,6 +19,8 @@ namespace EppNet.Objects
 
     public class ObjectRegistration : Registration
     {
+
+        public static readonly StringComparer StringSortComparer = StringComparer.Ordinal;
 
         public readonly NetworkObjectAttribute ObjectAttribute;
         protected internal SortedList<string, ObjectMemberDefinition> _methods;
@@ -34,6 +33,58 @@ namespace EppNet.Objects
             this._props = null;
         }
 
+
+        /// <summary>
+        /// Fetches an <see cref="ObjectMemberDefinition"/> by name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns>An <see cref="ObjectMemberDefinition"/> instance or null</returns>
+
+        public ObjectMemberDefinition GetMemberByName(string name)
+        {
+            // Sanitize the input
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
+
+            ObjectMemberDefinition def = null;
+
+            if (_methods != null && _methods.TryGetValue(name, out def))
+                return def;
+
+            if (_props != null && _props.TryGetValue(name, out def))
+                return def;
+
+            return def;
+        }
+
+        /// <summary>
+        /// Fetches a method's <see cref="ObjectMemberDefinition"/> by index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+
+        public ObjectMemberDefinition GetMethod(int index) => _GetMember(index, ref _methods);
+
+        /// <summary>
+        /// Fetches a property's <see cref="ObjectMemberDefinition"/> by index.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public ObjectMemberDefinition GetProperty(int index) => _GetMember(index, ref _props);
+
+        public override bool Compile()
+        {
+            if (IsCompiled())
+                return false;
+
+            Notify.Verbose($"Compiling {GetRegisteredType().Name}...");
+            _Internal_CompileConstructors();
+            _Internal_CompileMembers();
+            _compiled = true;
+
+            return true;
+        }
+
         protected void _Internal_CompileMembers()
         {
             Type checkType = Type.BaseType;
@@ -44,10 +95,8 @@ namespace EppNet.Objects
             // Let's traverse the tree for base type network objects
             if (checkType != typeof(object))
             {
-                // This type has at least one ancestor.
-
-                // Calm down, calm down. This isn't an infinite loop
-                // if you read the code below.
+                // This type has at least one ancestor, let's
+                // traverse the tree for network enabled superclasses
                 while (true)
                 {
                     if (!(checkType != null && checkType.IsDefined(typeof(NetworkObjectAttribute), false)))
@@ -64,6 +113,10 @@ namespace EppNet.Objects
             Dictionary<string, List<MethodInfo>> name2Method = new Dictionary<string, List<MethodInfo>>();
             Dictionary<string, PropertyInfo> name2Property = new Dictionary<string, PropertyInfo>();
 
+            // We traverse the captured types backwards as we want the derived types' definitions to override
+            // matching base type definitions.
+            // i.e. a base class network method should be overridden by a derived class's network method
+            // with a matching signature in the registration.
             for (int i = types.Count - 1; i > -1; i--)
             {
                 Type type = types[i];
@@ -86,6 +139,8 @@ namespace EppNet.Objects
                             ParameterInfo[] rParams = result.GetParameters();
 
                             // Let's consider if we need to replace the existing result with this new one.
+                            // We do this by identifying if a method exists in the dictionary with a matching
+                            // signature.
                             if (result.ReturnType == method.ReturnType && rParams.Length == mParams.Length)
                             {
                                 int numMatches = 0;
@@ -165,7 +220,7 @@ namespace EppNet.Objects
                             ObjectMemberDefinition pDef = new ObjectMemberDefinition(propInfo, netAttr);
 
                             if (_props == null)
-                                _props = new SortedList<string, ObjectMemberDefinition>(StringComparer.OrdinalIgnoreCase);
+                                _props = new SortedList<string, ObjectMemberDefinition>(StringSortComparer);
 
                             _props.Add(propInfo.Name, pDef);
                             continue;
@@ -214,7 +269,7 @@ namespace EppNet.Objects
                             ObjectMemberDefinition mDef = new ObjectMemberDefinition(method, netAttr, getterMthd);
 
                             if (_methods == null)
-                                _methods = new SortedList<string, ObjectMemberDefinition>(StringComparer.OrdinalIgnoreCase);
+                                _methods = new SortedList<string, ObjectMemberDefinition>(StringSortComparer);
 
                             _methods.Add(method.Name, mDef);
                         }
@@ -222,6 +277,11 @@ namespace EppNet.Objects
                     }
                 }
             }
+
+            // We want to be able to locate methods and properties by index.
+            // Both methods and props are inside sorted lists that automatically
+            // sort the entries. This is done at the end to ensure all the methods
+            // and properties have been added and sorted.
 
             if (_methods != null)
             {
@@ -251,47 +311,6 @@ namespace EppNet.Objects
                 definition = list.GetValueAtIndex(index);
 
             return definition;
-        }
-
-        public ObjectMemberDefinition GetMemberByName(string name)
-        {
-            if (name == null || name?.Length == 0)
-                return null;
-
-            _methods.TryGetValue(name, out ObjectMemberDefinition def);
-
-            if (def == null)
-                _props.TryGetValue(name, out def);
-
-            return def;
-        }
-
-        /// <summary>
-        /// Fetches a method's <see cref="ObjectMemberDefinition"/> by index.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-
-        public ObjectMemberDefinition GetMethod(int index) => _GetMember(index, ref _methods);
-
-        /// <summary>
-        /// Fetches a property's <see cref="ObjectMemberDefinition"/> by index.
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public ObjectMemberDefinition GetProperty(int index) => _GetMember(index, ref _props);
-
-        public override bool Compile()
-        {
-            if (IsCompiled())
-                return false;
-
-            Notify.Verbose($"Compiling {GetRegisteredType().Name}...");
-            _Internal_CompileConstructors();
-            _Internal_CompileMembers();
-            _compiled = true;
-
-            return true;
         }
 
     }
