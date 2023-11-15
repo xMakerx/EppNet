@@ -5,10 +5,8 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Objects;
-using EppNet.Sim;
 
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace EppNet.Zones
 {
@@ -22,7 +20,7 @@ namespace EppNet.Zones
 
         public ZoneDelegate(ObjectRegistration reg, IZone userObject, long id) : base(reg, userObject, id)
         {
-            this.Zone = (IZone)userObject;
+            this.Zone = userObject;
             this.ParentZone = null;
             this._children = null;
         }
@@ -50,11 +48,9 @@ namespace EppNet.Zones
 
         public bool RemoveChildZone(ZoneDelegate zone)
         {
-            // Ensure we were passed a valid delegate
-            if (!(zone != null && zone != this))
-                return false;
-
-            if (_children == null)
+            // Ensure we were passed a valid delegate,
+            // and we have a set of delegates.
+            if (!IsOtherValid(zone) || _children == null)
                 return false;
 
             bool removed = _children.Remove(zone);

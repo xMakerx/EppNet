@@ -5,7 +5,6 @@
 //////////////////////////////////////////////
 
 using EppNet.Sim;
-using EppNet.Utilities;
 
 using System.Collections.Generic;
 
@@ -61,6 +60,15 @@ namespace EppNet.Objects
             _savedStates.TryGetValue(time, out ObjectState state);
             return state;
         }
+
+        /// <summary>
+        /// Checks that the specified <see cref="ObjectDelegate"/> isn't null AND
+        /// <br/>isn't equivalent to the calling instance.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns>Whether or not the other instance is valid</returns>
+
+        public bool IsOtherValid(ObjectDelegate other) => (other != null && other != this);
 
     }
 

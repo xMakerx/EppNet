@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Core;
 using EppNet.Registers;
 using EppNet.Sim;
 
@@ -23,10 +24,12 @@ namespace EppNet.Objects
 
         protected readonly Simulation _sim;
 
+        protected readonly Distribution _distro_type;
+
         /// <summary>
         /// These are our created objects.
         /// </summary>
-        protected Dictionary<long, ObjectDelegate> _objects;
+        protected Dictionary<long, ObjectDelegate> _id2Delegate;
 
         protected Dictionary<ISimUnit, ObjectDelegate> _unit2Delegate;
 
@@ -37,8 +40,9 @@ namespace EppNet.Objects
 
             ObjectManager._instance = this;
             this._sim = Simulation.Get();
-            this._objects = new Dictionary<long, ObjectDelegate>();
+            this._id2Delegate = new Dictionary<long, ObjectDelegate>();
             this._unit2Delegate = new Dictionary<ISimUnit, ObjectDelegate>();
+            this._distro_type = _sim.DistroType;
         }
 
         public bool Delete(ObjectDelegate objDelegate)
@@ -47,8 +51,11 @@ namespace EppNet.Objects
                 return false;
 
             long id = objDelegate.ID;
-            bool removed = _objects.Remove(id);
+            bool removed = _id2Delegate.Remove(id);
             _unit2Delegate.Remove(objDelegate.UserObject);
+
+            // Call the onDelete method
+            objDelegate.UserObject.OnDelete();
 
             return removed;
         }
@@ -66,7 +73,7 @@ namespace EppNet.Objects
         {
             ISimUnit unit = null;
             ObjectDelegate objDel = null;
-            string distroName = Simulation.Get().DistroType.ToString();
+            string distroName = nameof(_distro_type);
 
             if (reg == null)
             {
@@ -93,23 +100,25 @@ namespace EppNet.Objects
 
                 if (customGenerator)
                     // The user has specified a generator
-                    unit = reg.ObjectAttribute.Creator();
+                    unit = reg.ObjectAttribute.Creator.Invoke();
                 else
                     unit = reg.NewInstance() as ISimUnit;
 
-                if (unit != null)
+                if (unit == null)
                 {
-                    id = (id == -1) ? _AllocateId() : id;
-                    objDel = new ObjectDelegate(reg, unit, id);
-
-                    _objects.Add(id, objDel);
-                    _unit2Delegate.Add(unit, objDel);
-                    Log.Verbose($"[ObjectManager#CreateObject()] Created new Object Instance of Type {typeName} assigned with ID {id}.");
-                    return objDel;
+                    // Something went wrong and we didn't get a valid unit back.
+                    Log.Fatal($"[ObjectManager#CreateObject()] Failed to create new instance of Type {typeName}. ISimUnit is null. Custom Constructor: {customGenerator}.");
+                    return null;
                 }
 
-                // Something went wrong and we didn't get a valid unit back.
-                Log.Fatal($"[ObjectManager#CreateObject()] Failed to create new instance of Type {typeName}. ISimUnit is null. Custom Constructor: {customGenerator}.");
+                id = (id == -1) ? _AllocateId() : id;
+                objDel = new ObjectDelegate(reg, unit, id);
+
+                _id2Delegate.Add(id, objDel);
+                _unit2Delegate.Add(unit, objDel);
+                Log.Verbose($"[ObjectManager#CreateObject()] Created new Object Instance of Type {typeName} assigned with ID {id}.");
+                return objDel;
+
             }
             catch (Exception ex)
             {
@@ -137,11 +146,11 @@ namespace EppNet.Objects
             return id;
         }
 
-        public bool IsIdAvailable(long id) => !_objects.ContainsKey(id);
+        public bool IsIdAvailable(long id) => !_id2Delegate.ContainsKey(id);
 
         public ObjectDelegate GetObject(long id)
         {
-            _objects.TryGetValue(id, out ObjectDelegate result);
+            _id2Delegate.TryGetValue(id, out ObjectDelegate result);
             return result;
         }
 

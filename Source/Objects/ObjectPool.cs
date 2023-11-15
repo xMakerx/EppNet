@@ -72,7 +72,7 @@ namespace EppNet.Objects
                     _pool.Enqueue(_MakeNew());
 
             else if (_pool.Count > capacity)
-                // Deque extras
+                // Dequeue extras
                 for (int i = 0; i < (_pool.Count - capacity); i++)
                     _pool.Dequeue();
 

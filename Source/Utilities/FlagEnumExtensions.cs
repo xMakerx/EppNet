@@ -19,6 +19,12 @@ namespace EppNet.Utilities
             Trace.Assert(typeof(T).IsEnum, $"Type '{typeof(T).Name}` is not a valid Enum!");
         }
 
+        public static string ToString<T>(this T a) where T : struct, IConvertible, IComparable, IFormattable
+        {
+            _EnsureEnum<T>();
+            return nameof(a);
+        }
+
         /*
 
         public static bool HandleOverlappingFlags<T>(this T a, T b, Dictionary<T, T> overlappingFlags) where T : struct, IConvertible, IComparable, IFormattable

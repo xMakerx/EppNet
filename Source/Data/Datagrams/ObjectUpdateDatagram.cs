@@ -46,16 +46,16 @@ namespace EppNet.Data.Datagrams
             base.Write();
 
             // Let's only send the objects that have pending updates.
-
+            /*
             foreach (ObjectDelegate obj in Objects)
             {
                 List<Update> outgoing = SnapshotUpdates ? 
-                    obj.OutgoingSnapshotUpdates.FlushQueue()
+                    obj.OutgoingSnapshotUpdates.Flush()
                     : obj.OutgoingReliableUpdates.FlushQueue();
 
                 if (outgoing.Count > 0)
                     Transients.Add(obj, outgoing);
-            }
+            }*/
 
             // Let's record how many objects are in this datagram.
             WriteByte((byte)Transients.Count);

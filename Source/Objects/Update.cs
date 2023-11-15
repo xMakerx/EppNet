@@ -45,6 +45,13 @@ namespace EppNet.Objects
             return update;
         }
 
+        public static Update For(ObjectDelegate objDelegate, string updateName, object[] args)
+        {
+            Update update = _GetFromPoolOrInstantiate();
+            update.Initialize(objDelegate, updateName, args);
+            return update;
+        }
+
         public static Update From(ObjectDelegate objDelegate, Datagram datagram)
         {
             if (objDelegate == null)

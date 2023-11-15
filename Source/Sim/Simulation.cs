@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using Disruptor.Dsl;
+
 using ENet;
 
 using EppNet.Attributes;
@@ -16,6 +18,11 @@ using EppNet.Utilities;
 using Serilog;
 
 using System;
+using System.Diagnostics;
+using System.Threading;
+
+using ENetLib = ENet.Library;
+using Notify = EppNet.Utilities.LoggingExtensions;
 
 namespace EppNet.Sim
 {
@@ -66,13 +73,33 @@ namespace EppNet.Sim
                 uint t = 0;
 
                 if (_instance != null && _instance._initialized)
-                    t = ENet.Library.Time;
+                    t = ENetLib.Time;
 
                 return t;
             }
         }
 
         public static ulong Time => (_instance != null ? _instance.Clock.Time : 0);
+
+        public static bool StopRequested
+        {
+            set
+            {
+                // Must have an instance
+                if (_instance == null)
+                    return;
+
+                if (value != _instance._stopRequested)
+                    _instance._stopRequested = value;
+            }
+
+            get => (_instance != null) ? _instance._stopRequested : false;
+        }
+
+        public static bool Running
+        {
+            get => (_instance != null) ? _instance._running : false;
+        }
 
         public readonly Socket Socket;
         public readonly MessageDirector MessageDirector;
@@ -81,6 +108,11 @@ namespace EppNet.Sim
         public Distribution DistroType { internal set; get; }
 
         protected bool _initialized;
+
+        protected Timer _tickerTimer;
+        protected Disruptor<SimulationTickEvent> _tickQueue;
+        protected bool _stopRequested;
+        protected bool _running;
 
         public Simulation(Socket socket)
         {
@@ -91,17 +123,22 @@ namespace EppNet.Sim
             Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Debug().CreateLogger();
 
             Simulation._instance = this;
+            this._initialized = false;
+            this._tickerTimer = null;
+            this._tickQueue = null;
+            this._stopRequested = false;
+            this._running = false;
+
             this.Socket = socket;
             this.MessageDirector = new MessageDirector();
             this.Clock = new SimClock(this);
-            this._initialized = false;
         }
 
         public void Initialize(Callbacks enet_callbacks = null)
         {
             if (LoggingExtensions.AssertFalseOrLog(_initialized, 
                 Serilog.Events.LogEventLevel.Warning, 
-                "[Simulation#Initialize()] Called initialize twice?"))
+                "Called initialize twice?"))
                 return;
 
             AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
@@ -116,30 +153,108 @@ namespace EppNet.Sim
 
             if (enet_callbacks != null)
             {
-                Log.Information("[Simulation#Initialize()] Initializing with ENet callbacks");
-                _initialized = ENet.Library.Initialize(enet_callbacks);
+                Notify.Info("Initializing with ENet callbacks...");
+                _initialized = ENetLib.Initialize(enet_callbacks);
             }
             else
             {
-                Log.Information("[Simulation#Initialize()] Initializing without ENet callbacks");
-                _initialized = ENet.Library.Initialize();
+                Notify.Info("Initializing without ENet callbacks...");
+                _initialized = ENetLib.Initialize();
             }
 
-            if (LoggingExtensions.AssertTrueOrFatal(_initialized, "[Simulation#Initialize()] Failed to initialize the ENet Library!"))
+            if (Notify.AssertTrueOrFatal(_initialized, "Failed to initialize the ENet Library!"))
             {
+                Notify.Info($"Initialized ENet ver-{ENetLib.version}!");
+
                 // We were able to initialize ENet successfully!
-                Log.Information("[Simulation#Initialize()] Compiling Datagram expression trees...");
+                Notify.Info("Compiling Datagram expression trees...");
                 DatagramRegister.Get().Compile();
 
-                Log.Information("[Simulation#Initialize()] Compiling custom object expression trees...");
+                Notify.Info("Compiling Object expression trees...");
                 ObjectRegister.Get().Compile();
             }
+        }
+
+        public void Start()
+        {
+            if (!_initialized)
+            {
+                Notify.Warn("Tried to start without first calling Simulation#Initialize()!");
+                return;
+            }
+
+            if (_running)
+            {
+                Notify.Warn("The simulation is already running!");
+                return;
+            }
+
+            _stopRequested = false;
+
+            _tickQueue = new Disruptor<SimulationTickEvent>(() => new SimulationTickEvent(), ringBufferSize: 1024);
+            
+            // FIXME: Setup processing order and start disruptor
+
+
+            int period = SimSettings.CalculateMsBetweenUpdates();
+            _tickerTimer = new Timer((state) => DoTick(state), this, period, period);
+            SimSettings.UpdateRateChanged += _UpdateTickTimer;
+
+            _running = true;
+            Notify.Info("Started simulating...");
+
+            int i = 0;
+            while (_running)
+            {
+                i++;
+            }
+        }
+
+        /// <summary>
+        /// Requests the Simulation to stop processing updates
+        /// </summary>
+
+        public void Stop()
+        {
+            StopRequested = true;
+            SimSettings.UpdateRateChanged -= _UpdateTickTimer;
+        }
+
+        private void _UpdateTickTimer()
+        {
+            int period = (int) SimSettings.CalculateMsBetweenUpdates();
+            _tickerTimer.Change(period, period);
+        }
+
+        public void DoTick(object state)
+        {
+            //Simulation sim = state as Simulation;
+
+            if (StopRequested)
+            {
+                // Let's stop running
+                _tickerTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                _running = false;
+
+                // FIXME: Clear queues here?
+                _tickQueue.Shutdown();
+                return;
+            }
+
+            using (var scope = _tickQueue.PublishEvent())
+            {
+                SimulationTickEvent tickEvent = scope.Event();
+                tickEvent.Initialize((int) scope.Sequence, Clock.Time);
+                Log.Information("Tick");
+            }
+
         }
 
         public static void Main(string[] args)
         {
             var sim = new Simulation(null);
             sim.Initialize();
+            sim.Start();
         }
 
         public SimClock GetClock() => Clock;

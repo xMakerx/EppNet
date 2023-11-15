@@ -95,8 +95,6 @@ namespace EppNet.Data
 
             lock (_lock)
             {
-                // Add all the enqueued datagrams to our list to be dispatched and clear the queue.
-                // Atomic operation to ensure we don't encounter weird race conditions.
                 datagrams.AddRange(_datagram_queue);
                 _datagram_queue.Clear();
             }

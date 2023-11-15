@@ -5,6 +5,7 @@
 //////////////////////////////////////////////
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EppNet.Data.Datagrams;
 
@@ -27,8 +28,15 @@ namespace EppNet.Data
         static Channel()
         {
             // The connectivity channel
-            // Handles ping datagrams
+            //-> Ping Datagrams (Clock Sync)
+            //-> Authentication
             new Channel(0x0, ChannelFlags.ProcessImmediately);
+
+            // Reliable object updates channel
+            new Channel(0x1);
+
+            // Unreliable object updates channel (snapshots)
+            new Channel(0x2);
         }
 
         /// <summary>

@@ -37,7 +37,7 @@ namespace EppNet.Sim
 
             return contains;
         
-        }
+        } 
 
         public bool RemoveInterest(uint id)
         {

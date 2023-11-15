@@ -17,17 +17,17 @@ namespace EppNet.Data
 
         public LockQueue() : base()
         {
-            this._lock = new object();
+            _lock = new object();
         }
 
         public LockQueue(int capacity) : base(capacity)
         {
-            this._lock = new object();
+            _lock = new object();
         }
 
         public LockQueue(IEnumerable<T> items) : base(items)
         {
-            this._lock = new object();
+            _lock = new object();
         }
 
         public new void Enqueue(T item)

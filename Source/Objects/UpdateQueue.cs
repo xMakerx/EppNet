@@ -4,44 +4,39 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Data;
 using EppNet.Utilities;
+
+using System.Collections.Concurrent;
 
 namespace EppNet.Objects
 {
 
-    public class UpdateQueue : LockQueue<Update>
+    public class UpdateQueue : ConcurrentQueue<Update>
     {
 
         public readonly bool IsSnapshotQueue;
 
-        public UpdateQueue(bool isSnapshotQueue = false)
+        public UpdateQueue(bool isSnapshotQueue = false) : base()
         {
             this.IsSnapshotQueue = isSnapshotQueue;
         }
 
-        public override bool TryEnqueue(Update item)
+        public bool TryEnqueue(Update item)
         {
             if (item == null)
                 return false;
 
-            lock (_lock)
+            var netAttr = item.MemberDefinition.Attribute;
+            bool snapshotUpdate = netAttr.Flags.IsFlagSet(Core.NetworkFlags.Snapshot);
+
+            // Ensure that the update is valid
+            if ((snapshotUpdate && IsSnapshotQueue) || (!snapshotUpdate && !IsSnapshotQueue))
             {
-
-                var netAttr = item.MemberDefinition.Attribute;
-                bool snapshotUpdate = netAttr.Flags.IsFlagSet(Core.NetworkFlags.Snapshot);
-
-                if ((snapshotUpdate && IsSnapshotQueue) || (!snapshotUpdate && !IsSnapshotQueue))
-                {
-                    if (Contains(item))
-                        return false;
-
-                    Enqueue(item);
-                    return true;
-                }
-
-                return false;
+                Enqueue(item);
+                return true;
             }
+
+            return false;
 
         }
 
