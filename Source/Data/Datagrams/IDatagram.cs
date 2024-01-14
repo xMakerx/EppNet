@@ -12,6 +12,8 @@ namespace EppNet.Data.Datagrams
     public interface IDatagram
     {
 
+        public bool Written { get; }
+
         public void Read();
 
         public void Write();

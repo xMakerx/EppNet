@@ -58,41 +58,82 @@ namespace EppNet.Connections
         }
 
         /// <summary>
-        /// Packages a <see cref="IDatagram"/> (Calls <see cref="IDatagram.Pack"/>) and
-        /// sends it with the specified <see cref="PacketFlags"/>.
+        /// Forcibly closes the connection.
         /// </summary>
-        /// <param name="datagram"></param>
-        /// <param name="flags"></param>
 
-        public void Send(IDatagram datagram, PacketFlags flags)
+        public void Eject()
         {
-            byte channelID = datagram.GetChannelID();
+            using (DisconnectDatagram datagram = new(DisconnectReason.Ejected))
+            {
+                datagram.Write();
+                SendInstant(datagram);
+            }
+        }
 
+        /// <summary>
+        /// Forcibly closes the connection with the
+        /// specified reason.
+        /// </summary>
+        /// <param name="reason"></param>
+
+        public void Eject(DisconnectReason reason)
+        {
+            using (DisconnectDatagram datagram = new(reason))
+            {
+                datagram.Write();
+                SendInstant(datagram);
+            }
+        }
+
+        public bool Send(byte[] bytes, byte channelId, PacketFlags flags)
+        {
             // Create the ENet packet
             Packet packet = new();
 
             try
             {
-                packet.Create(datagram.Pack(), flags);
+                packet.Create(bytes, flags);
 
                 // Send the packet to our ENet peer
-                if (_enet_peer.Send(channelID, ref packet))
+                if (_enet_peer.Send(channelId, ref packet))
                 {
-
-                    Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ID}");
-                    Channel channel = Channel.GetById(channelID);
+                    Channel channel = Channel.GetById(channelId);
                     channel.DatagramsSent++;
+                    return true;
                 }
             }
             catch (Exception e)
             {
-                Notify.Error($"Failed to send Datagram {datagram.GetType().Name} to Peer {ID}. Error: {e.Message}\n{e.StackTrace}");
+                Notify.Error($"Failed to send Datagram to Peer {ID}. Error: {e.Message}\n{e.StackTrace}");
             }
             finally
             {
                 // No matter what, dispose of this packet.
                 packet.Dispose();
             }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Packages a <see cref="IDatagram"/> (Calls <see cref="IDatagram.Pack"/>) and
+        /// sends it with the specified <see cref="PacketFlags"/>.
+        /// </summary>
+        /// <param name="datagram"></param>
+        /// <param name="flags"></param>
+
+        public bool Send(IDatagram datagram, PacketFlags flags)
+        {
+
+            if (!datagram.Written)
+                datagram.Write();
+
+            bool sent = Send(datagram.Pack(), datagram.GetChannelID(), flags);
+
+            if (sent)
+                Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ID}");
+
+            return sent;
         }
 
         /// <summary>
@@ -100,7 +141,7 @@ namespace EppNet.Connections
         /// </summary>
         /// <param name="datagram"></param>
 
-        public void SendInstant(IDatagram datagram) => Send(datagram, PacketFlags.Instant);
+        public bool SendInstant(IDatagram datagram) => Send(datagram, PacketFlags.Instant);
 
         /// <summary>
         /// The server always receives ID 0.

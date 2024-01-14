@@ -30,10 +30,10 @@ namespace EppNet.Data.Datagrams
         {
             base.Write();
 
-            DisconnectReason? generic = DisconnectReason.GetFromID(Reason.ID);
+            DisconnectReason generic = DisconnectReason.GetFromID(Reason.ID);
             byte reasonId = Reason.ID;
 
-            if (generic == null || (generic != null && generic.Value.Message != Reason.Message))
+            if (generic.Message != Reason.Message)
             {
                 // The reason message is different than the generic. Let's turn on
                 // the first bit to denote that.

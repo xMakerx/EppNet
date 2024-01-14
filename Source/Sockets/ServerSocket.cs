@@ -4,6 +4,11 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using ENet;
+
+using EppNet.Connections;
+using EppNet.Processes.Events;
+
 using Notify = EppNet.Utilities.LoggingExtensions;
 
 namespace EppNet.Sockets
@@ -13,13 +18,6 @@ namespace EppNet.Sockets
     {
 
         public ServerSocket() : base(SocketType.Server) { }
-
-        protected override bool Create()
-        {
-            _createTimeMs.SetToMonoNow();
-            //Network.Instance.Status = NetworkStatus.Online;
-            return true;
-        }
 
         public bool Start(int port, int maxClients)
         {
@@ -32,6 +30,11 @@ namespace EppNet.Sockets
             _enet_addr.Port = (ushort)port;
             ENetHost.Create(_enet_addr, maxClients);
             return Create();
+        }
+
+        protected override void OnPacketReceived(PacketReceivedEvent evt)
+        {
+            
         }
 
     }

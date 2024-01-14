@@ -16,7 +16,7 @@ namespace EppNet.Connections
 
         public static DisconnectReason[] Reasons = { Unknown, TimedOut, Ejected, Quit };
 
-        public static DisconnectReason? GetFromID(byte id)
+        public static DisconnectReason GetFromID(byte id)
         {
             foreach (var reason in Reasons)
             {
@@ -24,7 +24,7 @@ namespace EppNet.Connections
                     return reason;
             }
 
-            return null;
+            return Unknown;
         }
 
         public readonly byte ID;

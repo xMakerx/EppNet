@@ -13,6 +13,8 @@ namespace EppNet.Data.Datagrams
     {
         public byte Header { internal set; get; }
 
+        public bool Written { internal set; get; }
+
         /// <summary>
         /// This is populated remotely.
         /// </summary>
@@ -30,6 +32,7 @@ namespace EppNet.Data.Datagrams
         public virtual void Write()
         {
             WriteHeader();
+            this.Written = true;
         }
 
         public virtual void WriteHeader() => WriteUInt8(Header);

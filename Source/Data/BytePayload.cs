@@ -454,7 +454,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 8-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public byte ReadUInt8()
         {
@@ -477,7 +476,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 8-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
         public byte ReadByte() => ReadUInt8();
 
         /// <summary>
@@ -500,7 +498,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an 8-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public sbyte ReadInt8()
         {
@@ -522,7 +519,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an 8-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
         public sbyte ReadSByte() => ReadInt8();
 
         /// <summary>
@@ -540,7 +536,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads a 16-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public short ReadInt16()
         {
@@ -560,7 +555,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads a 16-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
         public short ReadShort() => ReadInt16();
 
         /// <summary>
@@ -579,7 +573,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 16-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public ushort ReadUInt16()
         {
@@ -600,7 +593,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 16-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public ushort ReadUShort() => ReadUInt16();
 
@@ -620,7 +612,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 32-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public uint ReadUInt32()
         {
@@ -641,7 +632,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 32-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public uint ReadUInt() => ReadUInt32();
 
@@ -682,7 +672,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads a 32-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
         public int ReadInt() => ReadInt32();
 
         /// <summary>
@@ -701,7 +690,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 64-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public ulong ReadUInt64()
         {
@@ -722,7 +710,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads an unsigned 64-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public ulong ReadULong() => ReadUInt64();
 
@@ -742,7 +729,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads a 64-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public long ReadInt64()
         {
@@ -763,7 +749,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads a 64-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public long ReadLong() => ReadInt64();
 

@@ -45,7 +45,17 @@ namespace EppNet.Sockets
         public Host ENetHost { protected set; get; }
 
         public Action OnStart;
-        public Action OnShutdown;
+
+        /// <summary>
+        /// Called prior to cleaning up and closing the native ENetSocket
+        /// </summary>
+        
+        public Action OnStopRequested;
+
+        /// <summary>
+        /// Called when the native ENet socket has been closed.
+        /// </summary>
+        public Action OnStopped;
 
         protected Address _enet_addr;
         protected Event _enet_event;
@@ -60,7 +70,9 @@ namespace EppNet.Sockets
             this.LastPollTimeMs = Timestamp.ZeroMonotonicMs();
 
             // Actions
-            this.OnShutdown = null;
+            this.OnStart = null;
+            this.OnStopRequested = null;
+            this.OnStopped = null;
 
             this._enet_addr = default;
             this._enet_event = default;
@@ -79,6 +91,23 @@ namespace EppNet.Sockets
 
             this.Status = SocketStatus.Online;
             return true;
+        }
+
+        /// <summary>
+        /// If you override this, make sure you call this or
+        /// call <see cref="ConnectionManager.HandleNewConnection(Peer)"/>
+        /// manually.
+        /// </summary>
+        /// <param name="peer"></param>
+
+        protected virtual void OnPeerConnected(Peer peer)
+        {
+            ConnectionManager.HandleNewConnection(peer);
+        }
+
+        protected virtual void OnPeerDisconnected(Peer peer, DisconnectReason reason)
+        {
+            ConnectionManager.HandleConnectionLost(peer, reason);
         }
 
         protected abstract void OnPacketReceived(PacketReceivedEvent evt);
@@ -117,17 +146,17 @@ namespace EppNet.Sockets
 
                     case EventType.Connect:
                         // A new peer has connected!
-                        ConnectionManager.HandleNewConnection(_enet_event.Peer);
+                        OnPeerConnected(_enet_event.Peer);
                         break;
 
                     case EventType.Disconnect:
                         // A peer has disconnected.
-                        ConnectionManager.HandleConnectionLost(_enet_event.Peer, DisconnectReason.Quit);
+                        OnPeerDisconnected(_enet_event.Peer, DisconnectReason.Quit);
                         break;
 
                     case EventType.Timeout:
                         // A peer has timed out.
-                        ConnectionManager.HandleConnectionLost(_enet_event.Peer, DisconnectReason.TimedOut);
+                        OnPeerDisconnected(_enet_event.Peer, DisconnectReason.TimedOut);
                         break;
 
                     case EventType.Receive:
@@ -152,11 +181,12 @@ namespace EppNet.Sockets
         {
             if (IsOpen())
             {
+                OnStopRequested?.Invoke();
+                ENetHost.Flush();
                 ENetHost.Dispose();
-                Flush();
 
                 // Let's call our shutdown handlers.
-                OnShutdown?.Invoke();
+                OnStopped?.Invoke();
             }
         }
 
