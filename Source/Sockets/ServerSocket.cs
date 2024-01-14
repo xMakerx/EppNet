@@ -32,11 +32,6 @@ namespace EppNet.Sockets
             return Create();
         }
 
-        protected override void OnPacketReceived(PacketReceivedEvent evt)
-        {
-            
-        }
-
     }
 
 }

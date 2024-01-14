@@ -14,9 +14,11 @@ namespace EppNet.Registers
         public static readonly DatagramRegister Instance = new DatagramRegister();
         public static DatagramRegister Get() => Instance;
 
-        public DatagramRegister() : base()
+        public DatagramRegister()
         {
             Add<PingDatagram>(0x1);
+            Add<DisconnectDatagram>(0x2);
+            Add<ObjectUpdateDatagram>(0x3);
         }
 
         public override bool IsValidKey(byte key)

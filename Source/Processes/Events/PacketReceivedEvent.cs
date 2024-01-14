@@ -9,33 +9,56 @@
 using ENet;
 
 using EppNet.Core;
+using EppNet.Connections;
+using EppNet.Sockets;
 
 namespace EppNet.Processes.Events
 {
 
-    public struct PacketReceivedEvent
+    public class PacketReceivedEvent : RingBufferEvent
     {
 
-        public static PacketReceivedEvent From(Event enetEvent) => new(enetEvent.Packet, enetEvent.Peer, enetEvent.ChannelID);
+        public static PacketReceivedEvent From(Socket socket, Event enetEvent)
+        {
+            Connection conn = socket.ConnectionManager.Get(enetEvent.Peer.ID);
+            return new(conn, enetEvent.Packet, enetEvent.ChannelID);
+        }
 
-        public readonly Packet Packet;
-        public readonly Peer Sender;
-        public readonly byte ChannelID;
+        public Socket Socket { internal set; get; }
+        public Connection Sender { internal set; get; }
+        public Packet Packet { internal set; get; }
+        public byte ChannelID { internal set; get; }
 
         /// <summary>
         /// Monotonic time of reception
         /// </summary>
-        public readonly Timestamp MonoTimestamp;
+        public Timestamp MonoTimestamp { internal set; get; }
 
-        public PacketReceivedEvent(Packet packet, Peer sender, byte channelID)
+        public PacketReceivedEvent()
+        {
+            this.Packet = default;
+            this.Sender = null;
+            this.ChannelID = 0;
+            this.MonoTimestamp = default;
+        }
+
+        public PacketReceivedEvent(Connection conn, Packet packet, byte channelID)
         {
             this.Packet = packet;
-            this.Sender = sender;
+            this.Sender = conn;
             this.ChannelID = channelID;
             this.MonoTimestamp = Timestamp.FromMonoNow();
         }
 
-        public void Dispose()
+        public void Initialize(Socket socket, Event enetEvent)
+        {
+            this.Packet = enetEvent.Packet;
+            this.Sender = socket.ConnectionManager.Get(enetEvent.Peer.ID);
+            this.ChannelID = enetEvent.ChannelID;
+            this.MonoTimestamp = Timestamp.FromMonoNow();
+        }
+
+        public override void Dispose()
         {
             Packet.Dispose();
         }

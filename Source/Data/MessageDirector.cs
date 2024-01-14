@@ -16,6 +16,7 @@ using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
+using EppNet.Processes.Events;
 
 namespace EppNet.Data
 {
@@ -103,8 +104,10 @@ namespace EppNet.Data
                 Dispatch(datagram);
         }
 
-        public virtual void OnPacketReceived(Connection sender, Packet packet, byte channelID)
+        public virtual void OnPacketReceived(PacketReceivedEvent evt)
         {
+            Packet packet = evt.Packet;
+            byte channelID = evt.ChannelID;
             byte[] received_data = new byte[packet.Length];
             packet.CopyTo(received_data);
 
@@ -121,7 +124,7 @@ namespace EppNet.Data
             {
                 datagram = (Datagram)registration.NewInstance(received_data);
                 datagram.ChannelID = channelID;
-                datagram.Sender = sender;
+                datagram.Sender = evt.Sender;
                 datagram.Read();
 
                 Channel channel = Channel.GetById(channelID);

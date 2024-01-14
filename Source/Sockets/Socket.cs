@@ -8,6 +8,7 @@ using ENet;
 
 using EppNet.Connections;
 using EppNet.Core;
+using EppNet.Data;
 using EppNet.Exceptions;
 using EppNet.Processes.Events;
 using EppNet.Sim;
@@ -39,6 +40,8 @@ namespace EppNet.Sockets
         public SocketStatus Status { protected set; get; }
         public ConnectionManager ConnectionManager { protected set; get; }
 
+        public MessageDirector MessageDirector { protected set; get; }
+
         public Timestamp CreateTimeMs { protected set; get; }
         public Timestamp LastPollTimeMs { protected set; get; }
 
@@ -66,6 +69,9 @@ namespace EppNet.Sockets
             this.Status = SocketStatus.Uninitialized;
             this.ENetHost = null;
 
+            this.MessageDirector = null;
+            this.ConnectionManager = null;
+
             this.CreateTimeMs = Timestamp.ZeroMonotonicMs();
             this.LastPollTimeMs = Timestamp.ZeroMonotonicMs();
 
@@ -87,6 +93,7 @@ namespace EppNet.Sockets
         {
             CreateTimeMs.SetToMonoNow();
             ConnectionManager = new(this);
+            MessageDirector = new();
             OnStart?.Invoke();
 
             this.Status = SocketStatus.Online;
@@ -109,8 +116,6 @@ namespace EppNet.Sockets
         {
             ConnectionManager.HandleConnectionLost(peer, reason);
         }
-
-        protected abstract void OnPacketReceived(PacketReceivedEvent evt);
 
         /// <summary>
         /// Polls for new network events. By default this is non-blocking and will not wait to receive a new event.
@@ -161,7 +166,15 @@ namespace EppNet.Sockets
 
                     case EventType.Receive:
                         // Received a packet
-                        PacketReceivedEvent evt = PacketReceivedEvent.From(_enet_event);
+                        PacketReceivedEvent evt = PacketReceivedEvent.From(this, _enet_event);
+                        Connection conn = ConnectionManager.Get(_enet_event.Peer.ID);
+
+                        if (conn == null)
+                        {
+                            // Received a packet from an unknown connection??
+                            MessageDirector.OnPacketReceived(conn, evt);
+                        }
+
                         OnPacketReceived(evt);
                         break;
 

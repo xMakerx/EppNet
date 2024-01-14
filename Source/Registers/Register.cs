@@ -93,7 +93,7 @@ namespace EppNet.Registers
                     return pair.Key;
             }
 
-            return default(TKey);
+            return default;
         }
 
         public virtual bool Compile()
