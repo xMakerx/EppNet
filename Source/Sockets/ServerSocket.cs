@@ -4,16 +4,15 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using Notify = EppNet.Utilities.LoggingExtensions;
+
 namespace EppNet.Sockets
 {
 
-    public class Server : Socket
+    public class ServerSocket : Socket
     {
 
-        public Server() : base()
-        {
-            _type = SocketType.Server;
-        }
+        public ServerSocket() : base(SocketType.Server) { }
 
         protected override bool Create()
         {
@@ -24,9 +23,14 @@ namespace EppNet.Sockets
 
         public bool Start(int port, int maxClients)
         {
+            if (IsOpen())
+            {
+                Notify.Warn("Tried to call start when the server is already open?!");
+                return false;
+            }
 
             _enet_addr.Port = (ushort)port;
-            _enet_host.Create(_enet_addr, maxClients);
+            ENetHost.Create(_enet_addr, maxClients);
             return Create();
         }
 

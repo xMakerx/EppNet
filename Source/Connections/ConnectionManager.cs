@@ -12,6 +12,8 @@ using EppNet.Utilities;
 using System;
 using System.Collections.Generic;
 
+using Notify = EppNet.Utilities.LoggingExtensions;
+
 namespace EppNet.Connections
 {
 
@@ -28,7 +30,7 @@ namespace EppNet.Connections
         {
             _socket = socket;
             _connections = new Dictionary<uint, Connection>();
-        }
+        } 
 
         public bool HandleNewConnection(Peer enetPeer)
         {
@@ -36,7 +38,10 @@ namespace EppNet.Connections
             bool added = _connections.TryAddEntry(enetPeer.ID, conn);
 
             if (added)
+            {
+                Notify.Debug($"New Connection Established to {enetPeer.IP}");
                 OnConnectionEstablished?.Invoke(conn);
+            }
 
             return added;
         }
@@ -44,6 +49,7 @@ namespace EppNet.Connections
         public bool HandleConnectionLost(Peer enetPeer, DisconnectReason reason) =>
             _connections.ExecuteIfExists(enetPeer.ID, (id, conn) =>
             {
+                Notify.Debug($"Connection to {enetPeer.IP} lost");
                 OnConnectionLost?.Invoke(new DisconnectEvent(conn, reason));
                 _connections.Remove(id);
             });

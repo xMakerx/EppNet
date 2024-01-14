@@ -166,26 +166,24 @@ namespace EppNet.Objects
                 throw new ArgumentNullException("Cannot write to a null Datagram!");
 
             byte updateId = (byte)MemberDefinition.Index;
+
             if (MemberDefinition.IsProperty())
-            {
                 // Properties have bit 7 enabled
                 updateId = updateId.EnableBit(7);
-            }
 
             // Encoded member ID
             datagramIn.WriteByte(updateId);
 
-            if (this.Arguments.Length > 0)
+            int numArgs = Arguments?.Length ?? 0;
+
+            datagramIn.WriteByte((byte)numArgs);
+            
+            for (int i = 0; i < numArgs; i++)
             {
-                datagramIn.WriteByte((byte) Arguments.Length);
+                bool written = datagramIn.TryWrite(Arguments[i]);
 
-                for (int i = 0; i < Arguments.Length; i++)
-                {
-                    bool written = datagramIn.TryWrite(Arguments[i]);
-
-                    if (!written)
-                        throw new FormatException($"[Update#WriteTo()] Datagram does not know how to serialize {Arguments[i].GetType()}!");
-                }
+                if (!written)
+                    throw new FormatException($"[Update#WriteTo()] Datagram does not know how to serialize {Arguments[i].GetType()}!");
             }
         }
 

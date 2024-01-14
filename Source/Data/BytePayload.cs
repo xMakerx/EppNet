@@ -350,8 +350,7 @@ namespace EppNet.Data
             Span<byte> buffer = stackalloc byte[length];
             int read = _stream.Read(buffer);
 
-            string output = Encoder.GetString(buffer);
-            return output;
+            return Encoder.GetString(buffer);
         }
 
         /// <summary>

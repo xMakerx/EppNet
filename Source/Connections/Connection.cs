@@ -11,6 +11,9 @@ using EppNet.Data;
 using EppNet.Sockets;
 using EppNet.Data.Datagrams;
 
+using System;
+using Notify = EppNet.Utilities.LoggingExtensions;
+
 namespace EppNet.Connections
 {
     /// <summary>
@@ -63,14 +66,33 @@ namespace EppNet.Connections
 
         public void Send(IDatagram datagram, PacketFlags flags)
         {
-            Packet enet_packet = new Packet();
-            enet_packet.Create(datagram.Pack(), flags);
-
             byte channelID = datagram.GetChannelID();
-            Channel channel = Channel.GetById(channelID);
-            channel.DatagramsSent++;
 
-            _enet_peer.Send(datagram.GetChannelID(), ref enet_packet);
+            // Create the ENet packet
+            Packet packet = new();
+
+            try
+            {
+                packet.Create(datagram.Pack(), flags);
+
+                // Send the packet to our ENet peer
+                if (_enet_peer.Send(channelID, ref packet))
+                {
+
+                    Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ID}");
+                    Channel channel = Channel.GetById(channelID);
+                    channel.DatagramsSent++;
+                }
+            }
+            catch (Exception e)
+            {
+                Notify.Error($"Failed to send Datagram {datagram.GetType().Name} to Peer {ID}. Error: {e.Message}\n{e.StackTrace}");
+            }
+            finally
+            {
+                // No matter what, dispose of this packet.
+                packet.Dispose();
+            }
         }
 
         /// <summary>

@@ -307,7 +307,7 @@ namespace EppNet.Objects
         {
             ObjectMemberDefinition definition = null;
 
-            if (-1 < index && index < list.Count)
+            if (list != null && -1 < index && index < list.Count)
                 definition = list.GetValueAtIndex(index);
 
             return definition;

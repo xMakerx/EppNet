@@ -6,8 +6,10 @@
 
 using ENet;
 
+using EppNet.Connections;
 using EppNet.Core;
 using EppNet.Exceptions;
+using EppNet.Processes.Events;
 using EppNet.Sim;
 
 using System;
@@ -24,8 +26,8 @@ namespace EppNet.Sockets
     public enum SocketStatus : byte
     {
         Unknown         = 0,
-        Unregistered    = 1 << 0,
-        Registered      = 1 << 1,
+        Uninitialized   = 1 << 0,
+        Initialized     = 1 << 1,
         Online          = 1 << 2,
         Disconnected    = 1 << 3
     }
@@ -33,42 +35,35 @@ namespace EppNet.Sockets
     public abstract class Socket : IDisposable
     {
 
-        public SocketType Type { get => _type; }
-        protected SocketType _type;
-        public SocketStatus Status
-        {
-            internal set
-            {
-                _status = value;
-            }
+        public SocketType Type { get; }
+        public SocketStatus Status { protected set; get; }
+        public ConnectionManager ConnectionManager { protected set; get; }
 
-            get => _status;
-        }
+        public Timestamp CreateTimeMs { protected set; get; }
+        public Timestamp LastPollTimeMs { protected set; get; }
 
-        protected SocketStatus _status;
+        public Host ENetHost { protected set; get; }
 
-        public Timestamp CreateTimeMs => _createTimeMs;
-        protected Timestamp _createTimeMs;
-
-        public Timestamp LastPollTimeMs => _lastPollTimeMs;
-        protected Timestamp _lastPollTimeMs;
-
-        public Host ENetHost { get => _enet_host; }
-        protected Host _enet_host;
+        public Action OnStart;
+        public Action OnShutdown;
 
         protected Address _enet_addr;
         protected Event _enet_event;
 
-        public Socket()
+        public Socket(SocketType type)
         {
-            _createTimeMs = Timestamp.ZeroMonotonicMs();
-            _lastPollTimeMs = Timestamp.ZeroMonotonicMs();
+            this.Type = type;
+            this.Status = SocketStatus.Uninitialized;
+            this.ENetHost = null;
 
-            this._type = SocketType.Unknown;
-            this._status = SocketStatus.Unregistered;
-            this._enet_host = null;
-            this._enet_addr = default(Address);
-            this._enet_event = default(Event);
+            this.CreateTimeMs = Timestamp.ZeroMonotonicMs();
+            this.LastPollTimeMs = Timestamp.ZeroMonotonicMs();
+
+            // Actions
+            this.OnShutdown = null;
+
+            this._enet_addr = default;
+            this._enet_event = default;
         }
 
         /// <summary>
@@ -76,7 +71,17 @@ namespace EppNet.Sockets
         /// </summary>
         /// <returns></returns>
 
-        protected abstract bool Create();
+        protected virtual bool Create()
+        {
+            CreateTimeMs.SetToMonoNow();
+            ConnectionManager = new(this);
+            OnStart?.Invoke();
+
+            this.Status = SocketStatus.Online;
+            return true;
+        }
+
+        protected abstract void OnPacketReceived(PacketReceivedEvent evt);
 
         /// <summary>
         /// Polls for new network events. By default this is non-blocking and will not wait to receive a new event.
@@ -88,20 +93,20 @@ namespace EppNet.Sockets
 
         public virtual void Poll(int timeoutMs = 0)
         {
-            if (_enet_host == null)
-                throw new NetworkException("Socket is not valid!");
+            if (!IsOpen())
+                throw new NetworkException("Socket has not been initialized!");
 
             bool polled = false;
 
             while (!polled)
             {
-                if (_enet_host.CheckEvents(out _enet_event) <= 0)
+                if (ENetHost.CheckEvents(out _enet_event) <= 0)
                 {
-                    if (_enet_host.Service(timeoutMs, out _enet_event) <= 0)
+                    if (ENetHost.Service(timeoutMs, out _enet_event) <= 0)
                         break;
 
                     polled = true;
-                    _lastPollTimeMs.Set(Simulation.MonoTime);
+                    LastPollTimeMs.Set(Simulation.MonoTime);
                 }
 
                 switch (_enet_event.Type)
@@ -112,18 +117,23 @@ namespace EppNet.Sockets
 
                     case EventType.Connect:
                         // A new peer has connected!
+                        ConnectionManager.HandleNewConnection(_enet_event.Peer);
                         break;
 
                     case EventType.Disconnect:
                         // A peer has disconnected.
+                        ConnectionManager.HandleConnectionLost(_enet_event.Peer, DisconnectReason.Quit);
                         break;
 
                     case EventType.Timeout:
                         // A peer has timed out.
+                        ConnectionManager.HandleConnectionLost(_enet_event.Peer, DisconnectReason.TimedOut);
                         break;
 
                     case EventType.Receive:
                         // Received a packet
+                        PacketReceivedEvent evt = PacketReceivedEvent.From(_enet_event);
+                        OnPacketReceived(evt);
                         break;
 
                 }
@@ -131,10 +141,7 @@ namespace EppNet.Sockets
             }
         }
 
-        public void Flush()
-        {
-            _enet_host?.Flush();
-        }
+        public void Flush() => ENetHost?.Flush();
 
         public void Dispose()
         {
@@ -145,7 +152,11 @@ namespace EppNet.Sockets
         {
             if (IsOpen())
             {
-                _enet_host.Dispose();
+                ENetHost.Dispose();
+                Flush();
+
+                // Let's call our shutdown handlers.
+                OnShutdown?.Invoke();
             }
         }
 
@@ -154,9 +165,9 @@ namespace EppNet.Sockets
         /// </summary>
         /// <returns></returns>
 
-        public bool IsServer() => _type == SocketType.Server;
+        public bool IsServer() => Type == SocketType.Server;
 
-        public bool IsOpen() => _enet_host != null;
+        public bool IsOpen() => ENetHost != null;
         
 
     }
