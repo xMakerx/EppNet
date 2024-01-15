@@ -4,67 +4,23 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Logging;
+
 using Serilog;
 using Serilog.Events;
 
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace EppNet.Utilities
 {
     public static class LoggingExtensions
     {
 
-        private static Dictionary<string, string> _filepath2Name = new Dictionary<string, string>()
-        {
-            { "",   "??" },
-        };
-
-        private static string _Internal_FilepathToName(string filePath)
-        {
-            // This is okay as we have some default values for null or whitespace.
-            if (string.IsNullOrWhiteSpace(filePath))
-                filePath = "";
-
-            if (!_filepath2Name.TryGetValue(filePath, out string name))
-            {
-
-                StringBuilder builder = new StringBuilder();
-                bool addChars = false;
-
-                for (int i = filePath.Length - 1; i > 0; i--)
-                {
-                    char c = filePath[i];
-
-                    // We only care about the file name.
-                    if (c == '\\' || c == '/')
-                        break;
-
-                    // We want to ignore the .cs or any other extension
-                    if (!addChars)
-                    {
-                        if (c == '.')
-                            addChars = true;
-
-                        continue;
-                    }
-
-                    // We want to add this character to the beginning
-                    builder.Insert(0, c);
-                }
-
-                // Let's get the string and cache the result.
-                name = builder.ToString();
-                _filepath2Name[filePath] = name;
-            }
-
-            return name;
-        }
+        public static string GetRuntimePath([CallerFilePath] string callerFilepath = null) => callerFilepath;
 
         public static string Msg(LogEventLevel level, string message, [CallerFilePath] string callerFilepath = null, [CallerMemberName] string callerMemberName = null)
         {
-            string filename = _Internal_FilepathToName(callerFilepath);
+            string filename = RuntimeFileMetadata.GetFilenameFromPath(callerFilepath, cacheIfNecessary: true); ;
             string memberName = callerMemberName == ".ctor" ? "ctor" : callerMemberName;
             string output = $"[{filename}#{memberName}()] {message}";
 
