@@ -20,17 +20,15 @@ namespace EppNet.Logging
         private const string Unknown = "Unknown";
         private const string Missing = "??";
 
-        private static Dictionary<string, RuntimeFileMetadata> _filepath2Data =
-            new Dictionary<string, RuntimeFileMetadata>()
-            {
-                { string.Empty, new() }
-            };
+        private static Dictionary<string, RuntimeFileMetadata> _filepath2Data = new()
+        {
+            { string.Empty, new() }
+        };
 
-        private static Dictionary<string, RuntimeFileMetadata> _filename2Data =
-            new Dictionary<string, RuntimeFileMetadata>()
-            {
-                { Unknown, new() }
-            };
+        private static Dictionary<string, RuntimeFileMetadata> _filename2Data = new()
+        {
+            { Unknown, new() }
+        };
 
         private static void _Internal_CacheEntry(string filename, string filepath)
         {

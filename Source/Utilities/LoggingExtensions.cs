@@ -13,14 +13,30 @@ using System.Runtime.CompilerServices;
 
 namespace EppNet.Utilities
 {
+
+    public struct CallerInformation
+    {
+
+        public string MemberName;
+        public string Filepath;
+        public CallerInformation(string memberName, string filepath)
+        {
+            this.MemberName = memberName;
+            this.Filepath = filepath;
+        }
+
+    }
+
     public static class LoggingExtensions
     {
+
+        public static LogEventLevel GlobalLogLevel;
 
         public static string GetRuntimePath([CallerFilePath] string callerFilepath = null) => callerFilepath;
 
         public static string Msg(LogEventLevel level, string message, [CallerFilePath] string callerFilepath = null, [CallerMemberName] string callerMemberName = null)
         {
-            string filename = RuntimeFileMetadata.GetFilenameFromPath(callerFilepath, cacheIfNecessary: true); ;
+            string filename = RuntimeFileMetadata.GetFilenameFromPath(callerFilepath, cacheIfNecessary: true);
             string memberName = callerMemberName == ".ctor" ? "ctor" : callerMemberName;
             string output = $"[{filename}#{memberName}()] {message}";
 

@@ -3,18 +3,21 @@
 /// Date: September 10, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
+/// <summary>
 /// Performant I/O object for reading & writing C# primitives.
 /// Leverages the functionality of Microsoft's <see cref="RecyclableMemoryStream"/>
 /// and stack allocated spans to quickly read and write from a binary buffer.
 /// While some functions such as #WriteTimestamp(<see cref="Timestamp"/>) exist, these objects
-/// aren't serialized, they're broken down into the necessary primitives necessary
+/// aren't serialized, they're broken down into primitives necessary
 /// to reconstruct the object.
 /// 
 /// Binary data is exclusively written and read in little endian to
 /// facilitate networking with computers with different CPUs.
+/// </summary>
 
 
 using EppNet.Core;
+using EppNet.Exceptions;
 using EppNet.Utilities;
 
 using Microsoft.IO;
@@ -39,17 +42,20 @@ namespace EppNet.Data
 
         static BytePayload()
         {
-            RecyclableStreamMgr = new RecyclableMemoryStreamManager(
-                512, // 0.5KB blocks
-                2048, // Large buffers are multiples of 2KB
-                12 * 1024 * 1024, // 12MB is too large to be repooled
-                false, // Use linear growth
-                64 * 1024 * 1024, // 64MB is the max for small pools,
-                128 * 1024 * 1024 // 128MB is the max for large pools
-            );
 
-            // Kills performance when enabled.
-            RecyclableStreamMgr.GenerateCallStacks = false;
+            RecyclableMemoryStreamManager.Options options = new RecyclableMemoryStreamManager.Options();
+            options.ZeroOutBuffer = false;
+            options.BlockSize = 512; // 0.5 KB blocks
+            options.LargeBufferMultiple = 2048; // Large buffers are multiples of 2 KB
+            options.MaximumBufferSize = 12 * 1024 * 1024; // 12MB is too large to be repooled.
+            options.UseExponentialLargeBuffer = false; // Linear growth strategy
+            options.MaximumSmallPoolFreeBytes = 64 * 1024 * 1024; // Keep 64 MB worth of small pools around
+            options.MaximumLargePoolFreeBytes = 128 * 1024 * 1024; // Keep 128MB worth of large pools around
+
+            // Kills performance when enabled. Helpful in debugging situations
+            options.GenerateCallStacks = false;
+
+            RecyclableStreamMgr = new(options);
 
             AddResolver(typeof(Vector2), new Vector2Resolver());
             AddResolver(typeof(Vector3), new Vector3Resolver());
@@ -71,16 +77,10 @@ namespace EppNet.Data
         /// The decimal precision of floating point numbers.
         /// </summary>
         public static int FloatPrecision = 4;
-        
-        public static RecyclableMemoryStream ObtainStream()
-        {
-            return RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
-        }
 
-        public static RecyclableMemoryStream ObtainStream(byte[] buffer)
-        {
-            return RecyclableStreamMgr.GetStream(buffer) as RecyclableMemoryStream;
-        }
+        public static RecyclableMemoryStream ObtainStream() => RecyclableStreamMgr.GetStream();
+
+        public static RecyclableMemoryStream ObtainStream(byte[] buffer) => RecyclableStreamMgr.GetStream(buffer);
 
         /// <summary>
         /// Converts a local float to a remote float (i.e. a float with the precision specified by <see cref="FloatPrecision"/>)
@@ -110,6 +110,18 @@ namespace EppNet.Data
         /// This is populated by <see cref="Pack"/>.
         /// </summary>
         public byte[] PackedData { internal set; get; }
+
+        /// <summary>
+        /// The length of this payload in bytes
+        /// </summary>
+
+        public long Length
+        {
+            get
+            {
+                return _stream != null ? _stream.Length : 0;
+            }
+        }
 
         protected internal RecyclableMemoryStream _stream;
 
@@ -150,8 +162,6 @@ namespace EppNet.Data
         /// Returns true if a successful companion write function was called or
         /// false if unable to find the correct function.
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
 
         public virtual bool TryWrite(object input)
         {
@@ -318,14 +328,13 @@ namespace EppNet.Data
 
         public virtual void Reset()
         {
-            if (_stream != null)
-            {
-                //byte[] buffer = _stream.GetBuffer();
-                //Array.Clear(buffer, 0, buffer.Length);
-                _stream.SetLength(0);
-            }
 
-            PackedData = null;
+            bool hadStream = _stream != null;
+
+            Dispose();
+
+            if (hadStream)
+                EnsureReadyToWrite();
         }
 
         /// <summary>
@@ -337,6 +346,8 @@ namespace EppNet.Data
         {
             _stream?.Dispose();
             _stream = null;
+
+            PackedData = null;
         }
 
         /// <summary>
@@ -445,25 +456,28 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
             _stream.WriteByte(input);
-
-            /*
-            Span<byte> buffer = stackalloc byte[1] { input };
-            _stream.Write(buffer);*/
         }
 
         /// <summary>
         /// Reads an unsigned 8-bit integer from the stream.
+        /// <br/>
+        /// <br/>
+        /// Exceptions: <br/>
+        /// - <see cref="BytePayloadReadException"/> Out of Range
         /// </summary>
 
         public byte ReadUInt8()
         {
-            /*
-            Span<byte> buffer = stackalloc byte[1];
-            int read = _stream.Read(buffer);
+            long pos = _stream.Position;
+            int result = _stream.ReadByte();
 
-            byte output = buffer[0];*/
-            byte output = (byte)_stream.ReadByte();
-            return output;
+            if (result == -1)
+            {
+                // This is the end of the stream.
+                throw BytePayloadReadException.NewOutOfRangeException(this, pos, 1);
+            }
+
+            return (byte)result;
         }
 
         /// <summary>
@@ -487,26 +501,28 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
             _stream.WriteByte((byte)input);
-
-            /*
-
-            Span<byte> span = _stream.GetSpan(sizeof(sbyte));
-            MemoryMarshal.Write(span, ref input);
-            _stream.Advance(sizeof(sbyte));*/
         }
 
         /// <summary>
         /// Reads an 8-bit integer from the stream.
+        /// <br/>
+        /// <br/>
+        /// Exceptions: <br/>
+        /// - <see cref="BytePayloadReadException"/> Out of Range
         /// </summary>
 
         public sbyte ReadInt8()
         {
-            /*
-            Span<byte> buffer = stackalloc byte[sizeof(sbyte)];
-            int read = _stream.Read(buffer);
-            sbyte output = unchecked((sbyte)buffer[0]);*/
-            sbyte output = (sbyte)_stream.ReadByte();
-            return output;
+            long pos = _stream.Position;
+            int result = _stream.ReadByte();
+
+            if (result == -1)
+            {
+                // This is the end of the stream.
+                throw BytePayloadReadException.NewOutOfRangeException(this, pos, 1);
+            }
+
+            return (sbyte)result;
         }
 
         /// <summary>
@@ -651,7 +667,6 @@ namespace EppNet.Data
         /// <summary>
         /// Reads a 32-bit integer from the stream.
         /// </summary>
-        /// <param name="input"></param>
 
         public int ReadInt32()
         {
@@ -798,7 +813,6 @@ namespace EppNet.Data
         /// Writes a timestamp to the wire including its unsigned 8-bit integer type and
         /// 64-bit integer denoting its value.
         /// </summary>
-        /// <param name="input"></param>
 
         public void WriteTypedTimestamp(Timestamp input)
         {
@@ -826,7 +840,6 @@ namespace EppNet.Data
         /// <summary>
         /// Writes a 64-bit integer denoting the value of the specified <see cref="Timestamp"/>.
         /// </summary>
-        /// <param name="input"></param>
 
         public void WriteTimestamp(Timestamp input)
         {
@@ -864,8 +877,7 @@ namespace EppNet.Data
 
         public virtual void EnsureReadyToWrite()
         {
-            if (_stream == null)
-                _stream = RecyclableStreamMgr.GetStream() as RecyclableMemoryStream;
+            _stream ??= ObtainStream();
         }
 
         /// <summary>

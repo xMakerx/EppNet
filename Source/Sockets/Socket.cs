@@ -167,15 +167,8 @@ namespace EppNet.Sockets
                     case EventType.Receive:
                         // Received a packet
                         PacketReceivedEvent evt = PacketReceivedEvent.From(this, _enet_event);
-                        Connection conn = ConnectionManager.Get(_enet_event.Peer.ID);
+                        MessageDirector.OnPacketReceived(evt);
 
-                        if (conn == null)
-                        {
-                            // Received a packet from an unknown connection??
-                            MessageDirector.OnPacketReceived(conn, evt);
-                        }
-
-                        OnPacketReceived(evt);
                         break;
 
                 }
