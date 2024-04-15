@@ -10,7 +10,7 @@ namespace EppNet.Core.Settings
     public class SettingsServer
     {
 
-
+          
 
     }
 

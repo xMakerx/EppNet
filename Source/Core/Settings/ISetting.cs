@@ -10,11 +10,16 @@ namespace EppNet.Core.Settings
     public interface ISetting<TValue>
     {
 
-        string GetKey();
+        string Key { get; }
+        TValue Value { set; get; }
 
-        bool SetValue(TValue value);
+        /// <summary>
+        /// If this setting should be written to the
+        /// configuration file.
+        /// </summary>
+        /// <returns>Defaults to true</returns>
 
-        TValue GetValue();
+        bool WritesToFile { set; get; }
 
         bool IsAcceptable(TValue value);
 

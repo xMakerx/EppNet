@@ -20,8 +20,30 @@ namespace EppNet.Core.Settings
         /// </summary>
         public event Action<SettingValueChangedEvent<TValue>> OnValueChanged;
 
-        public readonly string Key;
-        public TValue Value { protected set; get; }
+        public string Key { get; }
+
+        public TValue Value
+        {
+            set => _Internal_TrySetValue(value);
+            get => _value;
+        }
+
+        public bool WritesToFile
+        {
+            set
+            {
+                if (value != _writesToFile)
+                {
+                    // TODO: Push update to settings server
+                    _writesToFile = value;
+                }
+            }
+
+            get => _writesToFile;
+        }
+
+        protected bool _writesToFile;
+        protected TValue _value;
 
         // For range limits
         private TValue _lowerBounds;
@@ -30,16 +52,21 @@ namespace EppNet.Core.Settings
         public PrimitiveSetting(string key)
         {
             this.Key = key;
-            this.Value = default;
+            this._value = default;
         }
 
         public PrimitiveSetting(string key, TValue defaultValue)
         {
             this.Key = key;
-            this.Value = defaultValue;
+            this._value = defaultValue;
         }
 
-        public string GetKey() => Key;
+        /// <summary>
+        /// Sets the acceptable range for values<br/>
+        /// Values must be equal to or greater than the lower bounds and
+        /// less than or equal to the upper bounds.<br/>
+        /// (a less than or equal to n AND n less than or equal to b) OR [a, b])
+        /// </summary>
 
         public void SetAcceptableRange(TValue lowerBounds, TValue upperBounds)
         {
@@ -56,14 +83,20 @@ namespace EppNet.Core.Settings
             }
         }
 
+        /// <summary>
+        /// Returns a tuple representing the lower and upper bounds for
+        /// acceptable values.<br/>
+        /// (a less than or equal to n AND n less than or equal to b) OR [a, b])
+        /// </summary>
+        /// <returns>Tuple with lower and upper bounds</returns>
+
         public Tuple<TValue, TValue> GetAcceptableRange() => new(_lowerBounds, _upperBounds);
 
         /// <summary>
         /// Checks if the provided <see cref="TValue"/> is acceptable<br/>
-        /// i.e. in the acceptable range (if one was provided)
+        /// i.e. in the acceptable range (if one was provided)<br/>
+        /// See <see cref="GetAcceptableRange"/> for more information.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
 
         public bool IsAcceptable(TValue value)
         {
@@ -72,10 +105,15 @@ namespace EppNet.Core.Settings
                 || !hasRange;
         }
 
+        public bool TryApply()
+        {
+            throw new NotImplementedException();
+        }
+
         protected bool _Internal_TrySetValue(TValue value)
         {
             // If we have equivalent values, no need to change it.
-            if (Value.Equals(value))
+            if (_value.Equals(value))
                 return false;
 
             if (!IsAcceptable(value))
@@ -84,8 +122,8 @@ namespace EppNet.Core.Settings
                 return false;
             }
 
-            TValue prevValue = this.Value;
-            this.Value = value;
+            TValue prevValue = this._value;
+            this._value = value;
 
             // Event is explicitly created here for readibility reasons.
             SettingValueChangedEvent<TValue> evt = new(this, prevValue, value);
@@ -94,13 +132,5 @@ namespace EppNet.Core.Settings
             return true;
         }
 
-        public bool SetValue(TValue value) => _Internal_TrySetValue(value);
-
-        public TValue GetValue() => Value;
-
-        public bool TryApply()
-        {
-            throw new NotImplementedException();
-        }
     }
 }
