@@ -16,7 +16,7 @@ namespace EppNet.Objects
 
         public readonly bool IsSnapshotQueue;
 
-        public UpdateQueue(bool isSnapshotQueue = false) : base()
+        public UpdateQueue(bool isSnapshotQueue = false)
         {
             this.IsSnapshotQueue = isSnapshotQueue;
         }

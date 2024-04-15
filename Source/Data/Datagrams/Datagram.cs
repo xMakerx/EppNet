@@ -21,7 +21,7 @@ namespace EppNet.Data.Datagrams
         public Connection Sender { internal set; get; }
         public byte ChannelID { internal set; get; }
 
-        public Datagram() : base()
+        public Datagram()
         {
             this.Header = 0x0;
             this.ChannelID = 0x0;
