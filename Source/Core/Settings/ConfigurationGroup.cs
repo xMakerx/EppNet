@@ -72,13 +72,26 @@ namespace EppNet.Core.Settings
                 return;
         }
 
+        public override Writeable Clone()
+        {
+            ConfigurationGroup clone = new(Key)
+            {
+                WritesToFile = this.WritesToFile
+            };
+
+            foreach (var item in Items)
+                clone.Items.Add(item.Clone());
+
+            return clone;
+        }
+
         internal override void Write(Utf8JsonWriter writer)
         {
             if (!WritesToFile)
                 return;
 
             if (!IsRoot)
-                writer.WriteStartArray(Key);
+                writer.WriteStartObject(Key);
 
             foreach (var item in Items)
             {
@@ -97,7 +110,7 @@ namespace EppNet.Core.Settings
             }
 
             if (!IsRoot)
-                writer.WriteEndArray();
+                writer.WriteEndObject();
         }
 
         public bool IsRoot => string.IsNullOrEmpty(Key);

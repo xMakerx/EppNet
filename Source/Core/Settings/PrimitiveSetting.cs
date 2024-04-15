@@ -38,9 +38,9 @@ namespace EppNet.Core.Settings
             this._value = default;
         }
 
-        public PrimitiveSetting(string key, TValue defaultValue) : base(key)
+        public PrimitiveSetting(string key, TValue value) : base(key)
         {
-            this._value = defaultValue;
+            this._value = value;
         }
 
         /// <summary>
@@ -90,6 +90,16 @@ namespace EppNet.Core.Settings
         public bool TryApply()
         {
             throw new NotImplementedException();
+        }
+
+        public override Writeable Clone()
+        {
+            PrimitiveSetting<TValue> clone = new(Key, Value)
+            {
+                WritesToFile = this.WritesToFile
+            };
+            clone.SetAcceptableRange(_lowerBounds, _upperBounds);
+            return clone;
         }
 
         protected bool _Internal_TrySetValue(TValue value)

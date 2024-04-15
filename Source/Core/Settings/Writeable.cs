@@ -52,19 +52,21 @@ namespace EppNet.Core.Settings
 
         private Writeable _parent;
 
-        public Writeable(string key)
+        protected Writeable(string key)
         {
             this.Key = key;
             this._parent = null;
             this._writesToFile = true;
         }
 
-        public Writeable(string key, Writeable parent) : this(key)
+        protected Writeable(string key, Writeable parent) : this(key)
         {
             this.Parent = parent;
         }
 
         internal abstract void Write(Utf8JsonWriter writer);
+
+        public abstract Writeable Clone();
 
     }
 
