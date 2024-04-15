@@ -5,12 +5,13 @@
 ///////////////////////////////////////////////////////
 
 using System;
+using System.Text.Json;
 
 using Notify = EppNet.Utilities.LoggingExtensions;
 
 namespace EppNet.Core.Settings
 {
-    public class PrimitiveSetting<TValue> : ISetting<TValue> where TValue : struct, IComparable,
+    public class PrimitiveSetting<TValue> : Writeable, ISetting<TValue> where TValue : struct, IComparable,
         IFormattable, IConvertible, IComparable<TValue>, IEquatable<TValue>
     {
 
@@ -20,44 +21,25 @@ namespace EppNet.Core.Settings
         /// </summary>
         public event Action<SettingValueChangedEvent<TValue>> OnValueChanged;
 
-        public string Key { get; }
-
         public TValue Value
         {
             set => _Internal_TrySetValue(value);
             get => _value;
         }
 
-        public bool WritesToFile
-        {
-            set
-            {
-                if (value != _writesToFile)
-                {
-                    // TODO: Push update to settings server
-                    _writesToFile = value;
-                }
-            }
-
-            get => _writesToFile;
-        }
-
-        protected bool _writesToFile;
         protected TValue _value;
 
         // For range limits
         private TValue _lowerBounds;
         private TValue _upperBounds;
 
-        public PrimitiveSetting(string key)
+        public PrimitiveSetting(string key) : base(key)
         {
-            this.Key = key;
             this._value = default;
         }
 
-        public PrimitiveSetting(string key, TValue defaultValue)
+        public PrimitiveSetting(string key, TValue defaultValue) : base(key)
         {
-            this.Key = key;
             this._value = defaultValue;
         }
 
@@ -130,6 +112,15 @@ namespace EppNet.Core.Settings
             OnValueChanged?.Invoke(evt);
 
             return true;
+        }
+
+        internal override void Write(Utf8JsonWriter writer)
+        {
+            if (!WritesToFile)
+                return;
+
+            writer.WritePropertyName(Key);
+            writer.WriteRawValue(Value.ToString(), skipInputValidation: true);
         }
 
     }
