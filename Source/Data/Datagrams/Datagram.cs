@@ -26,6 +26,7 @@ namespace EppNet.Data.Datagrams
             this.Header = 0x0;
             this.ChannelID = 0x0;
             this.Sender = null;
+            this.Written = false;
         }
 
         public virtual void Read() { }

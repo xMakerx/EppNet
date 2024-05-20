@@ -27,7 +27,7 @@ namespace EppNet.Core.Settings
         public void Write()
         {
 
-            using FileStream stream = File.OpenWrite(SettingsServer.GetFullFilePath());
+            using FileStream stream = File.OpenWrite(SettingsService.GetFullFilePath());
             using Utf8JsonWriter writer = new(stream, FileOptions);
 
             writer.WriteStartObject();

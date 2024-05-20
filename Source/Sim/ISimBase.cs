@@ -11,7 +11,7 @@ namespace EppNet.Sim
 
     public interface ISimBase
     {
-        public SimClock GetClock();
+        public EppNet.Time.Clock GetClock();
         public Socket GetSocket();
 
     }

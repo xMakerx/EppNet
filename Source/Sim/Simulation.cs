@@ -18,7 +18,6 @@ using EppNet.Utilities;
 using Serilog;
 
 using System;
-using System.Diagnostics;
 using System.Threading;
 
 using ENetLib = ENet.Library;
@@ -103,7 +102,7 @@ namespace EppNet.Sim
 
         public readonly Socket Socket;
         public readonly MessageDirector MessageDirector;
-        public readonly SimClock Clock;
+        public readonly EppNet.Time.Clock Clock;
 
         public Distribution DistroType { internal set; get; }
 
@@ -131,7 +130,7 @@ namespace EppNet.Sim
 
             this.Socket = socket;
             this.MessageDirector = new MessageDirector();
-            this.Clock = new SimClock(this);
+            this.Clock = new();
         }
 
         public void Initialize(Callbacks enet_callbacks = null)
@@ -257,7 +256,7 @@ namespace EppNet.Sim
             sim.Start();
         }
 
-        public SimClock GetClock() => Clock;
+        public EppNet.Time.Clock GetClock() => Clock;
         public Socket GetSocket() => Socket;
     }
 

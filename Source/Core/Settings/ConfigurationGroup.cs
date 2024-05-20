@@ -15,6 +15,8 @@ namespace EppNet.Core.Settings
     public class ConfigurationGroup : Writeable
     {
 
+        public bool IsRoot => string.IsNullOrEmpty(Key);
+
         public List<Writeable> Items { get => _items; }
 
         protected List<Writeable> _items;
@@ -112,8 +114,6 @@ namespace EppNet.Core.Settings
             if (!IsRoot)
                 writer.WriteEndObject();
         }
-
-        public bool IsRoot => string.IsNullOrEmpty(Key);
 
     }
 }

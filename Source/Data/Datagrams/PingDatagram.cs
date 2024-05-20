@@ -36,7 +36,7 @@ namespace EppNet.Data.Datagrams
             if (Sender.IsServer())
             {
                 this.ReceivedTime = ReadULong();
-                Simulation.Get().Clock.ProcessPong(ReceivedTime, SentTime);
+                Simulation.Get().Clock.ProcessPong(this);
             }
             else
             {

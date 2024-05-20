@@ -61,14 +61,7 @@ namespace EppNet.Connections
         /// Forcibly closes the connection.
         /// </summary>
 
-        public void Eject()
-        {
-            using (DisconnectDatagram datagram = new(DisconnectReason.Ejected))
-            {
-                datagram.Write();
-                SendInstant(datagram);
-            }
-        }
+        public void Eject() => Eject(DisconnectReason.Ejected);
 
         /// <summary>
         /// Forcibly closes the connection with the
@@ -78,11 +71,8 @@ namespace EppNet.Connections
 
         public void Eject(DisconnectReason reason)
         {
-            using (DisconnectDatagram datagram = new(reason))
-            {
-                datagram.Write();
-                SendInstant(datagram);
-            }
+            using DisconnectDatagram datagram = new(reason);
+            SendInstant(datagram);
         }
 
         public bool Send(byte[] bytes, byte channelId, PacketFlags flags)

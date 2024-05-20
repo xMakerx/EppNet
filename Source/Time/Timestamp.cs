@@ -7,7 +7,7 @@ using EppNet.Sim;
 
 using System;
 
-namespace EppNet.Core
+namespace EppNet.Time
 {
 
     public enum TimestampType : byte
@@ -238,7 +238,7 @@ namespace EppNet.Core
             if (obj is Timestamp)
             {
                 Timestamp b = _CreateMatching((Timestamp)obj);
-                return (Value == b.Value);
+                return Value == b.Value;
             }
 
             return false;
@@ -256,7 +256,7 @@ namespace EppNet.Core
         public bool Equals(Timestamp other)
         {
             Timestamp b = _CreateMatching(other);
-            return (Value == b.Value);
+            return Value == b.Value;
         }
 
         /// <summary>
