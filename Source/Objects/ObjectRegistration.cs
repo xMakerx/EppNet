@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Attributes;
+using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Utilities;
 
@@ -12,20 +13,19 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-using Notify = EppNet.Utilities.LoggingExtensions;
-
 namespace EppNet.Objects
 {
 
-    public class ObjectRegistration : Registration
+    public class ObjectRegistration : Registration, ILoggable
     {
 
         public static readonly StringComparer StringSortComparer = StringComparer.Ordinal;
 
+        public ILoggable Notify { get => this; }
+
         public readonly NetworkObjectAttribute ObjectAttribute;
         protected internal SortedList<string, ObjectMemberDefinition> _methods;
         protected internal SortedList<string, ObjectMemberDefinition> _props;
-
         public ObjectRegistration(Type type, NetworkObjectAttribute attribute) : base(type)
         {
             this.ObjectAttribute = attribute;
@@ -245,9 +245,12 @@ namespace EppNet.Objects
 
                                 if (getterMthd == null)
                                 {
-                                    Notify.Error($"Method {method.Name} with NetworkFlag SNAPSHOT must have a specified getter or a " +
-                                        $"companion function in the declaring type named \"{methodName}\".", out string msg);
-                                    throw new ArgumentException(msg);
+                                    string msg = $"Method {method.Name} with NetworkFlag SNAPSHOT must have a specified getter or a " +
+                                        $"companion function in the declaring type named \"{methodName}\".";
+
+                                    var exp = new ArgumentException(msg);
+                                    Notify.Error(msg, exp);
+                                    throw exp;
                                 }
                                 else
                                 {
@@ -256,10 +259,12 @@ namespace EppNet.Objects
                                     if (!(paramInfos.Length == 1 && paramInfos[0].ParameterType.IsAssignableFrom(getterMthd.ReturnType)
                                         && getterMthd.GetParameters().Length == 0))
                                     {
-                                        Notify.Error($"Method {method.Name} with NetworkFlag SNAPSHOT must take 1 parameter with an assignable " +
-                                            $"type from the return type of the companion getter in the declaring type. Example: void SetPosition(Vector3); Vector3 GetPosition()",
-                                            out string msg);
-                                        throw new ArgumentException(msg);
+                                        string msg = $"Method {method.Name} with NetworkFlag SNAPSHOT must take 1 parameter with an assignable " +
+                                            $"type from the return type of the companion getter in the declaring type. Example: void SetPosition(Vector3); Vector3 GetPosition()";
+
+                                        var exp = new ArgumentException(msg);
+                                        Notify.Error(msg, exp);
+                                        throw exp;
                                     }
 
                                     Notify.Verbose($"Located companion getter Method {getterMthd.Name} for Method {member.Name}");

@@ -11,9 +11,11 @@ using ENet;
 using EppNet.Attributes;
 using EppNet.Core;
 using EppNet.Data;
+using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Sockets;
 using EppNet.Utilities;
+using EppNet.Time;
 
 using Serilog;
 
@@ -21,12 +23,11 @@ using System;
 using System.Threading;
 
 using ENetLib = ENet.Library;
-using Notify = EppNet.Utilities.LoggingExtensions;
 
 namespace EppNet.Sim
 {
 
-    public class Simulation : ISimBase
+    public class Simulation : ISimBase, ILoggable
     {
 
         protected static Simulation _instance = null;
@@ -102,7 +103,9 @@ namespace EppNet.Sim
 
         public readonly Socket Socket;
         public readonly MessageDirector MessageDirector;
-        public readonly EppNet.Time.Clock Clock;
+        public readonly Clock Clock;
+
+        public ILoggable Notify { get => this; }
 
         public Distribution DistroType { internal set; get; }
 
@@ -135,9 +138,7 @@ namespace EppNet.Sim
 
         public void Initialize(Callbacks enet_callbacks = null)
         {
-            if (LoggingExtensions.AssertFalseOrLog(_initialized, 
-                Serilog.Events.LogEventLevel.Warning, 
-                "Called initialize twice?"))
+            if (Notify.AssertTrueOrLog(Serilog.Events.LogEventLevel.Warning, "Called initialize twice?", !_initialized))
                 return;
 
             AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
@@ -161,7 +162,7 @@ namespace EppNet.Sim
                 _initialized = ENetLib.Initialize();
             }
 
-            if (Notify.AssertTrueOrFatal(_initialized, "Failed to initialize the ENet Library!"))
+            if (Notify.AssertTrueOrFatal("Failed to initialize the ENet Library!", _initialized))
             {
                 Notify.Info($"Initialized ENet ver-{ENetLib.version}!");
 

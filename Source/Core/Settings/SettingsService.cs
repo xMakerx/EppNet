@@ -6,6 +6,8 @@
 
 using System;
 
+using EppNet.Services;
+
 namespace EppNet.Core.Settings
 {
 
@@ -16,12 +18,12 @@ namespace EppNet.Core.Settings
         /// The path to the directory where the configuration is stored.
         /// </summary>
 
-        public static string ConfigurationPath
+        public string ConfigurationPath
         {
             set
             {
+                MarkDirty();
                 _configPath = value;
-                // TODO: Ask for new config
             }
 
             get => _configPath;
@@ -31,7 +33,7 @@ namespace EppNet.Core.Settings
         /// The filename and extension of the configuration
         /// </summary>
 
-        public static string ConfigurationFilename
+        public string ConfigurationFilename
         {
             set
             {
@@ -40,10 +42,15 @@ namespace EppNet.Core.Settings
 
             get => _configFilename;
         }
-        public static string GetFullFilePath() => @$"{ConfigurationPath}\{ConfigurationFilename}";
+        public string GetFullFilePath() => @$"{ConfigurationPath}\{ConfigurationFilename}";
 
-        private static string _configPath = AppDomain.CurrentDomain.BaseDirectory + @"\config";
-        private static string _configFilename = "config.json";
+        private string _configPath = AppDomain.CurrentDomain.BaseDirectory + @"\config";
+        private string _configFilename = "config.json";
+
+        public SettingsService(ServiceManager svcMgr) : base(svcMgr)
+        {
+
+        }
 
 
     }

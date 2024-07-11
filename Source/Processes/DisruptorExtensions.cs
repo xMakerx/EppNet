@@ -8,12 +8,9 @@
 
 using Disruptor;
 using Disruptor.Dsl;
-
 using EppNet.Processes.Events;
 
 using System;
-
-using Notify = EppNet.Utilities.LoggingExtensions;
 
 namespace EppNet.Source.Processes
 {
@@ -37,7 +34,7 @@ namespace EppNet.Source.Processes
 
             if (!retrieved)
             {
-                Notify.Error($"Failed to prepare event for ring buffer. Buffer full! Increase limit from: {buffer.BufferSize}");
+                //Notify.Error($"Failed to prepare event for ring buffer. Buffer full! Increase limit from: {buffer.BufferSize}");
                 return false;
             }
 
@@ -51,7 +48,7 @@ namespace EppNet.Source.Processes
             }
             catch (Exception e)
             {
-                Notify.Error($"Failed to prepare event for ring buffer. Error: {e.Message}\nStack Trace: {e.StackTrace}");
+                //Notify.Error($"Failed to prepare event for ring buffer. Error: {e.Message}\nStack Trace: {e.StackTrace}");
             }
 
             return retrieved;
@@ -69,13 +66,13 @@ namespace EppNet.Source.Processes
         {
             if (@event == null)
             {
-                Notify.Error("Tried to publish a NULL event. Did you forget to obtain one?");
+                //Notify.Error("Tried to publish a NULL event. Did you forget to obtain one?");
                 return false;
             }
 
             if (@event.Disposed)
             {
-                Notify.Error("Tried to publish a disposed event. Did you forget to initialize it?");
+                //Notify.Error("Tried to publish a disposed event. Did you forget to initialize it?");
                 return false;
             }
 
@@ -83,13 +80,13 @@ namespace EppNet.Source.Processes
             {
                 // Let's try to publish this event.
                 disruptor.RingBuffer.Publish(@event.SequenceID);
-                Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
+                //Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
                 return true;
             }
             catch (Exception e)
             {
                 // Something went wrong somewhere
-                Notify.Error($"Failed to publish event. Error: {e.Message}\nStack Trace: {e.StackTrace}");
+                //Notify.Error($"Failed to publish event. Error: {e.Message}\nStack Trace: {e.StackTrace}");
                 return false;
             }
 

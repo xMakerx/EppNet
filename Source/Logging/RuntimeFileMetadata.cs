@@ -20,21 +20,22 @@ namespace EppNet.Logging
         private const string Unknown = "Unknown";
         private const string Missing = "??";
 
+        public static readonly RuntimeFileMetadata Default = new();
+
         private static Dictionary<string, RuntimeFileMetadata> _filepath2Data = new()
         {
-            { string.Empty, new() }
+            { string.Empty, Default }
         };
 
         private static Dictionary<string, RuntimeFileMetadata> _filename2Data = new()
         {
-            { Unknown, new() }
+            { Unknown, Default }
         };
 
-        private static void _Internal_CacheEntry(string filename, string filepath, out RuntimeFileMetadata metadata)
+        private static void _Internal_CacheEntry(RuntimeFileMetadata metadata)
         {
-            metadata = new RuntimeFileMetadata(filename, filepath);
-            _filename2Data[filename] = metadata;
-            _filepath2Data[filepath] = metadata;
+            _filename2Data[metadata.Filename] = metadata;
+            _filepath2Data[metadata.Filepath] = metadata;
         }
 
         public static void ClearCache()
@@ -43,23 +44,40 @@ namespace EppNet.Logging
             _filepath2Data.Clear();
         }
 
-        public static bool TryGetMetadata(string filepath, out RuntimeFileMetadata metadata)
+        public static bool TryGetMetadataByPath(string filepath, out RuntimeFileMetadata metadata) => _filepath2Data.TryGetValue(filepath, out metadata);
+
+        public static bool TryGetMetadataByName(string filename, out RuntimeFileMetadata metadata) => _filename2Data.TryGetValue(filename, out metadata);
+
+        public static bool GetMetadataFromName(string filename, out RuntimeFileMetadata metadata, bool cacheIfNecessary = true)
         {
-            return _filepath2Data.TryGetValue(filepath, out metadata);
+            if (string.IsNullOrEmpty(filename))
+            {
+                metadata = RuntimeFileMetadata.Default;
+                return false;
+            }
+
+            // Check if we've already determined the filename
+            if (TryGetMetadataByName(filename, out metadata))
+                return true;
+
+            metadata = new(filename, Missing);
+
+            if (cacheIfNecessary)
+                _Internal_CacheEntry(metadata);
+
+            return false;
         }
 
-        public static RuntimeFileMetadata GetMetadataFromPath(string filepath, bool cacheIfNecessary = true)
+        public static bool GetMetadataFromPath(string filepath, out RuntimeFileMetadata metadata, bool cacheIfNecessary = true)
         {
-
-            RuntimeFileMetadata metadata;
 
             // This is okay as we have some default values for null or whitespace.
             if (string.IsNullOrWhiteSpace(filepath))
                 filepath = string.Empty;
 
             // Check if we've already determined the filename
-            if (TryGetMetadata(filepath, out metadata))
-                return metadata;
+            if (TryGetMetadataByPath(filepath, out metadata))
+                return true;
 
             // For some UNKNOWN reason Path#GetFileNameWithoutExtension
             // isn't working so I had to roll my own solution.
@@ -89,12 +107,14 @@ namespace EppNet.Logging
             }
 
             string filename = builder.ToString();
-            
+
+            // Create a new RuntimeFileMetadata
+            metadata = new(filename, filepath);
 
             if (cacheIfNecessary)
-                _Internal_CacheEntry(filename, filepath, out metadata);
+                _Internal_CacheEntry(metadata);
 
-            return metadata;
+            return false;
         }
 
         public string Filename { protected set; get; }
@@ -104,7 +124,7 @@ namespace EppNet.Logging
         /// A <see cref="LogEventLevel"/> of NULL means that we're
         /// using the global log event level rather than our own.
         /// </summary>
-        public LogEventLevel? LogLevel { set; get; }
+        public LogLevelFlags LogLevel { set; get; }
 
         private RuntimeFileMetadata() : this(Unknown, Missing) { }
 
@@ -112,7 +132,7 @@ namespace EppNet.Logging
         {
             this.Filename = filename;
             this.Filepath = filepath;
-            this.LogLevel = null;
+            this.LogLevel = LogLevelFlags.InfoWarnFatal;
         }
 
         public bool IsDefault() => Filename == Unknown && Filepath == Missing;

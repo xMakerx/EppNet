@@ -8,12 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-using Notify = EppNet.Utilities.LoggingExtensions;
+using EppNet.Logging;
 
 namespace EppNet.Core.Settings
 {
-    public class ConfigurationGroup : Writeable
+    public class ConfigurationGroup : Writeable, ILoggable
     {
+        public ILoggable Notify { get => this; }
 
         public bool IsRoot => string.IsNullOrEmpty(Key);
 

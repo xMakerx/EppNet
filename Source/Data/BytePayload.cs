@@ -16,7 +16,7 @@
 /// </summary>
 
 
-using EppNet.Core;
+using EppNet.Time;
 using EppNet.Exceptions;
 using EppNet.Utilities;
 

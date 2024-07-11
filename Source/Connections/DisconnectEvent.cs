@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Core;
+using EppNet.Time;
 
 namespace EppNet.Connections
 {

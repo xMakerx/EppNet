@@ -4,16 +4,18 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Logging;
+
 using System;
 using System.Text.Json;
 
-using Notify = EppNet.Logging.LoggingExtensions;
-
 namespace EppNet.Core.Settings
 {
-    public class PrimitiveSetting<TValue> : Writeable, ISetting<TValue> where TValue : struct, IComparable,
+    public class PrimitiveSetting<TValue> : Writeable, ILoggable, ISetting<TValue> where TValue : struct, IComparable,
         IFormattable, IConvertible, IComparable<TValue>, IEquatable<TValue>
     {
+
+        public ILoggable Notify { get => this; }
 
         /// <summary>
         /// Called when the value of this setting changes.
@@ -55,8 +57,8 @@ namespace EppNet.Core.Settings
             int lComp = lowerBounds.CompareTo(upperBounds);
             int uComp = upperBounds.CompareTo(lowerBounds);
 
-            if (Notify.AssertTrueOrFatal((lComp < 0 && uComp > 0) || lComp == uComp,
-                $"Setting {Key} was provided an invalid range of [{lowerBounds}, {upperBounds}]"))
+            if (Notify.AssertTrueOrFatal($"Setting {Key} was provided an invalid range of [{lowerBounds}, {upperBounds}]", 
+                (lComp < 0 && uComp > 0) || lComp == uComp))
             {
                 // Set the bounds
                 this._lowerBounds = lowerBounds;

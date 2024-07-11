@@ -19,6 +19,7 @@ namespace EppNet.Node
 
     public class NetworkNode : ILoggable, IEquatable<NetworkNode>
     {
+        public ILoggable Notify { get => this; }
 
         public string Name;
         public readonly Guid UUID;
@@ -39,7 +40,6 @@ namespace EppNet.Node
 
         public NetworkNode()
         {
-            this._Internal_SetupLogging();
             this.Name = string.Empty;
             this.UUID = Guid.NewGuid();
 

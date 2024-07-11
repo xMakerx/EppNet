@@ -6,19 +6,20 @@
 
 using ENet;
 
+using EppNet.Logging;
 using EppNet.Sockets;
 using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
 
-using Notify = EppNet.Logging.LoggingExtensions;
-
 namespace EppNet.Connections
 {
 
-    public class ConnectionManager
+    public class ConnectionManager : ILoggable
     {
+
+        public ILoggable Notify { get => this; }
 
         public event Action<Connection> OnConnectionEstablished;
         public event Action<DisconnectEvent> OnConnectionLost;

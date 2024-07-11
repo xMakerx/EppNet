@@ -8,12 +8,11 @@ using ENet;
 
 using EppNet.Data;
 using EppNet.Data.Datagrams;
+using EppNet.Logging;
 using EppNet.Sockets;
 using EppNet.Time;
 
 using System;
-
-using Notify = EppNet.Logging.LoggingExtensions;
 
 namespace EppNet.Connections
 {
@@ -24,8 +23,10 @@ namespace EppNet.Connections
     /// who organized.
     /// </summary>
 
-    public class Connection
+    public class Connection : ILoggable
     {
+
+        public ILoggable Notify { get => this; }
 
         /// <summary>
         /// The socket this connection originates from.

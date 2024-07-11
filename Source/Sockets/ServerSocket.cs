@@ -7,9 +7,8 @@
 using ENet;
 
 using EppNet.Connections;
+using EppNet.Logging;
 using EppNet.Processes.Events;
-
-using Notify = EppNet.Utilities.LoggingExtensions;
 
 namespace EppNet.Sockets
 {

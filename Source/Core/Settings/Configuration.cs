@@ -27,13 +27,13 @@ namespace EppNet.Core.Settings
         public void Write()
         {
 
-            using FileStream stream = File.OpenWrite(SettingsService.GetFullFilePath());
-            using Utf8JsonWriter writer = new(stream, FileOptions);
+            // TODO: using FileStream stream = File.OpenWrite(SettingsService.GetFullFilePath());
+            //using Utf8JsonWriter writer = new(stream, FileOptions);
 
-            writer.WriteStartObject();
-            MainGroup.Write(writer);
-            writer.WriteEndObject();
-            writer.Flush();
+            //writer.WriteStartObject();
+            //MainGroup.Write(writer);
+            //writer.WriteEndObject();
+            //writer.Flush();
         }
 
     }

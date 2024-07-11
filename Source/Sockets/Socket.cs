@@ -10,8 +10,10 @@ using EppNet.Connections;
 using EppNet.Core;
 using EppNet.Data;
 using EppNet.Exceptions;
+using EppNet.Logging;
 using EppNet.Processes.Events;
 using EppNet.Sim;
+using EppNet.Time;
 
 using System;
 
@@ -33,8 +35,10 @@ namespace EppNet.Sockets
         Disconnected    = 1 << 3
     }
 
-    public abstract class Socket : IDisposable
+    public abstract class Socket : IDisposable, ILoggable
     {
+
+        public ILoggable Notify { get => this; }
 
         public SocketType Type { get; }
         public SocketStatus Status { protected set; get; }

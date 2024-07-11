@@ -8,9 +8,9 @@
 
 using ENet;
 
-using EppNet.Core;
 using EppNet.Connections;
 using EppNet.Sockets;
+using EppNet.Time;
 
 namespace EppNet.Processes.Events
 {
