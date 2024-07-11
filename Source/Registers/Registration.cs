@@ -52,8 +52,7 @@ namespace EppNet.Registers
 
                     Expression accessorExp = Expression.ArrayIndex(param, index);
 
-                    Expression paramCastExp = Expression.Convert(accessorExp, paramType);
-                    argsExp[i] = paramCastExp;
+                    argsExp[k] = Expression.Convert(accessorExp, paramType); // Was argsExp[i] before
                     types[k] = paramType;
                 }
 
