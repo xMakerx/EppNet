@@ -7,7 +7,7 @@
 using System;
 using System.Text.Json;
 
-using Notify = EppNet.Utilities.LoggingExtensions;
+using Notify = EppNet.Logging.LoggingExtensions;
 
 namespace EppNet.Core.Settings
 {

@@ -12,7 +12,7 @@ using EppNet.Utilities;
 using System;
 using System.Collections.Generic;
 
-using Notify = EppNet.Utilities.LoggingExtensions;
+using Notify = EppNet.Logging.LoggingExtensions;
 
 namespace EppNet.Connections
 {

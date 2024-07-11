@@ -6,7 +6,7 @@
 
 namespace EppNet.Core.Settings
 {
-    public struct SettingValueChangedEvent<TValue>
+    public readonly struct SettingValueChangedEvent<TValue>
     {
 
         public readonly ISetting<TValue> Setting;

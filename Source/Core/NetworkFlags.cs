@@ -45,7 +45,8 @@ namespace EppNet.Core
         /// <summary>
         /// Data passed to this method is recorded for interpolation and extrapolation between
         /// ticks. In addition, the current value is queried every tick to detect changes and
-        /// propagate them. Implies <see cref="Persistant"/> as the latest snapshot value is
+        /// propagate them.
+        /// <br/>Implies <see cref="Persistant"/> as the latest snapshot value is
         /// sent to new parties that gain interest.
         /// </summary>
         Snapshot        = 1 << 5,

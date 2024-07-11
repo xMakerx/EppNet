@@ -30,9 +30,9 @@ namespace EppNet.Logging
             { Unknown, new() }
         };
 
-        private static void _Internal_CacheEntry(string filename, string filepath)
+        private static void _Internal_CacheEntry(string filename, string filepath, out RuntimeFileMetadata metadata)
         {
-            RuntimeFileMetadata metadata = new RuntimeFileMetadata(filename, filepath);
+            metadata = new RuntimeFileMetadata(filename, filepath);
             _filename2Data[filename] = metadata;
             _filepath2Data[filepath] = metadata;
         }
@@ -48,15 +48,18 @@ namespace EppNet.Logging
             return _filepath2Data.TryGetValue(filepath, out metadata);
         }
 
-        public static string GetFilenameFromPath(string filepath, bool cacheIfNecessary = true)
+        public static RuntimeFileMetadata GetMetadataFromPath(string filepath, bool cacheIfNecessary = true)
         {
+
+            RuntimeFileMetadata metadata;
+
             // This is okay as we have some default values for null or whitespace.
             if (string.IsNullOrWhiteSpace(filepath))
                 filepath = string.Empty;
 
             // Check if we've already determined the filename
-            if (TryGetMetadata(filepath, out RuntimeFileMetadata metadata))
-                return metadata.Filename;
+            if (TryGetMetadata(filepath, out metadata))
+                return metadata;
 
             // For some UNKNOWN reason Path#GetFileNameWithoutExtension
             // isn't working so I had to roll my own solution.
@@ -86,11 +89,12 @@ namespace EppNet.Logging
             }
 
             string filename = builder.ToString();
+            
 
             if (cacheIfNecessary)
-                _Internal_CacheEntry(filename, filepath);
+                _Internal_CacheEntry(filename, filepath, out metadata);
 
-            return filename;
+            return metadata;
         }
 
         public string Filename { protected set; get; }

@@ -6,13 +6,14 @@
 
 using ENet;
 
-using EppNet.Core;
 using EppNet.Data;
-using EppNet.Sockets;
 using EppNet.Data.Datagrams;
+using EppNet.Sockets;
+using EppNet.Time;
 
 using System;
-using Notify = EppNet.Utilities.LoggingExtensions;
+
+using Notify = EppNet.Logging.LoggingExtensions;
 
 namespace EppNet.Connections
 {
@@ -122,6 +123,8 @@ namespace EppNet.Connections
 
             if (sent)
                 Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ID}");
+            else
+                Notify.Debug($"Failed to send Datagram {datagram.GetType().Name} to Peer {ID}");
 
             return sent;
         }
