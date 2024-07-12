@@ -5,7 +5,6 @@
 //////////////////////////////////////////////
 
 using System;
-using System.Text;
 
 namespace EppNet.Messaging
 {
@@ -14,18 +13,18 @@ namespace EppNet.Messaging
     public enum ChannelFlags : byte
     {
 
-        None                = 0,
+        None                    = 0,
 
         /// <summary>
         /// Messages sent to this channel are processed immediately rather
         /// than waiting for the next simulation tick.
         /// </summary>
-        ProcessImmediately = 1 << 0,
+        ProcessImmediately      = 1 << 0,
 
         /// <summary>
         /// Data sent over this channel is encrypted.
         /// </summary>
-        Encrypted = 1 << 1
+        Encrypted               = 1 << 1
 
     }
 

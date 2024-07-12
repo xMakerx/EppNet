@@ -8,15 +8,15 @@ using Disruptor;
 
 using ENet;
 
-using EppNet.Connections;
+using EppNet.Data.Datagrams;
+using EppNet.Messaging;
+using EppNet.Processes.Events;
 using EppNet.Registers;
 using EppNet.Sim;
-using EppNet.Data.Datagrams;
 using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
-using EppNet.Processes.Events;
 
 namespace EppNet.Data
 {
@@ -92,11 +92,11 @@ namespace EppNet.Data
         /// </summary>
         public virtual void DispatchAll()
         {
-            List<Datagram> datagrams = new List<Datagram>();
+            List<Datagram> datagrams;
 
             lock (_lock)
             {
-                datagrams.AddRange(_datagram_queue);
+                datagrams = new(_datagram_queue);
                 _datagram_queue.Clear();
             }
 

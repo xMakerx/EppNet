@@ -7,6 +7,7 @@ using System;
 using System.Runtime.CompilerServices;
 
 using EppNet.Services;
+using EppNet.Sockets;
 using EppNet.Logging;
 
 namespace EppNet.Node
@@ -27,12 +28,12 @@ namespace EppNet.Node
         /// <summary>
         /// Fetches the <see cref="ServiceManager"/> associated with this node
         /// </summary>
-        public ServiceManager Services
-        {
-            get => _serviceMgr;
-        }
+        public ServiceManager Services { get => _serviceMgr; }
+
+        public Socket Socket { get => _socket; }
 
         internal ServiceManager _serviceMgr;
+        internal Socket _socket;
 
         internal readonly int _index;
 
@@ -45,6 +46,7 @@ namespace EppNet.Node
 
             this._index = NetworkNodeManager._nodes.Count;
             this._serviceMgr = new(this);
+            this._socket = null;
 
             // Let's try to register this
             NetworkNodeManager.TryRegisterNode(this);

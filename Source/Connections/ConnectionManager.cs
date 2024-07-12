@@ -7,6 +7,7 @@
 using ENet;
 
 using EppNet.Logging;
+using EppNet.Services;
 using EppNet.Sockets;
 using EppNet.Utilities;
 
@@ -16,10 +17,8 @@ using System.Collections.Generic;
 namespace EppNet.Connections
 {
 
-    public class ConnectionManager : ILoggable
+    public class ConnectionManager : Service
     {
-
-        public ILoggable Notify { get => this; }
 
         public event Action<Connection> OnConnectionEstablished;
         public event Action<DisconnectEvent> OnConnectionLost;
@@ -27,11 +26,10 @@ namespace EppNet.Connections
         internal readonly Socket _socket;
         protected readonly Dictionary<uint, Connection> _connections;
 
-        public ConnectionManager(Socket socket)
+        public ConnectionManager(ServiceManager svcMgr) : base(svcMgr)
         {
-            _socket = socket;
-            _connections = new Dictionary<uint, Connection>();
-        } 
+            this._socket = svcMgr.Node.Socket;
+        }
 
         public bool HandleNewConnection(Peer enetPeer)
         {

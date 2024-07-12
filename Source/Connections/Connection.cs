@@ -144,5 +144,7 @@ namespace EppNet.Connections
 
         public bool IsServer() => ID == 0;
 
+        public override string ToString() => string.Format($"Connection ID {_enet_peer.ID} {_enet_peer.IP}:{_enet_peer.Port}");
+
     }
 }
