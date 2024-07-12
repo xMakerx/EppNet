@@ -1,26 +1,32 @@
 ﻿/////////////////////////////////////////////
 /// Filename: ChannelFlags.cs
-/// Date: September 14, 2023
+/// Date: July 11, 2024
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
-namespace EppNet.Data
+using System;
+using System.Text;
+
+namespace EppNet.Messaging
 {
+
+    [Flags]
     public enum ChannelFlags : byte
     {
-        None = 0,
+
+        None                = 0,
 
         /// <summary>
-        /// Datagrams received are sent to this channel to be processed
-        /// immediately after reception rather than waiting for a new simulation
-        /// tick.
+        /// Messages sent to this channel are processed immediately rather
+        /// than waiting for the next simulation tick.
         /// </summary>
-        ProcessImmediately  = 1 << 0,
+        ProcessImmediately = 1 << 0,
 
         /// <summary>
         /// Data sent over this channel is encrypted.
         /// </summary>
-        Encrypted           = 1 << 1
+        Encrypted = 1 << 1
+
     }
 
 }

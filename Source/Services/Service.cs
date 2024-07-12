@@ -6,6 +6,8 @@
 
 using System;
 
+using EppNet.Logging;
+
 namespace EppNet.Services
 {
 
@@ -17,8 +19,9 @@ namespace EppNet.Services
         ShuttingDown    = 3
     }
 
-    public abstract class Service : IService
+    public abstract class Service : IService, ILoggable
     {
+        public ILoggable Notify { get => this; }
 
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 
@@ -65,7 +68,8 @@ namespace EppNet.Services
 
         public virtual void Start()
         {
-            this.Status = ServiceState.Starting;
+            if (Status == ServiceState.Offline)
+                this.Status = ServiceState.Starting;
         }
 
 

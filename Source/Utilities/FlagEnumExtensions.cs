@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace EppNet.Utilities
 {
@@ -17,6 +18,40 @@ namespace EppNet.Utilities
         private static void _EnsureEnum<T>()
         {
             Trace.Assert(typeof(T).IsEnum, $"Type '{typeof(T).Name}` is not a valid Enum!");
+        }
+
+        public static string ToListString<T>(this T input) where T : struct, Enum
+        {
+
+            StringBuilder builder = new();
+
+            T[] allValues = Enum.GetValues<T>();
+            int listedValues = 0;
+
+            for (int i = 0; i < allValues.Length; i++)
+            {
+                T val = allValues[i];
+
+                // This is equivalent to a flag of None
+                if (Convert.ToInt32(val) == 0)
+                    continue;
+
+                if (input.HasFlag(val))
+                {
+                    listedValues++;
+                    builder.Append(nameof(val));
+
+                    if (++i < allValues.Length)
+                        builder.Append(", ");
+                }
+
+            }
+
+            if (listedValues == 0)
+                builder.Append("None");
+
+            return builder.ToString();
+
         }
 
         public static string ToString<T>(this T a) where T : struct, IConvertible, IComparable, IFormattable

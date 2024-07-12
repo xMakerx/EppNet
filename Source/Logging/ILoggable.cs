@@ -104,6 +104,12 @@ namespace EppNet.Logging
             => loggable._Internal_DoMsg(level, new(message, objects), exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Fatal(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Fatal, msgData, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Fatal(this ILoggable loggable, string message,
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null) 
@@ -116,10 +122,22 @@ namespace EppNet.Logging
             => loggable.Msg(LogEventLevel.Error, message, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Error(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Error, msgData, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Warning(this ILoggable loggable, string message,
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null)
             => loggable.Msg(LogEventLevel.Warning, message, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Warning(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Warning, msgData, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Warn(this ILoggable loggable, string message,
@@ -128,10 +146,22 @@ namespace EppNet.Logging
             => loggable.Msg(LogEventLevel.Warning, message, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Warn(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Warning, msgData, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Debug(this ILoggable loggable, string message,
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null)
             => loggable.Msg(LogEventLevel.Debug, message, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Debug(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Debug, msgData, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Info(this ILoggable loggable, string message,
@@ -140,16 +170,34 @@ namespace EppNet.Logging
             => loggable.Msg(LogEventLevel.Information, message, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Info(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Information, msgData, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Information(this ILoggable loggable, string message,
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null)
             => loggable.Msg(LogEventLevel.Information, message, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Information(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Information, msgData, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool Verbose(this ILoggable loggable, string message,
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null)
             => loggable.Msg(LogEventLevel.Verbose, message, exception, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static bool Verbose(this ILoggable loggable, TemplatedMessage msgData,
+            Exception exception = null,
+            [CallerMemberName] string callerMemberName = null)
+            => loggable._Internal_DoMsg(LogEventLevel.Verbose, msgData, exception, callerMemberName);
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool AssertTrueOrLog(this ILoggable loggable, LogEventLevel level, string message,
