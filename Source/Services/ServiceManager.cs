@@ -13,7 +13,7 @@ using System.Collections.Generic;
 namespace EppNet.Services
 {
 
-    public class ServiceManager : IPerNode
+    public class ServiceManager : INodeDescendant
     {
 
         public NetworkNode Node { get; }

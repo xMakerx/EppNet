@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: IPerNode.cs
+/// Filename: INodeDescendant.cs
 /// Date: July 10, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
@@ -9,7 +9,11 @@ using System.Diagnostics.CodeAnalysis;
 namespace EppNet.Node
 {
 
-    public interface IPerNode
+    /// <summary>
+    /// Indicates something that descends from and is managed by a <see cref="NetworkNode"/>
+    /// </summary>
+
+    public interface INodeDescendant
     {
 
         /// <summary>

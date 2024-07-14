@@ -56,8 +56,7 @@ namespace EppNet.Logging
         /// <summary>
         /// Gets the <see cref="LogLevelFlags"/> for this loggable.<br/>
         /// If no <see cref="LogEventLevel"/> was set, the following takes precendence:<br/>
-        /// - If Loggable is <see cref="IPerNode"/>, uses the <see cref="LogEventLevel"/> of the associated <see cref="NetworkNode"/><br/>
-        /// - If not a <see cref="IPerNode"/>, uses <see cref="LoggingExtensions.GlobalLogLevel"/>
+        /// - If Loggable is <see cref="INodeDescendant"/>, uses the <see cref="LogEventLevel"/> of the associated <see cref="NetworkNode"/><br/>
         /// </summary>
         /// <param name="loggable"></param>
         /// <returns></returns>
@@ -262,7 +261,7 @@ namespace EppNet.Logging
                     out RuntimeFileMetadata metadata, cacheIfNecessary: true);
 
                 // Did we just create new metadata and are we a subcomponent of a node instance?
-                if (!existing && loggable is IPerNode pnLoggable)
+                if (!existing && loggable is INodeDescendant pnLoggable)
                 {
                     // If we're some kind of subcomponent of an instanced node,
                     // let's use log level of the node.
