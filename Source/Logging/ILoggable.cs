@@ -82,7 +82,7 @@ namespace EppNet.Logging
                     "Tried to log a message with more than one \"LogLevelFlags\" set. Only one AT most is allowed. Message: {message}",
                     msgData.Message);
 
-                loggable._Internal_DoMsg(LogEventLevel.Error, errMsgData, null, callerMemberName);
+                loggable._Internal_DoMsg(LogEventLevel.Error, errMsgData, exception, callerMemberName);
                 return false;
             }
 
@@ -311,6 +311,11 @@ namespace EppNet.Logging
                 else
                     Serilog.Log.Logger.Write(level, output);
             }
+
+            // If we're a descendant of a node, let's let the node know about
+            // this exception.
+            if (exception != null && loggable is INodeDescendant pnLoggable)
+                pnLoggable.Node.HandleException(exception);
             
             return true;
         }

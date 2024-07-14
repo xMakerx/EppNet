@@ -64,8 +64,6 @@ namespace EppNet.Processes
         /// <summary>
         /// Tries to fetch a <see cref="RingBufferEvent"/> from the Disruptor.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="disruptor"></param>
         /// <param name="event">A valid <see cref="RingBufferEvent"/> instance or NULL</param>
         /// <returns>Whether or not an event was obtained</returns>
 
@@ -90,8 +88,7 @@ namespace EppNet.Processes
             }
             catch (Exception e)
             {
-                Notify.Error($"Failed to prepare event for ring buffer. Error: {e.Message}\nStack Trace: {e.StackTrace}");
-                Node.HandleException(e);
+                Notify.Error($"Failed to prepare event for ring buffer. Error: {e.Message}\nStack Trace: {e.StackTrace}", e);
                 return false;
             }
 
@@ -127,8 +124,7 @@ namespace EppNet.Processes
             catch (Exception e)
             {
                 // Something went wrong somewhere
-                Notify.Error($"Failed to publish event. Error: {e.Message}\nStack Trace: {e.StackTrace}");
-                Node.HandleException(e);
+                Notify.Error($"Failed to publish event. Error: {e.Message}\nStack Trace: {e.StackTrace}", e);
                 return false;
             }
         }

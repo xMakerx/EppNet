@@ -156,7 +156,12 @@ namespace EppNet.Messaging
         public override int GetHashCode() => Id;
 
         public static bool operator ==(Channel left, Channel right) => left.Equals(right);
+
+        public static bool operator ==(Channel left, Channels right) => left.Equals(right);
+
         public static bool operator !=(Channel left, Channel right) => !left.Equals(right);
+
+        public static bool operator !=(Channel left, Channels right) => !left.Equals(right);
     }
 
 }
