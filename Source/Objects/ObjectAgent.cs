@@ -16,7 +16,7 @@ namespace EppNet.Objects
     /// innerworkings of objects in the system into this class.
     /// </summary>
 
-    public class ObjectDelegate
+    public class ObjectAgent
     {
 
         public readonly ISimUnit UserObject;
@@ -30,7 +30,7 @@ namespace EppNet.Objects
         public UpdateQueue OutgoingReliableUpdates { protected set; get; }
         public UpdateQueue OutgoingSnapshotUpdates { protected set; get; }
 
-        internal ObjectDelegate(ObjectRegistration registration, ISimUnit userObject, long id)
+        internal ObjectAgent(ObjectRegistration registration, ISimUnit userObject, long id)
         {
             this.Metadata = registration;
             this.UserObject = userObject;
@@ -62,13 +62,13 @@ namespace EppNet.Objects
         }
 
         /// <summary>
-        /// Checks that the specified <see cref="ObjectDelegate"/> isn't null AND
+        /// Checks that the specified <see cref="ObjectAgent"/> isn't null AND
         /// <br/>isn't equivalent to the calling instance.
         /// </summary>
         /// <param name="other"></param>
         /// <returns>Whether or not the other instance is valid</returns>
 
-        public bool IsOtherValid(ObjectDelegate other) => (other != null && other != this);
+        public bool IsOtherValid(ObjectAgent other) => other != null && other != this;
 
     }
 

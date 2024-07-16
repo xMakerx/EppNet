@@ -19,7 +19,7 @@ namespace EppNet.Sim
 
         public bool SendUpdate(string memberName, params object[] args)
         {
-            ObjectDelegate myDelegate = GetObjectDelegate();
+            ObjectAgent myDelegate = GetObjectDelegate();
             ObjectRegistration reg = myDelegate.Metadata;
             ObjectMemberDefinition mDef = reg.GetMemberByName(memberName);
 
@@ -41,7 +41,7 @@ namespace EppNet.Sim
 
         public bool RequestDelete()
         {
-            ObjectDelegate objDelegate = GetObjectDelegate();
+            ObjectAgent objDelegate = GetObjectDelegate();
 
             if (objDelegate.TicksUntilDeletion == -1)
             {
@@ -56,15 +56,15 @@ namespace EppNet.Sim
 
         public bool IsDeleteRequested()
         {
-            ObjectDelegate d = GetObjectDelegate();
+            ObjectAgent d = GetObjectDelegate();
             return (d != null && d.TicksUntilDeletion > -1);
         }
 
-        public ObjectDelegate GetObjectDelegate() => ObjectManager.Get().GetDelegateFor(this);
+        public ObjectAgent GetObjectDelegate() => ObjectManager.Get().GetDelegateFor(this);
 
         public long GetID()
         {
-            ObjectDelegate d = GetObjectDelegate();
+            ObjectAgent d = GetObjectDelegate();
             return (d != null ? d.ID : -1);
         }
 

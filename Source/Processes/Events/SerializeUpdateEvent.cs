@@ -16,13 +16,13 @@ namespace EppNet.Processes.Events
         /// Sequence ID within the constructor
         /// </summary>
         public int ID { private set; get; }
-        public ObjectDelegate ObjectDelegate { private set; get; }
+        public ObjectAgent ObjectDelegate { private set; get; }
         public string MemberName { private set; get; }
         public object[] Arguments { private set; get; }
 
         public Update Update { private set; get; }
 
-        public void Initialize(int sequenceId, ObjectDelegate objDelegate, string memberName,
+        public void Initialize(int sequenceId, ObjectAgent objDelegate, string memberName,
             object[] arguments)
         {
             ID = sequenceId;

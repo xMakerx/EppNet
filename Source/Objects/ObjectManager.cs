@@ -29,9 +29,9 @@ namespace EppNet.Objects
         /// <summary>
         /// These are our created objects.
         /// </summary>
-        protected Dictionary<long, ObjectDelegate> _id2Delegate;
+        protected Dictionary<long, ObjectAgent> _id2Delegate;
 
-        protected Dictionary<ISimUnit, ObjectDelegate> _unit2Delegate;
+        protected Dictionary<ISimUnit, ObjectAgent> _unit2Delegate;
 
         public ObjectManager()
         {
@@ -40,12 +40,12 @@ namespace EppNet.Objects
 
             ObjectManager._instance = this;
             this._sim = Simulation.Get();
-            this._id2Delegate = new Dictionary<long, ObjectDelegate>();
-            this._unit2Delegate = new Dictionary<ISimUnit, ObjectDelegate>();
+            this._id2Delegate = new Dictionary<long, ObjectAgent>();
+            this._unit2Delegate = new Dictionary<ISimUnit, ObjectAgent>();
             this._distro_type = _sim.DistroType;
         }
 
-        public bool Delete(ObjectDelegate objDelegate)
+        public bool Delete(ObjectAgent objDelegate)
         {
             if (objDelegate == null)
                 return false;
@@ -60,19 +60,19 @@ namespace EppNet.Objects
             return removed;
         }
 
-        public ObjectDelegate GetDelegateFor(ISimUnit unit)
+        public ObjectAgent GetDelegateFor(ISimUnit unit)
         {
             if (unit == null)
                 return null;
 
-            _unit2Delegate.TryGetValue(unit, out ObjectDelegate objDelegate);
+            _unit2Delegate.TryGetValue(unit, out ObjectAgent objDelegate);
             return objDelegate;
         }
 
-        protected ObjectDelegate _Internal_CreateObject(ObjectRegistration reg, long id = -1)
+        protected ObjectAgent _Internal_CreateObject(ObjectRegistration reg, long id = -1)
         {
             ISimUnit unit = null;
-            ObjectDelegate objDel = null;
+            ObjectAgent objDel = null;
             string distroName = nameof(_distro_type);
 
             if (reg == null)
@@ -112,7 +112,7 @@ namespace EppNet.Objects
                 }
 
                 id = (id == -1) ? _AllocateId() : id;
-                objDel = new ObjectDelegate(reg, unit, id);
+                objDel = new ObjectAgent(reg, unit, id);
 
                 _id2Delegate.Add(id, objDel);
                 _unit2Delegate.Add(unit, objDel);
@@ -129,7 +129,7 @@ namespace EppNet.Objects
             return objDel;
         }
 
-        public ObjectDelegate CreateObject<T>() where T : ISimUnit
+        public ObjectAgent CreateObject<T>() where T : ISimUnit
         {
             ObjectRegistration reg = ObjectRegister.Get().Get(typeof(T)) as ObjectRegistration;
             return _Internal_CreateObject(reg);
@@ -148,9 +148,9 @@ namespace EppNet.Objects
 
         public bool IsIdAvailable(long id) => !_id2Delegate.ContainsKey(id);
 
-        public ObjectDelegate GetObject(long id)
+        public ObjectAgent GetObject(long id)
         {
-            _id2Delegate.TryGetValue(id, out ObjectDelegate result);
+            _id2Delegate.TryGetValue(id, out ObjectAgent result);
             return result;
         }
 

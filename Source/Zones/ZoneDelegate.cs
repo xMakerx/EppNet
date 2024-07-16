@@ -11,7 +11,7 @@ using System.Collections.Generic;
 namespace EppNet.Zones
 {
 
-    public class ZoneDelegate : ObjectDelegate
+    public class ZoneDelegate : ObjectAgent
     {
 
         public readonly IZone Zone;

@@ -16,12 +16,12 @@ namespace EppNet.Objects
     public class ObjectState
     {
 
-        public readonly ObjectDelegate WrappedObject;
+        public readonly ObjectAgent WrappedObject;
         public readonly ulong Time;
 
         public ReadOnlyDictionary<string, object> Members2Value { private set; get; }
 
-        public ObjectState(ObjectDelegate objDelegate, ulong time)
+        public ObjectState(ObjectAgent objDelegate, ulong time)
         {
             this.WrappedObject = objDelegate;
             this.Time = time;

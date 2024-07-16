@@ -14,12 +14,12 @@ namespace EppNet.Data.Datagrams
     public class ObjectUpdateDatagram : Datagram
     {
 
-        public ObjectDelegate[] Objects { protected set; get; }
+        public ObjectAgent[] Objects { protected set; get; }
 
         /// <summary>
-        /// Stores a key-value pair of <see cref="ObjectDelegate"/>s with incoming or outgoing updates.
+        /// Stores a key-value pair of <see cref="ObjectAgent"/>s with incoming or outgoing updates.
         /// </summary>
-        public Dictionary<ObjectDelegate, List<Update>> Transients { protected set; get; }
+        public Dictionary<ObjectAgent, List<Update>> Transients { protected set; get; }
 
         public bool SnapshotUpdates { protected set; get; }
 
@@ -28,11 +28,11 @@ namespace EppNet.Data.Datagrams
             this.Header = 0x3;
             this.ChannelID = 0x1;
             this.Objects = null;
-            this.Transients = new Dictionary<ObjectDelegate, List<Update>>();
+            this.Transients = new Dictionary<ObjectAgent, List<Update>>();
             this.SnapshotUpdates = false;
         }
 
-        public ObjectUpdateDatagram(bool snapshotUpdates, params ObjectDelegate[] objectsToUpdate) : this()
+        public ObjectUpdateDatagram(bool snapshotUpdates, params ObjectAgent[] objectsToUpdate) : this()
         {
             this.SnapshotUpdates = snapshotUpdates;
             this.Objects = objectsToUpdate;
@@ -60,7 +60,7 @@ namespace EppNet.Data.Datagrams
             // Let's record how many objects are in this datagram.
             WriteByte((byte)Transients.Count);
 
-            foreach (KeyValuePair<ObjectDelegate, List<Update>> kvp in Transients)
+            foreach (KeyValuePair<ObjectAgent, List<Update>> kvp in Transients)
             {
                 // Write the ID of the object.
                 WriteULong((ulong) kvp.Key.ID);
@@ -83,7 +83,7 @@ namespace EppNet.Data.Datagrams
             for (int i = 0; i < numObjects; i++)
             {
                 ulong id = (ulong) ReadULong();
-                ObjectDelegate objDelegate = ObjectManager.Get().GetObject((long)id);
+                ObjectAgent objDelegate = ObjectManager.Get().GetObject((long)id);
 
                 if (objDelegate == null)
                 {

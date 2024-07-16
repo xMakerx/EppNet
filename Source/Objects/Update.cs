@@ -38,21 +38,21 @@ namespace EppNet.Objects
         /// <returns></returns>
         private static Update _GetFromPoolOrInstantiate() => _updatePool.Get() as Update;
 
-        public static Update For(ObjectDelegate objDelegate, ObjectMemberDefinition mDef, object[] args)
+        public static Update For(ObjectAgent objDelegate, ObjectMemberDefinition mDef, object[] args)
         {
             Update update = _GetFromPoolOrInstantiate();
             update.Initialize(objDelegate, mDef, args);
             return update;
         }
 
-        public static Update For(ObjectDelegate objDelegate, string updateName, object[] args)
+        public static Update For(ObjectAgent objDelegate, string updateName, object[] args)
         {
             Update update = _GetFromPoolOrInstantiate();
             update.Initialize(objDelegate, updateName, args);
             return update;
         }
 
-        public static Update From(ObjectDelegate objDelegate, Datagram datagram)
+        public static Update From(ObjectAgent objDelegate, Datagram datagram)
         {
             if (objDelegate == null)
                 throw new ArgumentNullException("Delegate cannot be null!");
@@ -104,7 +104,7 @@ namespace EppNet.Objects
             return update;
         }
 
-        public ObjectDelegate ObjectDelegate { private set; get; }
+        public ObjectAgent ObjectDelegate { private set; get; }
         public ObjectRegistration Registration { private set; get; }
 
         public ObjectMemberDefinition MemberDefinition { private set; get; }
@@ -121,7 +121,7 @@ namespace EppNet.Objects
             this._initialized = false;
         }
 
-        public void Initialize(ObjectDelegate objDelegate, ObjectMemberDefinition mDef, object[] args)
+        public void Initialize(ObjectAgent objDelegate, ObjectMemberDefinition mDef, object[] args)
         {
             this.ObjectDelegate = objDelegate;
             this.Registration = objDelegate.Metadata;
@@ -130,7 +130,7 @@ namespace EppNet.Objects
             this._initialized = true;
         }
 
-        public void Initialize(ObjectDelegate objDelegate, string updateName, object[] args)
+        public void Initialize(ObjectAgent objDelegate, string updateName, object[] args)
         {
             if (objDelegate == null) 
                 throw new ArgumentNullException("Delegate cannot be null!");

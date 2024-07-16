@@ -97,10 +97,10 @@ namespace EppNet.Objects
         /// <param name="instance"></param>
         /// <param name="args"></param>
         public void Invoke(ISimUnit instance, params object[] args) => Activator.Invoke(instance, args);
-        public void Invoke(ObjectDelegate instance, params object[] args) => Activator.Invoke(instance.UserObject, args);
+        public void Invoke(ObjectAgent instance, params object[] args) => Activator.Invoke(instance.UserObject, args);
 
         public object InvokeGetter(ISimUnit instance) => GetterActivator?.Invoke(instance);
-        public object InvokeGetter(ObjectDelegate instance) => GetterActivator?.Invoke(instance.UserObject);
+        public object InvokeGetter(ObjectAgent instance) => GetterActivator?.Invoke(instance.UserObject);
 
         public bool IsMethod() => MemberInfo.MemberType == MemberTypes.Method;
         public bool IsProperty() => MemberInfo.MemberType == MemberTypes.Property;
