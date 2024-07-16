@@ -39,6 +39,15 @@ namespace EppNet.Sim
         /// </summary>
         public void RecalculateZoneBounds() { }
 
+        /// <summary>
+        /// Called by the <see cref="ObjectManagerService"/> upon successful creation
+        /// </summary>
+        public void OnCreate() { }
+
+        /// <summary>
+        /// TODO: Replace this with ObjectManagerService management
+        /// </summary>
+        /// <returns></returns>
         public bool RequestDelete()
         {
             ObjectAgent objDelegate = GetObjectDelegate();
@@ -52,7 +61,13 @@ namespace EppNet.Sim
             return false;
         }
 
+        /// <summary>
+        /// Called by the <see cref="ObjectManagerService"/> upon deletion
+        /// </summary>
+
         public void OnDelete() { }
+
+        public void OnDeleteRequested() { }
 
         public bool IsDeleteRequested()
         {

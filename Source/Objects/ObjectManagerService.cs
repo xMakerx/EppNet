@@ -37,7 +37,7 @@ namespace EppNet.Objects
 
         public ISimUnit GetSimUnitFor(ObjectSlot slot)
         {
-            ISimUnit unit = (slot.Agent != null) ? slot.Agent.UserObject : null;
+            ISimUnit unit = slot.Agent?.UserObject;
 
             if (unit == null)
             {
@@ -120,6 +120,19 @@ namespace EppNet.Objects
                     slot.State = EnumObjectState.PendingDelete;
                     slot.Agent.TicksUntilDeletion = (int) ticksUntilDeletion;
                     _deleteLater.Add(slot);
+
+                    // Running OnDeleteRequested user-code shouldn't brick the object manager.
+                    // Call it wrapped in a try-catch to manage issues.
+                    try
+                    {
+                        slot.Agent.UserObject.OnDeleteRequested();
+                    }
+                    catch (Exception e)
+                    {
+                        TemplatedMessage message = new("An error occurred while running user delete requested code for Object ID {id}", slot.ID);
+                        Notify.Error(message, e);
+                        _serviceMgr.Node.HandleException(e);
+                    }
 
                     Notify.Debug(new TemplatedMessage("Requested deletion of Object ID {id}!", ID));
                     return true;
@@ -234,7 +247,20 @@ namespace EppNet.Objects
                 {
                     ID = id,
                     Agent = agent,
+                    State = EnumObjectState.WaitingForState
                 };
+
+                // Running OnCreate user-code shouldn't brick the object manager.
+                // Call it wrapped in a try-catch to manage issues.
+                try
+                {
+                    unit.OnCreate();
+                } catch (Exception e)
+                {
+                    TemplatedMessage message = new("An error occurred while running user creation code for Object ID {id}", slot.ID);
+                    Notify.Error(message, e);
+                    _serviceMgr.Node.HandleException(e);
+                }
 
                 _id2Slot.TryAdd(id, slot);
                 _unit2Slot.TryAdd(unit, slot);
@@ -263,20 +289,38 @@ namespace EppNet.Objects
             }
 
             ISimUnit unit = GetSimUnitFor(slot);
+            bool success = true;
 
-            _id2Slot.TryRemove(slot, out var _);
-            _unit2Slot.TryRemove(unit, out var _);
+            success &= _id2Slot.TryRemove(slot, out var _);
+            success &= _unit2Slot.TryRemove(unit, out var _);
 
-            // Call our OnDelete method
-            unit.OnDelete();
+            // Running user deletion code shouldn't brick the entire object manager.
+            // This is wrapped with a try-catch to handle if something else goes wrong
+            try
+            {
+                unit.OnDelete();
+            }
+            catch (Exception e)
+            {
+                TemplatedMessage message = new("An error occurred while running user deletion code for Object ID {id}", slot.ID);
+                Notify.Error(message, e);
+                _serviceMgr.Node.HandleException(e);
+            }
 
             // Let's set our state to deleted.
             slot.State = EnumObjectState.Deleted;
 
             // Remove from our delete later collection
+            // This doesn't dictate the value of success because there will
+            // be times when we skip the delete later and do it immediately.
             _deleteLater.Remove(slot);
 
-            return true;
+            if (success)
+                Notify.Debug(new TemplatedMessage("Successfully deleted Object ID {id}", slot.ID));
+            else
+                Notify.Warning(new TemplatedMessage("Deletion of Object ID {id} completed with unexpected behavior: a collection didn't manage it properly.", slot.ID));
+
+            return success;
         }
 
     }
