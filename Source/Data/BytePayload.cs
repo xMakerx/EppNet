@@ -78,6 +78,21 @@ namespace EppNet.Data
         /// </summary>
         public static int FloatPrecision = 4;
 
+        public static double PrecisionDecimalPlaces
+        {
+            get
+            {
+                if (_precisionDecimalPlaces == 0)
+                {
+                    _precisionDecimalPlaces = FastMath.GetTenPow(FloatPrecision);
+                }
+
+                return _precisionDecimalPlaces;
+            }
+        }
+
+        private static double _precisionDecimalPlaces = 0d;
+
         public static RecyclableMemoryStream ObtainStream() => RecyclableStreamMgr.GetStream();
 
         public static RecyclableMemoryStream ObtainStream(byte[] buffer) => RecyclableStreamMgr.GetStream(buffer);
@@ -90,8 +105,8 @@ namespace EppNet.Data
 
         public static float FloatToNetFloat(float input)
         {
-            int a = (int)(FastMath.Round(input, FloatPrecision) * FastMath.GetTenPow(FloatPrecision));
-            return (float)a / (float)FastMath.GetTenPow(FloatPrecision);
+            int a = (int)(input.Round(FloatPrecision) * PrecisionDecimalPlaces);
+            return a / (float)PrecisionDecimalPlaces;
         }
 
         #endregion
@@ -777,7 +792,7 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            int i32 = (int) (FastMath.Round(input, FloatPrecision) * FastMath.GetTenPow(FloatPrecision));
+            int i32 = (int) (input.Round(FloatPrecision) * PrecisionDecimalPlaces);
             WriteInt32(i32);
         }
 
@@ -797,8 +812,8 @@ namespace EppNet.Data
 
         public float ReadFloat()
         {
-            float i32 = (float) ReadInt32();
-            return i32 / (float) FastMath.GetTenPow(FloatPrecision);
+            float i32 = ReadInt32();
+            return i32 / (float) PrecisionDecimalPlaces;
         }
 
         /// <summary>
@@ -868,7 +883,7 @@ namespace EppNet.Data
         public double GetSizeKB()
         {
             float length = (_stream != null) ? _stream.Length : 0;
-            return FastMath.Round(length * 0.001, 3);
+            return (length * 0.001).Round(3);
         }
 
         /// <summary>
