@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using EppNet.Services;
 using EppNet.Sockets;
 using EppNet.Logging;
+using EppNet.Core;
 
 namespace EppNet.Node
 {
@@ -24,6 +25,7 @@ namespace EppNet.Node
 
         public string Name;
         public readonly Guid UUID;
+        public readonly Distribution Distro;
 
         /// <summary>
         /// Fetches the <see cref="ServiceManager"/> associated with this node
@@ -39,10 +41,11 @@ namespace EppNet.Node
 
         private RuntimeFileMetadata _logMetadata;
 
-        public NetworkNode()
+        public NetworkNode(Distribution distro)
         {
             this.Name = string.Empty;
             this.UUID = Guid.NewGuid();
+            this.Distro = distro;
 
             this._index = NetworkNodeManager._nodes.Count;
             this._serviceMgr = new(this);
@@ -52,7 +55,7 @@ namespace EppNet.Node
             NetworkNodeManager.TryRegisterNode(this);
         }
 
-        public NetworkNode(string name) : this()
+        public NetworkNode(Distribution distro, string name) : this(distro)
         {
             this.Name = name;
         }
