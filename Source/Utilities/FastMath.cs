@@ -11,28 +11,74 @@ namespace EppNet.Utilities
 {
     public static class FastMath
     {
+        /// <summary>
+        /// How many decimal places to cache
+        /// </summary>
+        public const int CachedDecimals = 15;
+
         private static readonly double[] _roundLookup = CreateRoundLookup();
 
-        public static double GetTenPow(int a) => _roundLookup[a];
+        /// <summary>
+        /// Essentially a wrapper around <see cref="Math.Pow(double, double)"/> with 10^index<br/>
+        /// Indices from 0 to <see cref="CachedDecimals"/> - 1 are cached.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns>Math.Pow(10, index)</returns>
+        public static double GetTenPow(int index)
+        {
+            if (0 <= index && index < CachedDecimals)
+                return _roundLookup[index];
+
+            return Math.Pow(10, index);
+        }
 
         private static double[] CreateRoundLookup()
         {
-            double[] result = new double[15];
+            double[] result = new double[CachedDecimals];
+
             for (int i = 0; i < result.Length; i++)
-            {
-                double r = Math.Pow(10, i);
-                result[i] = r;
-            }
+                result[i] = Math.Pow(10, i);
 
             return result;
         }
 
-        public static double Round(double value) => Math.Floor(value + 0.5);
+        /// <summary>
+        /// Rounds the specified number to the specified decimal places<br/>
+        /// - Rounding to 0 decimal places returns 1
+        /// - Rounding to <0 decimal places returns the provided number
+        /// </summary>
+        /// <returns></returns>
 
-        public static double Round(double value, int decimalPlaces)
+        public static float Round(this float f, int decimals) => (float) ((double)f).Round(decimals);
+
+        /// <summary>
+        /// Rounds the specified number to the specified decimal places<br/>
+        /// - Rounding to 0 decimal places returns 1
+        /// - Rounding to <0 decimal places returns the provided number
+        /// </summary>
+        /// <returns></returns>
+
+        public static double Round(this double d, int decimals)
         {
-            double adjustment = _roundLookup[decimalPlaces];
-            return Round(value * adjustment) / adjustment;
+            double result;
+
+            if (decimals == 0)
+            {
+                // Just return 1 as 10^0 is 1.
+                result = 1d;
+            }
+            else if (decimals < 0)
+            {
+                // We don't support rounding to negative decimal places.
+                result = d;
+            }
+            else
+            {
+                double adjustment = GetTenPow(decimals);
+                result = Math.Floor((d * adjustment) + 0.5) / adjustment;
+            }
+
+            return result;
         }
 
     }
