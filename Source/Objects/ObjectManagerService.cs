@@ -241,7 +241,7 @@ namespace EppNet.Objects
                 }
 
                 id = (id == -1) ? _Internal_AllocateId() : id;
-                agent = new(registration, unit, id);
+                agent = new(this, registration, unit, id);
 
                 ObjectSlot slot = new(id)
                 {
@@ -253,7 +253,7 @@ namespace EppNet.Objects
                 // Call it wrapped in a try-catch to manage issues.
                 try
                 {
-                    unit.OnCreate();
+                    unit.OnCreate(agent);
                 } catch (Exception e)
                 {
                     TemplatedMessage message = new("An error occurred while running user creation code for Object ID {id}", slot.ID);

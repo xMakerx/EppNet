@@ -6,6 +6,7 @@
 /// Simulation units are components that propagate updates
 /// on the network
 
+using EppNet.Node;
 using EppNet.Objects;
 
 namespace EppNet.Sim
@@ -19,7 +20,7 @@ namespace EppNet.Sim
 
         public bool SendUpdate(string memberName, params object[] args)
         {
-            ObjectAgent myDelegate = GetObjectDelegate();
+            ObjectAgent myDelegate = GetAgent();
             ObjectRegistration reg = myDelegate.Metadata;
             ObjectMemberDefinition mDef = reg.GetMemberByName(memberName);
 
@@ -42,45 +43,80 @@ namespace EppNet.Sim
         /// <summary>
         /// Called by the <see cref="ObjectManagerService"/> upon successful creation
         /// </summary>
-        public void OnCreate() { }
+        public void OnCreate(ObjectAgent agent) { }
 
         /// <summary>
-        /// TODO: Replace this with ObjectManagerService management
+        /// Requests the <see cref="ObjectManagerService"/> to delete this
+        /// TODO: ISimUnit: Implement command functionality to call this code at the end of a tick
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Whether or not the request for deletion was successful</returns>
         public bool RequestDelete()
         {
-            ObjectAgent objDelegate = GetObjectDelegate();
+            ObjectAgent agent = GetAgent();
 
-            if (objDelegate.TicksUntilDeletion == -1)
-            {
-                objDelegate.TicksUntilDeletion = 0;
-                return true;
-            }
+            if (agent == null)
+                return false;
 
-            return false;
+            return agent.ObjectManager.TryRequestDelete(agent.ID);
         }
 
         /// <summary>
-        /// Called by the <see cref="ObjectManagerService"/> upon deletion
+        /// Called by the <see cref="ObjectManagerService"/> upon deletion.<br/>
+        /// Guaranteed to be called once.
         /// </summary>
 
         public void OnDelete() { }
 
+        /// <summary>
+        /// Called by the <see cref="ObjectManagerService"/> when deletion is requested successfully.<br/>
+        /// Guaranteed to be called once.
+        /// </summary>
+
         public void OnDeleteRequested() { }
 
-        public bool IsDeleteRequested()
+        /// <summary>
+        /// Checks if this unit is delete requested.
+        /// </summary>
+        /// <returns>True or false</returns>
+
+        public bool IsDeleteRequested() => GetAgent()?.TicksUntilDeletion > -1;
+
+        /// <summary>
+        /// Fetches the <see cref="ObjectAgent"/> associated with this unit.
+        /// </summary>
+        /// <returns>A valid ObjectAgent instance or NULL</returns>
+
+        public virtual ObjectAgent GetAgent()
         {
-            ObjectAgent d = GetObjectDelegate();
-            return (d != null && d.TicksUntilDeletion > -1);
+            foreach (NetworkNode node in NetworkNodeManager._nodes.Values)
+            {
+                ObjectManagerService manager = node.Services.GetService<ObjectManagerService>();
+
+                if (manager != null)
+                {
+                    ObjectAgent agent = manager.GetAgentFor(this);
+
+                    if (agent != null)
+                        return agent;
+                }
+            }
+
+            return null;
         }
 
-        public ObjectAgent GetObjectDelegate() => ObjectManager.Get().GetDelegateFor(this);
+        /// <summary>
+        /// Fetches the ID associated with this unit.
+        /// </summary>
+        /// <returns>A valid ID if properly managed or -1</returns>
 
-        public long GetID()
+        public virtual long GetID()
         {
-            ObjectAgent d = GetObjectDelegate();
-            return (d != null ? d.ID : -1);
+            ObjectAgent agent = GetAgent();
+
+            if (agent != null)
+                return agent.ID;
+
+            return -1;
         }
 
     }

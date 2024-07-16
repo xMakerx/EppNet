@@ -19,6 +19,7 @@ namespace EppNet.Objects
     public class ObjectAgent
     {
 
+        public readonly ObjectManagerService ObjectManager;
         public readonly ISimUnit UserObject;
         public readonly ObjectRegistration Metadata;
         public readonly long ID;
@@ -30,8 +31,9 @@ namespace EppNet.Objects
         public UpdateQueue OutgoingReliableUpdates { protected set; get; }
         public UpdateQueue OutgoingSnapshotUpdates { protected set; get; }
 
-        internal ObjectAgent(ObjectRegistration registration, ISimUnit userObject, long id)
+        internal ObjectAgent(ObjectManagerService manager, ObjectRegistration registration, ISimUnit userObject, long id)
         {
+            this.ObjectManager = manager;
             this.Metadata = registration;
             this.UserObject = userObject;
             this.ID = id;
