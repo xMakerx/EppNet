@@ -10,6 +10,7 @@ using EppNet.Services;
 using EppNet.Sim;
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 
 namespace EppNet.Objects
@@ -21,13 +22,37 @@ namespace EppNet.Objects
         protected ConcurrentDictionary<long, ObjectSlot> _id2Slot;
         protected ConcurrentDictionary<ISimUnit, ObjectSlot> _unit2Slot;
 
-        protected ConcurrentQueue<ObjectSlot> _deleteLaterQueue;
+        /// <summary>
+        /// This HashSet contains objects that are meant to be deleted later. <br/>
+        /// This is not a thread-safe collection as it's only meant to be modified on one thread.
+        /// </summary>
+        protected HashSet<ObjectSlot> _deleteLater;
 
         public ObjectManagerService(ServiceManager svcMgr) : base(svcMgr)
         {
             this._id2Slot = new();
             this._unit2Slot = new();
-            this._deleteLaterQueue = new();
+            this._deleteLater = new();
+        }
+
+        public ISimUnit GetSimUnitFor(ObjectSlot slot)
+        {
+            ISimUnit unit = (slot.Agent != null) ? slot.Agent.UserObject : null;
+
+            if (unit == null)
+            {
+                // We have to locate our unit
+                foreach (KeyValuePair<ISimUnit, ObjectSlot> kvp in _unit2Slot)
+                {
+                    if (kvp.Value == slot)
+                    {
+                        unit = kvp.Key;
+                        break;
+                    }
+                }
+            }
+
+            return unit;
         }
 
         public ObjectSlot GetSlotFor(ISimUnit unit)
@@ -82,19 +107,20 @@ namespace EppNet.Objects
         /// <param name="agent"></param>
         /// <returns>Whether or not the request was fulfilled</returns>
 
-        public bool TryRequestDelete(long ID)
+        public bool TryRequestDelete(long ID, uint ticksUntilDeletion = 10)
         {
 
-            if (_id2Slot.TryGetValue(ID, out var slot))
+            if (ID != -1 && _id2Slot.TryGetValue(ID, out var slot))
             {
                 // Great! We know what this object is!
                 // We can only delete an object if it's in the generated or disabled state
                 if (slot.State == EnumObjectState.Generated || slot.State == EnumObjectState.Disabled)
                 {
+                    // TODO: ObjectManagerService: Add better way to control how many ticks until deletion
                     slot.State = EnumObjectState.PendingDelete;
-                    _deleteLaterQueue.Enqueue(slot);
+                    slot.Agent.TicksUntilDeletion = (int) ticksUntilDeletion;
+                    _deleteLater.Add(slot);
 
-                    // TODO: Add ticks until deletion or whatever
                     Notify.Debug(new TemplatedMessage("Requested deletion of Object ID {id}!", ID));
                     return true;
                 }
@@ -109,6 +135,30 @@ namespace EppNet.Objects
         }
 
         public bool IsIdAvailable(long id) => !_id2Slot.ContainsKey(id);
+
+        internal override void Update()
+        {
+            HashSet<ObjectSlot> clearThisTick = new();
+
+            foreach (ObjectSlot slot in _deleteLater)
+            {
+
+                if (slot.Agent == null)
+                {
+                    Notify.Debug(new TemplatedMessage("Tried to process deletion of Object ID {id} with NULL ObjectAgent?", slot.ID));
+                    clearThisTick.Add(slot);
+                    continue;
+                }
+
+                if (--slot.Agent.TicksUntilDeletion == -1)
+                    clearThisTick.Add(slot);
+            }
+
+            foreach (ObjectSlot slot in clearThisTick)
+                _Internal_DeleteObject(slot);
+
+            base.Update();
+        }
 
         protected long _Internal_AllocateId()
         {
@@ -201,6 +251,32 @@ namespace EppNet.Objects
             }
 
             return agent;
+        }
+
+        protected bool _Internal_DeleteObject(ObjectSlot slot)
+        {
+            if (slot == default)
+            {
+                // This shouldn't happen.
+                Notify.Warning("Tried to delete Object in the default slot??");
+                return false;
+            }
+
+            ISimUnit unit = GetSimUnitFor(slot);
+
+            _id2Slot.TryRemove(slot, out var _);
+            _unit2Slot.TryRemove(unit, out var _);
+
+            // Call our OnDelete method
+            unit.OnDelete();
+
+            // Let's set our state to deleted.
+            slot.State = EnumObjectState.Deleted;
+
+            // Remove from our delete later collection
+            _deleteLater.Remove(slot);
+
+            return true;
         }
 
     }
