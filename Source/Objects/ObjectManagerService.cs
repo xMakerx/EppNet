@@ -243,9 +243,8 @@ namespace EppNet.Objects
                 id = (id == -1) ? _Internal_AllocateId() : id;
                 agent = new(registration, unit, id);
 
-                ObjectSlot slot = new()
+                ObjectSlot slot = new(id)
                 {
-                    ID = id,
                     Agent = agent,
                     State = EnumObjectState.WaitingForState
                 };

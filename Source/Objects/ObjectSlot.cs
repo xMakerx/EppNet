@@ -33,7 +33,7 @@ namespace EppNet.Objects
             if (id < 0)
                 throw new ArgumentOutOfRangeException(nameof(id), "ID must be positive!");
 
-            return new() { ID = id };
+            return new(id);
         }
 
         public static bool operator ==(ObjectSlot left, ObjectSlot right) => left.Equals(right) && left.Agent == right.Agent;
@@ -45,7 +45,7 @@ namespace EppNet.Objects
         /// The ID associated with this slot<br/>
         /// If this represents a valid ObjectSlot, the ID would be positive.
         /// </summary>
-        public long ID;
+        public readonly long ID;
 
         /// <summary>
         /// The state associated with the <see cref="ObjectAgent"/> in this slot.
@@ -65,6 +65,13 @@ namespace EppNet.Objects
         public ObjectSlot()
         {
             this.ID = -1L;
+            this.State = EnumObjectState.Unknown;
+            this.Agent = null;
+        }
+
+        public ObjectSlot(long id)
+        {
+            this.ID = id;
             this.State = EnumObjectState.Unknown;
             this.Agent = null;
         }
