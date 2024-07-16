@@ -19,21 +19,6 @@ using System;
 
 namespace EppNet.Sockets
 {
-    public enum SocketType : byte
-    {
-        Unknown         = 0,
-        Server          = 1,
-        Client          = 2
-    }
-
-    public enum SocketStatus : byte
-    {
-        Unknown         = 0,
-        Uninitialized   = 1 << 0,
-        Initialized     = 1 << 1,
-        Online          = 1 << 2,
-        Disconnected    = 1 << 3
-    }
 
     public abstract class Socket : IDisposable, ILoggable
     {

@@ -46,6 +46,11 @@ namespace EppNet.Messaging
             return _Internal_TryAddChannel(id, out newChannel, flags);
         }
 
+        /// <summary>
+        /// Tries to obtain a <see cref="EppNet.Messaging.Channel"/> by its ID.
+        /// </summary>
+        /// <returns>A valid <see cref="Channel"/> instance or NULL</returns>
+
         public Channel GetChannelById(byte id)
         {
 
@@ -61,20 +66,20 @@ namespace EppNet.Messaging
             return channel;
         }
 
-        public override void Start()
+        public override bool Start()
         {
-            // We can only begin starting up if we're
-            // currently offline
-            if (Status != ServiceState.Offline)
-                return;
 
-            // Let's add our channels
-            _Internal_TryAddChannel((byte)Channels.Connectivity, out var _, ChannelFlags.ProcessImmediately);
-            _Internal_TryAddChannel((byte)Channels.Reliable, out var _);
-            _Internal_TryAddChannel((byte)Channels.Unreliable, out var _);
+            bool started = base.Start();
 
-            if (Status == ServiceState.Offline)
-                this.Status = ServiceState.Starting;
+            if (started)
+            {
+                // Let's add our channels
+                _Internal_TryAddChannel((byte)Channels.Connectivity, out var _, ChannelFlags.ProcessImmediately);
+                _Internal_TryAddChannel((byte)Channels.Reliable, out var _);
+                _Internal_TryAddChannel((byte)Channels.Unreliable, out var _);
+            }
+
+            return started;
         }
 
         private bool _Internal_TryAddChannel(byte id, out Channel newChannel, ChannelFlags flags = ChannelFlags.None)

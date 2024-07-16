@@ -16,7 +16,7 @@ namespace EppNet.Services
         public readonly ServiceState OldState;
 
         /// <summary>
-        /// Stores a service's state transformation from one to another.
+        /// Stores a <see cref="IService"/> State's transformation
         /// </summary>
 
         public ServiceStateChangedEvent(ServiceState newState, ServiceState oldState)

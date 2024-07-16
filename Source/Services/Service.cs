@@ -25,6 +25,8 @@ namespace EppNet.Services
 
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 
+        public event Action OnUpdate;
+
         public ServiceState Status
         {
             protected set
@@ -54,7 +56,10 @@ namespace EppNet.Services
             this._serviceMgr = svcMgr;
 
             if (_serviceMgr == null)
-                throw new ArgumentNullException("svcMgr", "Must pass a valid ServiceManager instance to a service!");
+                throw new ArgumentNullException(nameof(svcMgr), "Must pass a valid ServiceManager instance to a service!");
+
+            // Let's add our debug state change notification
+            OnStateChanged += (ServiceStateChangedEvent evt) => Notify.Debug(new TemplatedMessage("Service State changed to {NewState} from {OldState}", evt.State, evt.OldState));
         }
 
         /// <summary>
@@ -63,20 +68,25 @@ namespace EppNet.Services
 
         internal virtual void Update()
         {
-            // If 
+            OnUpdate?.Invoke();
         }
 
-        public virtual void Start()
+        public virtual bool Start()
         {
-            if (Status == ServiceState.Offline)
-                this.Status = ServiceState.Starting;
+            if (Status != ServiceState.Offline)
+                return false;
+
+            this.Status = ServiceState.Starting;
+            return true;
         }
 
-
-        public virtual void Shutdown()
+        public virtual bool Stop()
         {
+            if (Status != ServiceState.Online)
+                return false;
 
             this.Status = ServiceState.ShuttingDown;
+            return true;
         }
 
         /// <summary>
