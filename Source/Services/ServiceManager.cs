@@ -80,7 +80,11 @@ namespace EppNet.Services
             Type type = typeof(T);
 
             if (type == typeof(Service))
-                throw new InvalidOperationException("Must specify a derived type of \"Service\"!");
+            {
+                InvalidOperationException exp = new("Must specify a derived type of \"Service\"!");
+                Node.HandleException(exp);
+                return null;
+            }
 
             T result = null;
             foreach (Service service in _services)

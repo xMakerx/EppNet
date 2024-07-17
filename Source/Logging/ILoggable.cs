@@ -29,6 +29,9 @@ namespace EppNet.Logging
     public static class ILoggableExtensions
     {
 
+        public static string ResolveMemberName(string callerMemberName)
+            => callerMemberName == ".ctor" ? "ctor" : callerMemberName;
+
         /// <summary>
         /// Sets the enabled <see cref="LogLevelFlags"/>
         /// </summary>
@@ -286,7 +289,7 @@ namespace EppNet.Logging
         {
 
             string filename = _Internal_CreateOrGetMetadata(loggable).Filename;
-            string memberName = _Internal_ResolveMemberName(callerMemberName);
+            string memberName = ResolveMemberName(callerMemberName);
             string output = $"[{filename}#{memberName}()] {msgData.Message}";
 
             LogLevelFlags myLevel = loggable.GetLogLevel();
@@ -319,9 +322,6 @@ namespace EppNet.Logging
             
             return true;
         }
-
-        private static string _Internal_ResolveMemberName(string callerMemberName) 
-            => callerMemberName == ".ctor" ? "ctor" : callerMemberName;
 
     }
 

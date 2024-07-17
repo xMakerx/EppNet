@@ -10,6 +10,7 @@ using EppNet.Services;
 using EppNet.Sockets;
 using EppNet.Logging;
 using EppNet.Core;
+using EppNet.Exceptions;
 
 namespace EppNet.Node
 {
@@ -26,6 +27,8 @@ namespace EppNet.Node
         public string Name;
         public readonly Guid UUID;
         public readonly Distribution Distro;
+
+        public ExceptionStrategy ExceptionStrategy;
 
         /// <summary>
         /// Fetches the <see cref="ServiceManager"/> associated with this node
@@ -46,6 +49,7 @@ namespace EppNet.Node
             this.Name = string.Empty;
             this.UUID = Guid.NewGuid();
             this.Distro = distro;
+            this.ExceptionStrategy = ExceptionStrategy.ThrowAll;
 
             this._index = NetworkNodeManager._nodes.Count;
             this._serviceMgr = new(this);
@@ -74,7 +78,21 @@ namespace EppNet.Node
             if (exception == null)
                 return;
 
+            switch (ExceptionStrategy)
+            {
 
+                case ExceptionStrategy.ThrowAll:
+                    // TODO: Politely disconnect all users
+                    throw exception;
+
+                case ExceptionStrategy.LogOnly:
+                    RuntimeFileMetadata.GetMetadataFromPath(callerFilepath, out RuntimeFileMetadata metadata, cacheIfNecessary: false);
+                    TemplatedMessage msgData = new("[{filename}#{memberName}()] A {exception} occurred with message {message}", metadata.Filename, 
+                        ILoggableExtensions.ResolveMemberName(callerMemberName), exception.GetType().Name, exception.Message);
+                    Notify.Error(msgData, exception);
+                    break;
+
+            }
         }
 
         public bool Equals(NetworkNode other)
