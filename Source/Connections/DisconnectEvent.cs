@@ -9,7 +9,7 @@ using EppNet.Time;
 namespace EppNet.Connections
 {
 
-    public class DisconnectEvent
+    public readonly struct DisconnectEvent
     {
 
         public readonly Connection Connection;

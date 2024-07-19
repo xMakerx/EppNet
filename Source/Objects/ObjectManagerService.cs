@@ -163,7 +163,7 @@ namespace EppNet.Objects
                     continue;
                 }
 
-                if (--slot.Agent.TicksUntilDeletion == -1)
+                if (--slot.Agent.TicksUntilDeletion < 1)
                     clearThisTick.Add(slot);
             }
 
@@ -292,6 +292,9 @@ namespace EppNet.Objects
 
             success &= _id2Slot.TryRemove(slot, out var _);
             success &= _unit2Slot.TryRemove(unit, out var _);
+
+            // We're being deleted now
+            slot.Agent.TicksUntilDeletion = -1;
 
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong
