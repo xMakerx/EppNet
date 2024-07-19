@@ -9,7 +9,7 @@ using EppNet.Services;
 using EppNet.Utilities;
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace EppNet.Messaging
 {
@@ -17,13 +17,11 @@ namespace EppNet.Messaging
     public class ChannelService : Service
     {
 
-        protected Dictionary<byte, EppNet.Messaging.Channel> _channels;
-        protected object _threadLock;
+        protected ConcurrentDictionary<byte, Channel> _channels;
 
         public ChannelService(ServiceManager svcMgr) : base(svcMgr)
         {
             this._channels = new();
-            this._threadLock = new();
         }
 
         public bool TryAddChannel(byte id) => TryAddChannel(id, out Channel _);
@@ -53,15 +51,10 @@ namespace EppNet.Messaging
 
         public Channel GetChannelById(byte id)
         {
+            _channels.TryGetValue(id, out Channel channel);
 
-            Channel channel = null;
-            lock (_threadLock)
-            {
-                _channels.TryGetValue(id, out channel);
-
-                if (channel == null)
-                    Notify.Debug(new TemplatedMessage("Failed to obtain Channel \"{channelId}\"!", id));
-            }
+            if (channel == null)
+                Notify.Debug(new TemplatedMessage("Failed to obtain Channel \"{channelId}\"!", id));
 
             return channel;
         }
@@ -86,26 +79,23 @@ namespace EppNet.Messaging
         {
             newChannel = null;
 
-            lock (_threadLock)
+            if (_channels.ContainsKey(id))
             {
-                if (_channels.ContainsKey(id))
-                {
-                    // The channel already exists
-                    string message = "Channel \"{channelId}\" already exists!";
-                    ChannelAlreadyExistsException exp = new(id, String.Format(message, id));
+                // The channel already exists
+                string message = "Channel \"{channelId}\" already exists!";
+                ChannelAlreadyExistsException exp = new(id, String.Format(message, id));
 
-                    Notify.Error(new TemplatedMessage(message, id), exp);
-                    _serviceMgr.Node.HandleException(exp);
+                Notify.Error(new TemplatedMessage(message, id), exp);
+                _serviceMgr.Node.HandleException(exp);
 
-                    return false;
-                }
-
-                newChannel = new(id, flags);
-                _channels[id] = newChannel;
-
-                // Let's send out this debug message just in case.
-                Notify.Debug(new TemplatedMessage("Created new Channel \"{channelId}\" with Flags {flags}", id, flags.ToListString()));
+                return false;
             }
+
+            newChannel = new(id, flags);
+            _channels[id] = newChannel;
+
+            // Let's send out this debug message just in case.
+            Notify.Debug(new TemplatedMessage("Created new Channel \"{channelId}\" with Flags {flags}", id, flags.ToListString()));
 
             return true;
         }
