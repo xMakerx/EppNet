@@ -19,6 +19,15 @@ namespace EppNet.Objects
     public class ObjectManagerService : Service
     {
 
+        protected enum EnumUserCodeType
+        {
+            OnCreate          = 0,
+            OnDeleteRequested = 1,
+            OnDelete          = 2,
+            OnGenerate        = 3,
+            AnnounceGenerate  = 4
+        }
+
         protected readonly ConcurrentDictionary<long, ObjectSlot> _id2Slot;
         protected readonly ConcurrentDictionary<ISimUnit, ObjectSlot> _unit2Slot;
 
@@ -104,13 +113,12 @@ namespace EppNet.Objects
         /// <summary>
         /// Tries to request the deletion of an object by ID
         /// </summary>
-        /// <param name="agent"></param>
         /// <returns>Whether or not the request was fulfilled</returns>
 
-        public bool TryRequestDelete(long ID, uint ticksUntilDeletion = 10)
+        public bool TryRequestDelete(long id, uint ticksUntilDeletion = 10)
         {
 
-            if (ID != -1 && _id2Slot.TryGetValue(ID, out var slot))
+            if (id != -1 && _id2Slot.TryGetValue(id, out var slot))
             {
                 // Great! We know what this object is!
                 // We can only delete an object if it's in the generated or disabled state
@@ -123,27 +131,16 @@ namespace EppNet.Objects
 
                     // Running OnDeleteRequested user-code shouldn't brick the object manager.
                     // Call it wrapped in a try-catch to manage issues.
-                    try
-                    {
-                        slot.Agent.UserObject.OnDeleteRequested();
-                    }
-                    catch (Exception e)
-                    {
-                        TemplatedMessage message = new("An error occurred while running user delete requested code for Object ID {id}", slot.ID);
-                        Notify.Error(message, e);
-                        _serviceMgr.Node.HandleException(e);
-                    }
-
-                    Notify.Debug(new TemplatedMessage("Requested deletion of Object ID {id}!", ID));
+                    _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDeleteRequested);
                     return true;
                 }
 
-                Notify.Warning(new TemplatedMessage("Cannot request deletion of Object ID {id} because it hasn't been generated yet.", ID));
+                Notify.Warning(new TemplatedMessage("Cannot request deletion of Object ID {id} because it hasn't been generated yet.", id));
                 return false;
             }
 
             // We have no idea what this object is
-            Notify.Error(new TemplatedMessage("Tried to request deletion of unknown Object ID {id}. Maybe it's already deleted?", ID));
+            Notify.Error(new TemplatedMessage("Tried to request deletion of unknown Object ID {id}. Maybe it's already deleted?", id));
             return false;
         }
 
@@ -275,15 +272,7 @@ namespace EppNet.Objects
 
                 // Running OnCreate user-code shouldn't brick the object manager.
                 // Call it wrapped in a try-catch to manage issues.
-                try
-                {
-                    unit.OnCreate(agent);
-                } catch (Exception e)
-                {
-                    TemplatedMessage message = new("An error occurred while running user creation code for Object ID {id}", slot.ID);
-                    Notify.Error(message, e);
-                    _serviceMgr.Node.HandleException(e);
-                }
+                _Internal_SafeUserCodeCall(agent, EnumUserCodeType.OnCreate);
 
                 _id2Slot.TryAdd(id, slot);
                 _unit2Slot.TryAdd(unit, slot);
@@ -302,6 +291,70 @@ namespace EppNet.Objects
             return agent;
         }
 
+        /// <summary>
+        /// Safely calls user code or sends an exception to the <see cref="EppNet.Node.NetworkNode"/><br/>
+        /// See <see cref="EnumUserCodeType"/> for the list of valid user functions in the <see cref="ISimUnit"/> interface.
+        /// </summary>
+        /// <param name="agent"></param>
+        /// <param name="userCode"></param>
+        /// <returns>Whether or not the user code ran without exceptions</returns>
+
+        protected bool _Internal_SafeUserCodeCall(ObjectAgent agent, EnumUserCodeType userCode)
+        {
+            if (agent == null)
+            {
+                Notify.Error("Tried to call user code on a null ObjectAgent!");
+                return false;
+            }
+
+            string codeName = string.Empty;
+
+            // This code is kind of crap but it works so I don't violate DRY
+            try
+            {
+                switch (userCode)
+                {
+
+                    case EnumUserCodeType.OnCreate:
+                        codeName = "creation";
+                        agent.UserObject.OnCreate(agent);
+                        break;
+
+                    case EnumUserCodeType.OnDeleteRequested:
+                        codeName = "on delete requested";
+                        agent.UserObject.OnDeleteRequested();
+                        break;
+
+                    case EnumUserCodeType.OnDelete:
+                        codeName = "deletion";
+                        agent.UserObject.OnDelete();
+                        break;
+
+                    case EnumUserCodeType.OnGenerate:
+                        codeName = "generation";
+                        agent.UserObject.OnGenerate();
+                        break;
+
+                    case EnumUserCodeType.AnnounceGenerate:
+                        codeName = "announce generate";
+                        agent.UserObject.AnnounceGenerate();
+                        break;
+                }
+
+                // Handy debug function just in case.
+                Notify.Debug($"Successfully callled user {codeName} function for Object ID {agent.ID}!");
+            }
+            catch (Exception e)
+            {
+                string msg = $"An error occurred while running user {codeName} function for Object ID {agent.ID}";
+                Notify.Error(msg, e);
+                _serviceMgr.Node.HandleException(e);
+                return false;
+            }
+
+            return true;
+        }
+
         protected bool _Internal_DeleteObject(ObjectSlot slot)
         {
             if (slot == default)
@@ -317,21 +370,13 @@ namespace EppNet.Objects
             success &= _id2Slot.TryRemove(slot, out var _);
             success &= _unit2Slot.TryRemove(unit, out var _);
 
-            // We're being deleted now
-            slot.Agent.TicksUntilDeletion = -1;
+            // Let's reset ticks left until deletion (if agent is valid)
+            if (slot.Agent != null)
+                slot.Agent.TicksUntilDeletion = -1;
 
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong
-            try
-            {
-                unit.OnDelete();
-            }
-            catch (Exception e)
-            {
-                TemplatedMessage message = new("An error occurred while running user deletion code for Object ID {id}", slot.ID);
-                Notify.Error(message, e);
-                _serviceMgr.Node.HandleException(e);
-            }
+            _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDelete);
 
             // Let's set our state to deleted.
             slot.State = EnumObjectState.Deleted;
