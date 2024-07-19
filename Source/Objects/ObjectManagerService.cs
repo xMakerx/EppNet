@@ -19,14 +19,14 @@ namespace EppNet.Objects
     public class ObjectManagerService : Service
     {
 
-        protected ConcurrentDictionary<long, ObjectSlot> _id2Slot;
-        protected ConcurrentDictionary<ISimUnit, ObjectSlot> _unit2Slot;
+        protected readonly ConcurrentDictionary<long, ObjectSlot> _id2Slot;
+        protected readonly ConcurrentDictionary<ISimUnit, ObjectSlot> _unit2Slot;
 
         /// <summary>
         /// This HashSet contains objects that are meant to be deleted later. <br/>
         /// This is not a thread-safe collection as it's only meant to be modified on one thread.
         /// </summary>
-        protected HashSet<ObjectSlot> _deleteLater;
+        protected readonly HashSet<ObjectSlot> _deleteLater;
 
         public ObjectManagerService(ServiceManager svcMgr) : base(svcMgr)
         {
@@ -149,6 +149,21 @@ namespace EppNet.Objects
 
         public bool IsIdAvailable(long id) => !_id2Slot.ContainsKey(id);
 
+        public override bool Stop()
+        {
+            bool stopped = base.Stop();
+            if (stopped)
+            {
+                // Let's delete our objects
+                HashSet<ObjectSlot> toDelete = new(_id2Slot.Values);
+
+                foreach (ObjectSlot slot in toDelete)
+                    _Internal_DeleteObject(slot);
+            }
+
+            return stopped;
+        }
+
         internal override void Update()
         {
             HashSet<ObjectSlot> clearThisTick = new();
@@ -186,6 +201,15 @@ namespace EppNet.Objects
 
         protected ObjectAgent _Internal_CreateObject(ObjectRegistration registration, long id = -1)
         {
+
+            if (Status != ServiceState.Online)
+            {
+                // We weren't provided an object registration but were provided an ID
+                var msg = new TemplatedMessage("Cannot create an Object while the ObjectManager Service is offline!");
+                Notify.Fatal(msg);
+                return null;
+            }
+
             ISimUnit unit = null;
             ObjectAgent agent = null;
             string distroName = nameof(_serviceMgr.Node.Distro);
