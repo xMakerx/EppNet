@@ -184,18 +184,7 @@ namespace EppNet.Data
             switch (Type.GetTypeCode(input.GetType()))
             {
                 case TypeCode.String:
-                    if (input is Str16 str16input)
-                    {
-                        WriteString16(str16input);
-                        return true;
-                    }
-
-                    if (input is Str8 str8input)
-                    {
-                        WriteString8(str8input);
-                        return true;
-                    }
-
+                    // We didn't use a custom string type
                     return false;
 
                 case TypeCode.Boolean:
@@ -239,15 +228,23 @@ namespace EppNet.Data
                     break;
 
                 case TypeCode.Object:
-                    IResolver resolver = GetResolver(input.GetType());
+                    // Try to resolve the type to either a string type or
+                    // a type we have a resolver for
 
-                    if (resolver != null)
+                    if (input.GetType() == typeof(Str16))
                     {
-                        resolver.Write(this, input);
-                        return true;
+                        WriteString16((Str16)input);
+                        break;
+                    }    
+
+                    if (input.GetType() == typeof(Str8))
+                    {
+                        WriteString8((Str8)input);
+                        break;
                     }
 
-                    break;
+                    IResolver resolver = GetResolver(input.GetType());
+                    return resolver?.Write(this, input) == true;
 
                 default:
                     return false;
@@ -323,10 +320,9 @@ namespace EppNet.Data
                     else if (type == typeof(Str8))
                         return ReadString8();
 
+                    // Try to resolve the type
                     IResolver resolver = GetResolver(type);
-
-                    if (resolver != null)
-                        resolver.Read(this, out output);
+                    resolver?.Read(this, out output);
 
                     break;
 
