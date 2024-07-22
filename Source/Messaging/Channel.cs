@@ -4,7 +4,11 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
+using ENet;
+
 using EppNet.Logging;
+
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using System;
 
@@ -39,6 +43,8 @@ namespace EppNet.Messaging
     public class Channel : ILoggable, IDisposable, IEquatable<Channel>
     {
 
+        public readonly ChannelService Service;
+
         public ILoggable Notify { get => this; }
 
         public readonly byte Id;
@@ -66,27 +72,27 @@ namespace EppNet.Messaging
             get => _datagramsSent;
         }
 
-        public float TotalDataReceivedKb
+        public long TotalBytesReceived
         { 
             private set
             {
 
                 lock (_threadLock)
-                    _totalDataReceivedKb = value;
+                    _totalBytesReceived = value;
             }
 
-            get => _totalDataReceivedKb;
+            get => _totalBytesReceived;
         }
 
-        public float TotalDataSentKb
+        public long TotalBytesSent
         {
             private set
             {
                 lock (_threadLock)
-                    _totalDataSentKb = value;
+                    _totalBytesSent = value;
             }
 
-            get => _totalDataSentKb;
+            get => _totalBytesSent;
         }
 
 
@@ -95,24 +101,56 @@ namespace EppNet.Messaging
         // Statistics
         protected int _datagramsReceived;
         protected int _datagramsSent;
-        protected float _totalDataReceivedKb;
-        protected float _totalDataSentKb;
+        protected long _totalBytesReceived;
+        protected long _totalBytesSent;
 
-        public Channel(byte id)
+        public Channel(ChannelService service, byte id)
         {
+            this.Service = service;
             this.Id = id;
             this.Flags = ChannelFlags.None;
 
             this._threadLock = new();
             this._datagramsReceived = 0;
             this._datagramsSent = 0;
-            this._totalDataReceivedKb = 0f;
-            this._totalDataSentKb = 0f;
+            this._totalBytesReceived = 0L;
+            this._totalBytesSent = 0L;
         }
 
-        public Channel(byte id, ChannelFlags flags) : this(id)
+        public Channel(ChannelService service, byte id, ChannelFlags flags) : this(service, id)
         {
             this.Flags = flags;
+        }
+
+        public bool SendTo(Peer peer, byte[] bytes, PacketFlags flags)
+        {
+            // Create an ENet packet
+            Packet packet = new();
+
+            try
+            {
+                packet.Create(bytes, flags);
+
+                // Send the packet to our ENet peer
+                if (peer.Send(Id, ref packet))
+                {
+                    DatagramsSent++;
+                    _totalBytesSent += bytes.LongLength;
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Notify.Error($"Failed to send Datagram to Peer {peer.ID}. Error {ex.Message}\n{ex.StackTrace}");
+            }
+            finally
+            {
+                // No matter what, dispose of this packet.
+                packet.Dispose();
+            }
+
+            // Failed to send the datagram.
+            return false;
         }
 
         /// <summary>
@@ -128,8 +166,8 @@ namespace EppNet.Messaging
             {
                 _datagramsReceived = 0;
                 _datagramsSent = 0;
-                _totalDataReceivedKb = 0f;
-                _totalDataSentKb = 0f;
+                _totalBytesReceived = 0L;
+                _totalBytesSent = 0L;
 
                 Notify.Debug("Statistics were reset!");
             }

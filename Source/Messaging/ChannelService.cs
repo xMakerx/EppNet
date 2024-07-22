@@ -4,6 +4,9 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
+using ENet;
+
+using EppNet.Data.Datagrams;
 using EppNet.Logging;
 using EppNet.Services;
 using EppNet.Utilities;
@@ -24,6 +27,22 @@ namespace EppNet.Messaging
             this._channels = new();
         }
 
+        public bool TrySendTo(Peer peer, IDatagram datagram, PacketFlags flags)
+        {
+
+            if (!datagram.Written)
+                datagram.Write();
+
+            Channel channel = GetChannelById(datagram.GetChannelID());
+            return channel?.SendTo(peer, datagram.Pack(), flags) == true;
+        }
+
+        public bool TrySendDataTo(Peer peer, byte channelId, byte[] bytes, PacketFlags flags)
+        {
+            Channel channel = GetChannelById(channelId);
+            return channel?.SendTo(peer, bytes, flags) == true;
+        }
+
         public bool TryAddChannel(byte id) => TryAddChannel(id, out Channel _);
 
         public bool TryAddChannel(byte id, out Channel newChannel, ChannelFlags flags = ChannelFlags.None)
@@ -33,10 +52,10 @@ namespace EppNet.Messaging
             if (id < (byte) Enum.GetValues<Channels>().Length)
             {
                 // This is a reserved channel id
-                string message = "Channel ID \"{channelId}\" is reserved!";
-                ChannelAlreadyExistsException exp = new(id, String.Format(message, id));
+                string message = $"Channel ID \"{id}\" is reserved!";
+                ChannelAlreadyExistsException exp = new(id, message);
 
-                Notify.Error(new TemplatedMessage(message, id), exp);
+                Notify.Error(new TemplatedMessage(message), exp);
                 _serviceMgr.Node.HandleException(exp);
                 return false;
             }
@@ -82,16 +101,16 @@ namespace EppNet.Messaging
             if (_channels.ContainsKey(id))
             {
                 // The channel already exists
-                string message = "Channel \"{channelId}\" already exists!";
-                ChannelAlreadyExistsException exp = new(id, String.Format(message, id));
+                string message = $"Channel \"{id}\" already exists!";
+                ChannelAlreadyExistsException exp = new(id, message);
 
-                Notify.Error(new TemplatedMessage(message, id), exp);
+                Notify.Error(new TemplatedMessage(message), exp);
                 _serviceMgr.Node.HandleException(exp);
 
                 return false;
             }
 
-            newChannel = new(id, flags);
+            newChannel = new(this, id, flags);
             _channels[id] = newChannel;
 
             // Let's send out this debug message just in case.

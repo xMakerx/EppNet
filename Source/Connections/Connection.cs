@@ -6,13 +6,11 @@
 
 using ENet;
 
-using EppNet.Data;
 using EppNet.Data.Datagrams;
 using EppNet.Logging;
+using EppNet.Messaging;
 using EppNet.Sockets;
 using EppNet.Time;
-
-using System;
 
 namespace EppNet.Connections
 {
@@ -79,32 +77,8 @@ namespace EppNet.Connections
 
         public bool Send(byte[] bytes, byte channelId, PacketFlags flags)
         {
-            // Create the ENet packet
-            Packet packet = new();
-
-            try
-            {
-                packet.Create(bytes, flags);
-
-                // Send the packet to our ENet peer
-                if (_enet_peer.Send(channelId, ref packet))
-                {
-                    Channel channel = Channel.GetById(channelId);
-                    channel.DatagramsSent++;
-                    return true;
-                }
-            }
-            catch (Exception e)
-            {
-                Notify.Error($"Failed to send Datagram to Peer {ID}. Error: {e.Message}\n{e.StackTrace}");
-            }
-            finally
-            {
-                // No matter what, dispose of this packet.
-                packet.Dispose();
-            }
-
-            return false;
+            ChannelService channelService = _manager.Node.Services.GetService<ChannelService>();
+            return channelService?.TrySendDataTo(_enet_peer, channelId, bytes, flags) == true;
         }
 
         /// <summary>
@@ -116,11 +90,12 @@ namespace EppNet.Connections
 
         public bool Send(IDatagram datagram, PacketFlags flags)
         {
+            ChannelService channelService = _manager.Node.Services.GetService<ChannelService>();
 
-            if (!datagram.Written)
-                datagram.Write();
+            if (channelService == null)
+                return false;
 
-            bool sent = Send(datagram.Pack(), datagram.GetChannelID(), flags);
+            bool sent = channelService.TrySendTo(_enet_peer, datagram, flags);
 
             if (sent)
                 Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ID}");
