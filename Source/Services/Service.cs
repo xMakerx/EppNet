@@ -7,6 +7,7 @@
 using System;
 
 using EppNet.Logging;
+using EppNet.Node;
 
 namespace EppNet.Services
 {
@@ -19,9 +20,10 @@ namespace EppNet.Services
         ShuttingDown    = 3
     }
 
-    public abstract class Service : IService, ILoggable
+    public abstract class Service : IService, INodeDescendant, ILoggable
     {
         public ILoggable Notify { get => this; }
+        public NetworkNode Node { get => _serviceMgr.Node; }
 
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 

@@ -78,8 +78,6 @@ namespace EppNet.Objects
             return slot;
         }
 
-        public ObjectAgent GetAgentBySlot(ObjectSlot slot) => GetAgentById(slot);
-
         public ObjectAgent GetAgentById(long id)
         {
             _id2Slot.TryGetValue(id, out var slot);

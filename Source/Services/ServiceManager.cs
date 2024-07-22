@@ -19,17 +19,47 @@ namespace EppNet.Services
         public NetworkNode Node { get; }
 
         /// <summary>
-        /// Generic HashSet storage because services aren't going to be
+        /// Generic List storage because services aren't going to be
         /// added and removed during the lifetime of any delegate app. <br/>Services
         /// are expected to be added when the NetworkNode is instantiated and
         /// when the application is about to close. No need for threading.
         /// </summary>
-        protected HashSet<Service> _services;
+        protected List<Service> _services;
 
         public ServiceManager(NetworkNode node)
         {
             this.Node = node;
             this._services = new();
+        }
+
+        /// <summary>
+        /// Calls <see cref="Service.Start"/> on every service
+        /// </summary>
+
+        public void Start()
+        {
+            foreach (Service service in _services)
+                service.Start();
+        }
+        
+        /// <summary>
+        /// Calls <see cref="Service.Update"/> on every service
+        /// </summary>
+
+        public void Tick()
+        {
+            foreach (Service service in _services)
+                service.Update();
+        }
+
+        /// <summary>
+        /// Calls <see cref="Service.Stop"/> on every service
+        /// </summary>
+
+        public void Stop()
+        {
+            foreach (Service service in _services)
+                service.Stop();
         }
 
         public bool TryAddService<T>() where T : Service
@@ -42,7 +72,8 @@ namespace EppNet.Services
             try
             {
                 T created = (T)Activator.CreateInstance(typeof(T), Node);
-                return _services.Add(created);
+                _services.Add(created);
+                return true;
             } catch (Exception ex)
             {
                 Node.HandleException(ex);
@@ -64,7 +95,8 @@ namespace EppNet.Services
             if (service == null)
                 return false;
 
-            return _services.Add(service);
+            _services.Add(service);
+            return true;
         }
 
         /// <summary>
