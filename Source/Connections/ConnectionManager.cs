@@ -20,7 +20,7 @@ namespace EppNet.Connections
     public class ConnectionManager : Service
     {
 
-        public event Action<Connection> OnConnectionEstablished;
+        public event Action<ConnectEvent> OnConnectionEstablished;
         public event Action<DisconnectEvent> OnConnectionLost;
 
         internal readonly Socket _socket;
@@ -39,7 +39,7 @@ namespace EppNet.Connections
             if (added)
             {
                 Notify.Debug($"New Connection Established to {enetPeer.IP}");
-                OnConnectionEstablished?.Invoke(conn);
+                OnConnectionEstablished?.Invoke(new ConnectEvent(conn));
             }
 
             return added;

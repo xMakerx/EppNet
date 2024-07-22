@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Logging;
+using EppNet.Time;
 using EppNet.Utilities;
 
 using System;
@@ -62,12 +63,12 @@ namespace EppNet.Objects
         /// </summary>
         public readonly string Header;
         public readonly ObjectAgent Object;
-        public readonly ulong Time;
+        public readonly Timestamp Time;
 
         protected SortedList<string, object> _method2Value;
         protected SortedList<string, object> _prop2Value;
 
-        public ObjectSnapshot(ObjectAgent @object, string header, ulong time)
+        public ObjectSnapshot(ObjectAgent @object, string header, Timestamp time)
         {
             if (@object == null)
                 @object.ObjectManager.Notify.Error("Tried to create a new ObjectState with a NULL ObjectAgent!",
