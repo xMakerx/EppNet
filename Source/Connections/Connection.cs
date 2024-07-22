@@ -45,7 +45,7 @@ namespace EppNet.Connections
 
         public bool IsAuthenticated { internal set; get; }
 
-        protected readonly Peer _enet_peer;
+        internal readonly Peer _enet_peer;
         protected readonly ConnectionManager _manager;
 
         public Connection(ConnectionManager manager, Peer peer)

@@ -29,6 +29,31 @@ namespace EppNet.Connections
         public ConnectionManager(ServiceManager svcMgr) : base(svcMgr)
         {
             this._socket = svcMgr.Node.Socket;
+            this._connections = new();
+        }
+
+        public override bool Stop()
+        {
+            bool stopped = base.Stop();
+
+            if (stopped)
+                EjectAll();
+
+            return stopped;
+        }
+
+        public void EjectAll() => EjectAll(DisconnectReason.Unknown);
+
+        public void EjectAll(DisconnectReason reason)
+        {
+            foreach (var conn in _connections.Values)
+            {
+                Notify.Debug($"Forcibly ejected {conn._enet_peer.IP}");
+                conn.Eject(reason);
+                OnConnectionLost?.Invoke(new(conn, reason));
+            }
+
+            _connections.Clear();
         }
 
         public bool HandleNewConnection(Peer enetPeer)

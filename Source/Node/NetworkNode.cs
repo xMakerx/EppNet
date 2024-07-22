@@ -78,11 +78,17 @@ namespace EppNet.Node
             if (exception == null)
                 return;
 
+            // TODO: NetworkNode: Perhaps behave differently depending on the severity of the exception?
+
             switch (ExceptionStrategy)
             {
 
                 case ExceptionStrategy.ThrowAll:
-                    // TODO: Politely disconnect all users
+                    // Stop all our services
+                    // This will politely disconnect everyone as well.
+                    _serviceMgr.Stop();
+
+                    // Scream!
                     throw exception;
 
                 case ExceptionStrategy.LogOnly:
