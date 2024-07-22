@@ -181,87 +181,80 @@ namespace EppNet.Data
         public virtual bool TryWrite(object input)
         {
 
-            if (input is Str16)
+            switch (Type.GetTypeCode(input.GetType()))
             {
-                WriteString16((Str16)input);
-                return true;
+                case TypeCode.String:
+                    if (input is Str16 str16input)
+                    {
+                        WriteString16(str16input);
+                        return true;
+                    }
+
+                    if (input is Str8 str8input)
+                    {
+                        WriteString8(str8input);
+                        return true;
+                    }
+
+                    return false;
+
+                case TypeCode.Boolean:
+                    WriteBool((bool)input);
+                    break;
+
+                case TypeCode.Byte:
+                    WriteByte((byte)input);
+                    break;
+
+                case TypeCode.SByte:
+                    WriteSByte((sbyte)input);
+                    break;
+
+                case TypeCode.Int16:
+                    WriteInt16((short)input);
+                    break;
+
+                case TypeCode.UInt16:
+                    WriteUInt16((ushort)input);
+                    break;
+
+                case TypeCode.Int32:
+                    WriteInt32((int)input);
+                    break;
+
+                case TypeCode.UInt32:
+                    WriteUInt32((uint)input);
+                    break;
+
+                case TypeCode.Int64:
+                    WriteInt64((long)input);
+                    break;
+
+                case TypeCode.UInt64:
+                    WriteUInt64((ulong)input);
+                    break;
+
+                case TypeCode.Single:
+                    WriteSingle((float)input);
+                    break;
+
+                case TypeCode.Object:
+                    IResolver resolver = GetResolver(input.GetType());
+
+                    if (resolver != null)
+                    {
+                        resolver.Write(this, input);
+                        return true;
+                    }
+
+                    break;
+
+                default:
+                    return false;
+
             }
 
-            if (input is Str8)
-            {
-                WriteString8((Str8)input);
-                return true;
-            }
-
-            if (input is bool)
-            {
-                WriteBool((bool)input);
-                return true;
-            }
-
-            if (input is byte)
-            {
-                WriteByte((byte)input);
-                return true;
-            }
-
-            if (input is sbyte)
-            {
-                WriteSByte((sbyte)input);
-                return true;
-            }
-
-            if (input is short)
-            {
-                WriteShort((short)input);
-                return true;
-            }
-
-            if (input is ushort)
-            {
-                WriteUShort((ushort)input);
-                return true;
-            }
-
-            if (input is int)
-            {
-                WriteInt((int)input);
-                return true;
-            }
-
-            if (input is uint)
-            {
-                WriteUInt((uint)input);
-                return true;
-            }
-
-            if (input is long)
-            {
-                WriteLong((long)input);
-                return true;
-            }
-
-            if (input is ulong)
-            {
-                WriteULong((ulong)input);
-                return true;
-            }
-
-            if (input is float)
-            {
-                WriteFloat((float)input);
-                return true;
-            }
-
-            IResolver resolver = GetResolver(input.GetType());
-
-            if (resolver != null)
-            {
-                resolver.Write(this, input);
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -274,51 +267,72 @@ namespace EppNet.Data
 
         public virtual object TryRead(Type type)
         {
-            if (type == typeof(Str16))
-                return ReadString16();
 
-            if (type == typeof(Str8))
-                return ReadString8();
+            object output = null;
 
-            if (type == typeof(bool))
-                return ReadBool();
-
-            if (type == typeof(byte))
-                return ReadByte();
-
-            if (type == typeof(sbyte))
-                return ReadSByte();
-
-            if (type == typeof(short))
-                return ReadShort();
-
-            if (type == typeof(ushort))
-                return ReadUShort();
-
-            if (type == typeof(int))
-                return ReadInt();
-
-            if (type == typeof(uint))
-                return ReadUInt();
-
-            if (type == typeof(long))
-                return ReadLong();
-
-            if (type == typeof(ulong))
-                return ReadULong();
-
-            if (type == typeof(float))
-                return ReadFloat();
-
-            IResolver resolver = GetResolver(type);
-
-            if (resolver != null)
+            switch (Type.GetTypeCode(type))
             {
-                resolver.Read(this, out object output);
-                return output;
+                case TypeCode.String:
+                    // Must explicitly specify a string type!
+                    return null;
+
+                case TypeCode.Boolean:
+                    output = ReadBool();
+                    break;
+
+                case TypeCode.Byte:
+                    output = ReadByte();
+                    break;
+
+                case TypeCode.SByte:
+                    output = ReadSByte();
+                    break;
+
+                case TypeCode.Int16:
+                    output = ReadInt16();
+                    break;
+
+                case TypeCode.UInt16:
+                    output = ReadUInt16();
+                    break;
+
+                case TypeCode.Int32:
+                    output = ReadInt32();
+                    break;
+
+                case TypeCode.UInt32:
+                    output = ReadUInt32();
+                    break;
+
+                case TypeCode.Int64:
+                    output = ReadInt64();
+                    break;
+
+                case TypeCode.UInt64:
+                    output = ReadUInt64();
+                    break;
+
+                case TypeCode.Single:
+                    output = ReadSingle();
+                    break;
+
+                case TypeCode.Object:
+
+                    if (type == typeof(Str16))
+                        return ReadString16();
+                    else if (type == typeof(Str8))
+                        return ReadString8();
+
+                    IResolver resolver = GetResolver(type);
+
+                    if (resolver != null)
+                        resolver.Read(this, out output);
+
+                    break;
+
             }
 
-            return null;
+            return output;
         }
 
         /// <summary>

@@ -19,6 +19,16 @@ namespace EppNet.Objects
     public class ObjectManagerService : Service
     {
 
+        /// <summary>
+        /// Raised when a new object is created
+        /// </summary>
+        public Action<ObjectCreatedEvent> OnObjectCreated;
+
+        /// <summary>
+        /// Raised when an existing object is deleted
+        /// </summary>
+        public Action<ObjectDeletedEvent> OnObjectDeleted;
+
         protected enum EnumUserCodeType
         {
             OnCreate          = 0,
@@ -268,6 +278,9 @@ namespace EppNet.Objects
                     State = EnumObjectState.WaitingForState
                 };
 
+                // Raise our event that a new object was created
+                OnObjectCreated?.Invoke(new(slot));
+
                 // Running OnCreate user-code shouldn't brick the object manager.
                 // Call it wrapped in a try-catch to manage issues.
                 _Internal_SafeUserCodeCall(agent, EnumUserCodeType.OnCreate);
@@ -371,6 +384,9 @@ namespace EppNet.Objects
             // Let's reset ticks left until deletion (if agent is valid)
             if (slot.Agent != null)
                 slot.Agent.TicksUntilDeletion = -1;
+
+            // Raise our event that an object was deleted
+            OnObjectDeleted?.Invoke(new(slot));
 
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong
