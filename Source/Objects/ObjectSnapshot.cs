@@ -26,6 +26,24 @@ namespace EppNet.Objects
 
         private static Random _rand = new Random();
 
+        /// <summary>
+        /// Generates a random header for this state <br/>
+        /// Thanks to Dan Rigby: https://stackoverflow.com/a/1344258/26439978
+        /// </summary>
+        /// <returns>Randomly generated header<br/>
+        /// - Example: 6Q4j9CgP
+        /// </returns>
+        private static string _Internal_GenerateHeader()
+        {
+            string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            char[] chars = new char[HeaderLength];
+
+            for (int i = 0; i < chars.Length; i++)
+                chars[i] = validChars[_rand.Next(validChars.Length)];
+
+            return new string(chars);
+        }
+
         public static bool operator ==(ObjectSnapshot a, ObjectSnapshot b) => a.Equals(b);
         public static bool operator !=(ObjectSnapshot a, ObjectSnapshot b) => !a.Equals(b);
 
@@ -49,43 +67,26 @@ namespace EppNet.Objects
         protected SortedList<string, object> _method2Value;
         protected SortedList<string, object> _prop2Value;
 
+        public ObjectSnapshot(ObjectAgent @object, string header, ulong time)
+        {
+            if (@object == null)
+                @object.ObjectManager.Notify.Error("Tried to create a new ObjectState with a NULL ObjectAgent!",
+                    new ArgumentNullException(nameof(@object), "ObjectAgent argument cannot be null!"));
+
+            this.Header = header;
+            this.Object = @object;
+            this.Time = time;
+
+            this._method2Value = new(ObjectRegistration.StringSortComparer);
+            this._prop2Value = new(ObjectRegistration.StringSortComparer);
+        }
+
         /// <summary>
         /// Creates and records the current state of the specified <see cref="ObjectAgent"/> at the current time
         /// </summary>
         /// <param name="object"></param>
-        public ObjectSnapshot(ObjectAgent @object)
-        {
-            if (@object == null)
-                @object.ObjectManager.Notify.Error("Tried to create a new ObjectState with a NULL ObjectAgent!", 
-                    new ArgumentNullException(nameof(@object), "ObjectAgent argument cannot be null!"));
-
-            this.Header = _Internal_GenerateHeader();
-            this.Object = @object;
-            this.Time = 0L; // TODO: ObjectState: Acquire current time/tick
-
-            this._method2Value = new(ObjectRegistration.StringSortComparer);
-            this._prop2Value = new(ObjectRegistration.StringSortComparer);
-
-            this.RecordCurrent();
-        }
-
-        /// <summary>
-        /// Generates a random header for this state <br/>
-        /// Thanks to Dan Rigby: https://stackoverflow.com/a/1344258/26439978
-        /// </summary>
-        /// <returns>Randomly generated header<br/>
-        /// - Example: 6Q4j9CgP
-        /// </returns>
-        private string _Internal_GenerateHeader()
-        {
-            string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            char[] chars = new char[HeaderLength];
-
-            for (int i = 0; i < chars.Length; i++)
-                chars[i] = validChars[_rand.Next(validChars.Length)];
-
-            return new string(chars);
-        }
+        /// TODO: ObjectSnapshot: Acquire current time/ticks
+        public ObjectSnapshot(ObjectAgent @object) : this(@object, _Internal_GenerateHeader(), 0L) => RecordCurrent();
 
         /// <summary>
         /// Captures the current value of each network property and snapshot network method
