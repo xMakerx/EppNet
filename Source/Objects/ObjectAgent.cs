@@ -26,7 +26,7 @@ namespace EppNet.Objects
 
         public int TicksUntilDeletion { internal set; get; }
 
-        internal SortedDictionary<ulong, ObjectState> _savedStates;
+        internal SortedDictionary<ulong, ObjectSnapshot> _savedStates;
 
         public UpdateQueue OutgoingReliableUpdates { protected set; get; }
         public UpdateQueue OutgoingSnapshotUpdates { protected set; get; }
@@ -39,7 +39,7 @@ namespace EppNet.Objects
             this.ID = id;
 
             this.TicksUntilDeletion = -1;
-            this._savedStates = new SortedDictionary<ulong, ObjectState>();
+            this._savedStates = new SortedDictionary<ulong, ObjectSnapshot>();
             this.OutgoingReliableUpdates = new UpdateQueue();
             this.OutgoingSnapshotUpdates = new UpdateQueue(isSnapshotQueue: true);
         }
@@ -57,9 +57,9 @@ namespace EppNet.Objects
             return addedToReliable;
         }
 
-        public ObjectState GetStateAt(ulong time)
+        public ObjectSnapshot GetStateAt(ulong time)
         {
-            _savedStates.TryGetValue(time, out ObjectState state);
+            _savedStates.TryGetValue(time, out ObjectSnapshot state);
             return state;
         }
 
