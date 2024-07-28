@@ -115,10 +115,6 @@ namespace EppNet.Node
                     // Let's ensure we unregister nodes when the process ends.
                     AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
                     {
-
-                        Dictionary<int, string> dict = new();
-                        dict.Iterator();
-
                         Iterator<KeyValuePair<Guid, NetworkNode>> iterator = _nodes.Iterator();
 
                         while (iterator.HasNext())
