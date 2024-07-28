@@ -11,6 +11,7 @@ using EppNet.Sockets;
 using EppNet.Logging;
 using EppNet.Core;
 using EppNet.Exceptions;
+using Serilog;
 
 namespace EppNet.Node
 {
@@ -35,10 +36,33 @@ namespace EppNet.Node
         /// </summary>
         public ServiceManager Services { get => _serviceMgr; }
 
-        public Socket Socket { get => _socket; }
+        public BaseSocket Socket
+        {
+            get
+            {
+                if (_socket == null)
+                {
+                    switch (Distro)
+                    {
+                        case Distribution.Client:
+                            new ClientSocket(this);
+                            break;
+
+                        case Distribution.Server:
+                            new ServerSocket(this);
+                            break;
+                    }
+
+                }
+
+                return _socket;
+
+            }
+
+        }
 
         internal ServiceManager _serviceMgr;
-        internal Socket _socket;
+        internal BaseSocket _socket;
 
         internal readonly int _index;
 
@@ -54,9 +78,14 @@ namespace EppNet.Node
             this._index = NetworkNodeManager._nodes.Count;
             this._serviceMgr = new(this);
             this._socket = null;
+            this._logMetadata = null;
 
             // Let's try to register this
             NetworkNodeManager.TryRegisterNode(this);
+
+            Serilog.Debugging.SelfLog.Enable(Console.Error);
+            Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Debug().CreateLogger();
+            Notify.SetLogLevel(LogLevelFlags.Debug);
         }
 
         public NetworkNode(Distribution distro, string name) : this(distro)
@@ -67,6 +96,31 @@ namespace EppNet.Node
         ~NetworkNode()
         {
             NetworkNodeManager.TryUnregisterNode(this);
+        }
+
+        /// <summary>
+        /// Tries to start this NetworkNode:
+        /// <br/>- Opens the socket (creates if necessary)
+        /// <br/>- Starts the ServiceManager
+        /// </summary>
+        /// <returns></returns>
+
+        public bool TryStart()
+        {
+            // Try to start our NetworkNode 
+            if (Socket.Create())
+            {
+                // Start our services
+                Services.Start();
+                return true;
+            }
+
+            return false;
+        }
+
+        internal void _Internal_SetSocket(BaseSocket socket)
+        {
+            this._socket = socket;
         }
 
         public void HandleException(Exception exception,

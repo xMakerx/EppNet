@@ -83,6 +83,7 @@ namespace EppNet.Data.Datagrams
             for (int i = 0; i < numObjects; i++)
             {
                 ulong id = (ulong) ReadULong();
+                /*
                 ObjectAgent objDelegate = ObjectManager.Get().GetObject((long)id);
 
                 if (objDelegate == null)
@@ -97,7 +98,7 @@ namespace EppNet.Data.Datagrams
                 for (int j = 0; j < numUpdates; j++)
                     updates.Add(Update.From(objDelegate, this));
 
-                Transients.Add(objDelegate, updates);
+                Transients.Add(objDelegate, updates);*/
             }
         }
 

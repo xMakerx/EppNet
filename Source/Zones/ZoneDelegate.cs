@@ -18,7 +18,7 @@ namespace EppNet.Zones
         public ZoneDelegate ParentZone { internal set; get; }
         protected internal HashSet<ZoneDelegate> _children;
 
-        public ZoneDelegate(ObjectRegistration reg, IZone userObject, long id) : base(reg, userObject, id)
+        public ZoneDelegate(ObjectManagerService service, ObjectRegistration reg, IZone userObject, long id) : base(service, reg, userObject, id)
         {
             this.Zone = userObject;
             this.ParentZone = null;

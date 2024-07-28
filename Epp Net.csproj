@@ -3,7 +3,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>EppNet</RootNamespace>
-    <StartupObject>EppNet.Sim.Simulation</StartupObject>
+    <StartupObject>EppNet.Tests.SocketTest</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
@@ -19,6 +19,7 @@
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Source\Adapter\" />
     <Folder Include="Source\Threading\" />
   </ItemGroup>
 </Project>

@@ -23,7 +23,7 @@ namespace EppNet.Logging
 
         protected internal void _Internal_SetMetadata(RuntimeFileMetadata metadata) { }
 
-        protected internal RuntimeFileMetadata _Internal_GetMetadata() => RuntimeFileMetadata.Default;
+        protected internal RuntimeFileMetadata _Internal_GetMetadata() => null;
     }
 
     public static class ILoggableExtensions
@@ -66,7 +66,7 @@ namespace EppNet.Logging
 
         public static LogLevelFlags GetLogLevel(this ILoggable loggable)
         {
-            RuntimeFileMetadata metadata = loggable._Internal_GetMetadata();
+            RuntimeFileMetadata metadata = _Internal_CreateOrGetMetadata(loggable);
             return metadata.LogLevel;
         }
 
@@ -254,7 +254,7 @@ namespace EppNet.Logging
             RuntimeFileMetadata derivedMeta = loggable._Internal_GetMetadata();
 
             // Do we need to do a dictionary lookup?
-            if (derivedMeta == RuntimeFileMetadata.Default || derivedMeta == null)
+            if (derivedMeta == null)
             {
                 // The derived class does not implement a backing field to store our metadata;
                 // OR we do have a backing field but haven't set up our metadata.
@@ -263,17 +263,18 @@ namespace EppNet.Logging
                 bool existing = RuntimeFileMetadata.GetMetadataFromName(loggable.GetType().Name,
                     out RuntimeFileMetadata metadata, cacheIfNecessary: true);
 
-                // Did we just create new metadata and are we a subcomponent of a node instance?
-                if (!existing && loggable is INodeDescendant pnLoggable)
+                if (!existing)
                 {
-                    // If we're some kind of subcomponent of an instanced node,
-                    // let's use log level of the node.
-                    metadata.LogLevel = pnLoggable.Node.GetLogLevel();
-                }
-
-                if (derivedMeta == null && !existing)
-                    // Let's cache this for next time.
+                    // Set the metadata since it was just created
                     loggable._Internal_SetMetadata(metadata);
+
+                    if (loggable is INodeDescendant pnLoggable)
+                    {
+                        // If we're some kind of subcomponent of an instanced node,
+                        // let's use log level of the node.
+                        metadata.LogLevel = pnLoggable.Node.GetLogLevel();
+                    }
+                }
 
                 return metadata;
             }
@@ -288,14 +289,12 @@ namespace EppNet.Logging
             [CallerMemberName] string callerMemberName = null)
         {
 
-            string filename = _Internal_CreateOrGetMetadata(loggable).Filename;
+            RuntimeFileMetadata metadata = _Internal_CreateOrGetMetadata(loggable);
+            string filename = metadata.Filename;
             string memberName = ResolveMemberName(callerMemberName);
             string output = $"[{filename}#{memberName}()] {msgData.Message}";
 
-            LogLevelFlags myLevel = loggable.GetLogLevel();
-            bool shouldDisplay = myLevel.IsOn(level);
-
-            if (!shouldDisplay)
+            if (!loggable.GetLogLevel().IsOn(level))
                 return false;
 
             // This message will be displayed.

@@ -23,13 +23,23 @@ namespace EppNet.Connections
         public event Action<ConnectEvent> OnConnectionEstablished;
         public event Action<DisconnectEvent> OnConnectionLost;
 
-        internal readonly Socket _socket;
+        internal readonly BaseSocket _socket;
         protected readonly Dictionary<uint, Connection> _connections;
 
         public ConnectionManager(ServiceManager svcMgr) : base(svcMgr)
         {
             this._socket = svcMgr.Node.Socket;
             this._connections = new();
+        }
+
+        public override bool Start()
+        {
+            bool started = base.Start();
+
+            if (started)
+                Status = ServiceState.Online;
+
+            return started;
         }
 
         public override bool Stop()
@@ -56,7 +66,7 @@ namespace EppNet.Connections
             _connections.Clear();
         }
 
-        public bool HandleNewConnection(Peer enetPeer)
+        public bool HandleConnectionEstablished(Peer enetPeer)
         {
             Connection conn = new Connection(this, enetPeer);
             bool added = _connections.TryAddEntry(enetPeer.ID, conn);

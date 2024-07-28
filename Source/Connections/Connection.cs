@@ -29,7 +29,7 @@ namespace EppNet.Connections
         /// <summary>
         /// The socket this connection originates from.
         /// </summary>
-        public readonly Socket Origin;
+        public readonly BaseSocket Origin;
 
         /// <summary>
         /// The ENet-provided peer ID.
@@ -119,7 +119,7 @@ namespace EppNet.Connections
 
         public bool IsServer() => ID == 0;
 
-        public override string ToString() => string.Format($"Connection ID {_enet_peer.ID} {_enet_peer.IP}:{_enet_peer.Port}");
+        public override string ToString() => $"Connection ID {_enet_peer.ID} {_enet_peer.IP}:{_enet_peer.Port}";
 
     }
 }

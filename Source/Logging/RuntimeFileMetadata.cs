@@ -8,6 +8,7 @@
 
 using Serilog.Events;
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -20,7 +21,7 @@ namespace EppNet.Logging
         private const string Unknown = "Unknown";
         private const string Missing = "??";
 
-        public static readonly RuntimeFileMetadata Default = new();
+        public static RuntimeFileMetadata Default => new();
 
         private static Dictionary<string, RuntimeFileMetadata> _filepath2Data = new()
         {
@@ -52,6 +53,7 @@ namespace EppNet.Logging
         {
             if (string.IsNullOrEmpty(filename))
             {
+                Console.WriteLine("Empty or null filename!");
                 metadata = RuntimeFileMetadata.Default;
                 return false;
             }

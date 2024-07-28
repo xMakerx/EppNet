@@ -101,8 +101,7 @@ namespace EppNet.Sim
             get => (_instance != null) ? _instance._running : false;
         }
 
-        public readonly Socket Socket;
-        public readonly MessageDirector MessageDirector;
+        public readonly BaseSocket Socket;
         public readonly Clock Clock;
 
         public ILoggable Notify { get => this; }
@@ -116,7 +115,7 @@ namespace EppNet.Sim
         protected bool _stopRequested;
         protected bool _running;
 
-        public Simulation(Socket socket)
+        public Simulation(BaseSocket socket)
         {
             if (Simulation._instance != null)
                 return;
@@ -132,7 +131,6 @@ namespace EppNet.Sim
             this._running = false;
 
             this.Socket = socket;
-            this.MessageDirector = new MessageDirector();
             this.Clock = new();
         }
 
@@ -258,7 +256,7 @@ namespace EppNet.Sim
         }
 
         public EppNet.Time.Clock GetClock() => Clock;
-        public Socket GetSocket() => Socket;
+        public BaseSocket GetSocket() => Socket;
     }
 
 }

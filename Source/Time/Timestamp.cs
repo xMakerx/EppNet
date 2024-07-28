@@ -5,6 +5,8 @@
 ///////////////////////////////////////////////////////
 using EppNet.Sim;
 
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using System;
 
 namespace EppNet.Time
@@ -268,6 +270,7 @@ namespace EppNet.Time
         public override int GetHashCode() => HashCode.Combine(Type, Monotonic, Value);
 
         #region Operators
+
         public static implicit operator Timestamp(int time) => new Timestamp(time);
         public static implicit operator Timestamp(uint time) => new Timestamp(time);
         public static implicit operator Timestamp(float time) => new Timestamp(time);

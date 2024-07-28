@@ -33,6 +33,11 @@ namespace EppNet.Time
             this.Strategy = new CommonClockStrategy(this, 5000L);
         }
 
+        public Clock(ClockStrategy strat)
+        {
+            this.Strategy = strat;
+        }
+
         public void Initialize()
         {
             // Ensure first initialization.

@@ -62,8 +62,9 @@ namespace EppNet.Services
                 service.Stop();
         }
 
-        public bool TryAddService<T>() where T : Service
+        public bool TryAddService<T>(out T created) where T : Service
         {
+            created = null;
             T existing = GetService<T>();
 
             if (existing != null)
@@ -71,7 +72,7 @@ namespace EppNet.Services
 
             try
             {
-                T created = (T)Activator.CreateInstance(typeof(T), Node);
+                created = (T)Activator.CreateInstance(typeof(T), Node);
                 _services.Add(created);
                 return true;
             } catch (Exception ex)

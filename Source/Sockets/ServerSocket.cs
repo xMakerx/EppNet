@@ -8,27 +8,24 @@ using ENet;
 
 using EppNet.Connections;
 using EppNet.Logging;
-using EppNet.Processes.Events;
+using EppNet.Node;
+
+using System;
 
 namespace EppNet.Sockets
 {
 
-    public class ServerSocket : Socket
+    public class ServerSocket : BaseSocket
     {
 
-        public ServerSocket() : base(SocketType.Server) { }
-
-        public bool Start(int port, int maxClients)
+        public ServerSocket(NetworkNode node) : base(node, SocketType.Server)
         {
-            if (IsOpen())
-            {
-                Notify.Warn("Tried to call start when the server is already open?!");
-                return false;
-            }
+            this.MaxClients = 4095;
+        }
 
-            _enet_addr.Port = (ushort)port;
-            ENetHost.Create(_enet_addr, maxClients);
-            return Create();
+        public override void OnPacketReceived(Peer peer, Packet packet)
+        {
+            throw new System.NotImplementedException();
         }
 
     }

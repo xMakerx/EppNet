@@ -4,6 +4,9 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using System;
+using System.Collections.Generic;
+
 namespace EppNet.Connections
 {
 
@@ -14,7 +17,7 @@ namespace EppNet.Connections
         public static DisconnectReason Ejected = new(2, "Connection was forcibly closed by the remote host.");
         public static DisconnectReason Quit = new(3, string.Empty);
 
-        public static DisconnectReason[] Reasons = { Unknown, TimedOut, Ejected, Quit };
+        public static List<DisconnectReason> Reasons = new() { Unknown, TimedOut, Ejected, Quit };
 
         public static DisconnectReason GetFromID(byte id)
         {
@@ -26,6 +29,8 @@ namespace EppNet.Connections
 
             return Unknown;
         }
+
+        public static DisconnectReason GetFromID(uint id) => GetFromID(Convert.ToByte(id));
 
         public readonly byte ID;
         public string Message { internal set; get; }
