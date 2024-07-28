@@ -82,6 +82,7 @@ namespace EppNet.Services
                 created = (T)Activator.CreateInstance(typeof(T), Node);
                 _services.Add(created);
                 return true;
+
             } catch (Exception ex)
             {
                 Node.HandleException(ex);

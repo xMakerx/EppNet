@@ -41,15 +41,22 @@ namespace EppNet.Node
         public NetworkNodeBuilder(Distribution distro) : this(string.Empty, distro) { }
 
         /// <summary>
-        /// Resets all internal members
+        /// Resets internal members associating with constructing a new <see cref="NetworkNode"/><br/>
+        /// <paramref name="uniqueOnly"/> == true resets only members that cannot be the same on different nodes
         /// </summary>
-        public NetworkNodeBuilder Reset()
+        public NetworkNodeBuilder Reset(bool uniqueOnly = false)
         {
-            this._name = string.Empty;
-            this._distro = Distribution.Shared;
-            this._exceptStrat = ExceptionStrategy.ThrowAll;
+            // The following members must be unique for every network node
+            this._name = string.Empty; // Names shouldn't be the same, but I don't have any guards in place for this
             this._socket = null;
             this._svcMgr = null;
+
+            if (!uniqueOnly)
+            {
+                this._distro = Distribution.Shared;
+                this._exceptStrat = ExceptionStrategy.ThrowAll;
+            }
+
             return this;
         }
 
@@ -89,6 +96,13 @@ namespace EppNet.Node
             return this;
         }
 
+        /// <summary>
+        /// Creates a new <see cref="Service"/> of the specified type.<br/>
+        /// <b>NOTE:</b> If a <see cref="ServiceManager"/> isn't associated with this builder, it will create one.
+        /// </summary>
+        /// <typeparam name="T">Must be a derived type of Service></typeparam>
+        /// <param name="service">The created service</param>
+
         public NetworkNodeBuilder WithService<T>(out T service) where T : Service
         {
             if (_svcMgr == null)
@@ -119,9 +133,10 @@ namespace EppNet.Node
         }
 
         /// <summary>
-        /// Constructs a new <see cref="NetworkNode"/>!
+        /// Constructs a new <see cref="NetworkNode"/>!<br/>
+        /// The newly constructed node isn't tracked in this instance. After creation, internally resets members that<br/>
+        /// must be unique for each <see cref="NetworkNode"/> after creation
         /// </summary>
-        /// <returns></returns>
 
         public NetworkNode Build()
         {
@@ -135,9 +150,7 @@ namespace EppNet.Node
                 _socket._Internal_SetupFor(node);
 
             // Reset members that should be unique for every node
-            _name = string.Empty;
-            _socket = null;
-            _svcMgr = null;
+            Reset(uniqueOnly: true);
 
             return node;
         }
