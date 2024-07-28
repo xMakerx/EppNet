@@ -42,14 +42,14 @@ namespace EppNet.Utilities
             return result;
         }
 
-        public static double Round(this float f, int decimals) => ((double)f).Round(decimals);
-
         /// <summary>
         /// Rounds the specified number to the specified decimal places<br/>
         /// - Rounding to 0 decimal places returns 1
         /// - Rounding to <0 decimal places returns the provided number
         /// </summary>
         /// <returns></returns>
+        public static double Round(this float f, int decimals) => ((double)f).Round(decimals);
+
 
         /// <summary>
         /// Rounds the specified number to the specified decimal places<br/>
