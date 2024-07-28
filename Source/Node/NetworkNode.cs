@@ -3,15 +3,15 @@
 /// Date: July 9, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
-using System;
-using System.Runtime.CompilerServices;
-
-using EppNet.Services;
-using EppNet.Sockets;
-using EppNet.Logging;
 using EppNet.Core;
 using EppNet.Exceptions;
+using EppNet.Logging;
+using EppNet.Services;
+using EppNet.Sockets;
+
 using Serilog;
+using System;
+using System.Runtime.CompilerServices;
 
 namespace EppNet.Node
 {
@@ -23,6 +23,7 @@ namespace EppNet.Node
 
     public class NetworkNode : ILoggable, IEquatable<NetworkNode>
     {
+
         public ILoggable Notify { get => this; }
 
         public string Name;
@@ -36,6 +37,13 @@ namespace EppNet.Node
         /// </summary>
         public ServiceManager Services { get => _serviceMgr; }
 
+        /// <summary>
+        /// The <see cref="BaseSocket"/> associated with this Node.<br/>
+        /// If you try to get the Socket without creating one first, it will<br/>
+        /// generate a default node based on the <see cref="Distribution"/> type.<br/>
+        /// - <see cref="Distribution.Client"/> => <see cref="ClientSocket"/><br/>
+        /// - <see cref="Distribution.Server"/> => <see cref="ServerSocket"/>
+        /// </summary>
         public BaseSocket Socket
         {
             get
@@ -56,7 +64,6 @@ namespace EppNet.Node
                 }
 
                 return _socket;
-
             }
 
         }
@@ -67,6 +74,7 @@ namespace EppNet.Node
         internal readonly int _index;
 
         private RuntimeFileMetadata _logMetadata;
+        private bool _started;
 
         public NetworkNode(Distribution distro)
         {
@@ -79,48 +87,82 @@ namespace EppNet.Node
             this._serviceMgr = new(this);
             this._socket = null;
             this._logMetadata = null;
-
-            // Let's try to register this
-            NetworkNodeManager.TryRegisterNode(this);
+            this._started = false;
 
             Serilog.Debugging.SelfLog.Enable(Console.Error);
-            Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Debug().CreateLogger();
-            Notify.SetLogLevel(LogLevelFlags.Debug);
+            Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Verbose().CreateLogger();
+            Notify.SetLogLevel(LogLevelFlags.All);
+
+            // Let's try to register this
+            if (!NetworkNodeManager._Internal_TryRegisterNode(this))
+                throw new InvalidOperationException("Node has already been added!");
         }
 
-        public NetworkNode(Distribution distro, string name) : this(distro)
+        public NetworkNode(string name, Distribution distro) : this(distro)
         {
             this.Name = name;
         }
 
-        ~NetworkNode()
-        {
-            NetworkNodeManager.TryUnregisterNode(this);
-        }
-
         /// <summary>
         /// Tries to start this NetworkNode:
-        /// <br/>- Opens the socket (creates if necessary)
+        /// <br/>- Opens the socket (creates if necessary; implied by <see cref="Socket"/>#get)
         /// <br/>- Starts the ServiceManager
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Whether or not we started</returns>
 
         public bool TryStart()
         {
-            // Try to start our NetworkNode 
+            // Try to create our socket
             if (Socket.Create())
             {
-                // Start our services
-                Services.Start();
-                return true;
+                try
+                {
+                    // Start our services
+                    Services.Start();
+                    _started = true;
+
+                    Console.Beep();
+                    Notify.Debug("Started!");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Notify.Error("Failed to start!");
+                    HandleException(ex);
+                }
             }
 
             return false;
         }
 
-        internal void _Internal_SetSocket(BaseSocket socket)
+        public bool TryStop() => TryStop(false);
+
+        /// <summary>
+        /// Tries to stop this NetworkNode
+        /// </summary>
+        /// <param name="finalizer">Whether or not a finalizer ran this</param>
+        /// <returns></returns>
+
+        public bool TryStop(bool finalizer)
         {
-            this._socket = socket;
+            if (!_started)
+                return false;
+
+            if (finalizer)
+            {
+                // Let's discourage this behavior! Bad, bad!
+                const string warning = "It's bad practice to not manually stop a NetworkNode. Ensure you call NetworkNode#TryStop() when closing your application.";
+                Notify.Warn(warning);
+            }
+
+            Console.Beep();
+            Socket.Dispose(!finalizer);
+            Services.Stop();
+            _started = false;
+
+            Notify.Debug("Stopped!");
+            
+            return true;
         }
 
         public void HandleException(Exception exception,
@@ -179,6 +221,11 @@ namespace EppNet.Node
         }
 
         RuntimeFileMetadata ILoggable._Internal_GetMetadata() => _logMetadata;
+
+        internal void _Internal_SetSocket(BaseSocket socket)
+        {
+            this._socket = socket;
+        }
     }
 
 }

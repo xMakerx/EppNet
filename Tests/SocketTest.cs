@@ -18,17 +18,13 @@ namespace EppNet.Tests
         public SocketTest()
         {
 
-            if (ENet.Library.Initialize())
-            {
-                NetworkNode node = new(Distribution.Server);
+            NetworkNode node = new(Distribution.Server);
 
-                ServerSocket serverSocket = node.Socket as ServerSocket;
-                serverSocket.Port = 4296;
-                serverSocket.Notify.SetLogLevel(LogLevelFlags.Debug);
+            ServerSocket serverSocket = node.Socket as ServerSocket;
+            serverSocket.Port = 4296;
+            serverSocket.Notify.SetLogLevel(LogLevelFlags.All);
 
-                node.TryStart();
-            }
-
+            node.TryStart();
         }
 
         public static void Main(string[] args)
