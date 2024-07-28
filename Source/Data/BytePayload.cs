@@ -802,7 +802,9 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            int i32 = (int) (input.Round(FloatPrecision) * PrecisionDecimalPlaces);
+            double rounded = input.Round(FloatPrecision);
+
+            int i32 = (int)(rounded * PrecisionDecimalPlaces);
             WriteInt32(i32);
         }
 

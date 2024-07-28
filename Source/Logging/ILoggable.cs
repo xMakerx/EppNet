@@ -288,9 +288,7 @@ namespace EppNet.Logging
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null)
         {
-
-            RuntimeFileMetadata metadata = _Internal_CreateOrGetMetadata(loggable);
-            string filename = metadata.Filename;
+            string filename = _Internal_CreateOrGetMetadata(loggable).Filename;
             string memberName = ResolveMemberName(callerMemberName);
             string output = $"[{filename}#{memberName}()] {msgData.Message}";
 

@@ -42,14 +42,14 @@ namespace EppNet.Utilities
             return result;
         }
 
+        public static double Round(this float f, int decimals) => ((double)f).Round(decimals);
+
         /// <summary>
         /// Rounds the specified number to the specified decimal places<br/>
         /// - Rounding to 0 decimal places returns 1
         /// - Rounding to <0 decimal places returns the provided number
         /// </summary>
         /// <returns></returns>
-
-        public static float Round(this float f, int decimals) => (float) ((double)f).Round(decimals);
 
         /// <summary>
         /// Rounds the specified number to the specified decimal places<br/>
@@ -75,7 +75,7 @@ namespace EppNet.Utilities
             else
             {
                 double adjustment = GetTenPow(decimals);
-                result = Math.Floor((d * adjustment) + 0.5) / adjustment;
+                result = Math.Floor((d * adjustment) + 0.5d) / adjustment;
             }
 
             return result;
