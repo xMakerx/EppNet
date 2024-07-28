@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 using EppNet.Core;
+using EppNet.Data;
 using EppNet.Exceptions;
 using EppNet.Logging;
 using EppNet.Services;
@@ -21,7 +22,7 @@ namespace EppNet.Node
     /// 
     /// </summary>
 
-    public class NetworkNode : ILoggable, IEquatable<NetworkNode>
+    public class NetworkNode : ILoggable, IEquatable<NetworkNode>, IDataHolder
     {
 
         public ILoggable Notify { get => this; }
@@ -104,6 +105,18 @@ namespace EppNet.Node
         public NetworkNode(Distribution distro) : this(string.Empty, distro, ExceptionStrategy.ThrowAll, null, null) { }
 
         public NetworkNode(string name, Distribution distro) : this(name, distro, ExceptionStrategy.ThrowAll, null, null) { }
+
+        ~NetworkNode() => Dispose(false);
+
+        public void Dispose(bool disposing)
+        {
+            NetworkNodeManager._Internal_TryUnregisterNode(this);
+            TryStop(!disposing);
+
+            IDataHolder.DeleteAllData(this);
+        }
+
+        public void Dispose() => Dispose(true);
 
         /// <summary>
         /// Tries to start this NetworkNode:

@@ -348,15 +348,8 @@ namespace EppNet.Sockets
             _connMgr = Node.Services.GetService<ConnectionManager>();
 
             if (_connMgr == null)
-            {
                 _connMgr = new ConnectionManager(Node.Services);
-                Node.Services.TryAddService(_connMgr);
-            }
-        }
-
-        internal void _Internal_SetupClock([NotNull] Clock clock)
-        {
-
+            
         }
 
     }

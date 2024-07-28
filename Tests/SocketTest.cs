@@ -9,6 +9,8 @@ using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Sockets;
 
+using System;
+
 namespace EppNet.Tests
 {
 

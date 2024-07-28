@@ -122,9 +122,7 @@ namespace EppNet.Node
                         {
                             var pair = iterator.Next();
                             NetworkNode node = pair.Value;
-
-                            if (_Internal_TryUnregisterNode(node))
-                                node.TryStop(true);
+                            node.Dispose(true);
                         }
                     };
                 }
