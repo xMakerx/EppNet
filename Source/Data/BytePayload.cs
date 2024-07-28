@@ -83,15 +83,26 @@ namespace EppNet.Data
             get
             {
                 if (_precisionDecimalPlaces == 0)
-                {
                     _precisionDecimalPlaces = FastMath.GetTenPow(FloatPrecision);
-                }
 
                 return _precisionDecimalPlaces;
             }
         }
 
         private static double _precisionDecimalPlaces = 0d;
+
+        public static double PrecisionReturnDecimalPlaces
+        {
+            get
+            {
+                if (_precisionReturnDecimalPlaces == 0)
+                    _precisionReturnDecimalPlaces = 1 / PrecisionDecimalPlaces;
+
+                return _precisionReturnDecimalPlaces;
+            }
+        }
+
+        private static double _precisionReturnDecimalPlaces = 0d;
 
         public static RecyclableMemoryStream ObtainStream() => RecyclableStreamMgr.GetStream();
 
@@ -106,7 +117,7 @@ namespace EppNet.Data
         public static float FloatToNetFloat(float input)
         {
             int a = (int)(input.Round(FloatPrecision) * PrecisionDecimalPlaces);
-            return a / (float)PrecisionDecimalPlaces;
+            return a * (float) PrecisionReturnDecimalPlaces;
         }
 
         #endregion
@@ -825,7 +836,7 @@ namespace EppNet.Data
         public float ReadFloat()
         {
             float i32 = ReadInt32();
-            return i32 / (float) PrecisionDecimalPlaces;
+            return (float) (i32 * PrecisionReturnDecimalPlaces);
         }
 
         /// <summary>
