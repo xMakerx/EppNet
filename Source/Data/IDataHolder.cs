@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
@@ -18,8 +19,10 @@ namespace EppNet.Data
 
     public interface IDataHolder : IDisposable
     {
-
-        private static readonly Dictionary<IDataHolder, Dictionary<string, object>> _data = new();
+        /// <summary>
+        /// Holds weak references to objects that implement IDataHolder to not prevent garbage collection
+        /// </summary>
+        private static readonly ConditionalWeakTable<IDataHolder, Dictionary<string, object>> _data = new();
 
         /// <summary>
         /// Tries to get all data associated with a particular <see cref="IDataHolder"/>
