@@ -97,11 +97,13 @@ namespace EppNet.Services
         /// <param name="service"></param>
         /// <returns>Whether it was added or not</returns>
 
-        [MemberNotNull]
-        public bool TryAddService<T>(T service) where T : Service
+        public bool TryAddService<T>([NotNull] T service) where T : Service
         {
             if (service == null)
                 return false;
+
+            if (service.Node != null)
+                throw new InvalidOperationException("Service is already associated with a different NetworkNode!");
 
             _services.Add(service);
             return true;
@@ -122,7 +124,12 @@ namespace EppNet.Services
             if (type == typeof(Service))
             {
                 InvalidOperationException exp = new("Must specify a derived type of \"Service\"!");
-                Node.HandleException(exp);
+
+                if (Node == null)
+                    throw exp;
+                else
+                    Node.HandleException(exp);
+
                 return null;
             }
 

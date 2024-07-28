@@ -29,6 +29,7 @@ namespace EppNet.Node
 
         private BaseSocket _socket;
         private ServiceManager _svcMgr;
+
         public NetworkNodeBuilder() => Reset();
 
         public NetworkNodeBuilder(string name, Distribution distro) : this()
@@ -39,13 +40,14 @@ namespace EppNet.Node
 
         public NetworkNodeBuilder(Distribution distro) : this(string.Empty, distro) { }
 
-        public void Reset()
+        public NetworkNodeBuilder Reset()
         {
             this._name = string.Empty;
             this._distro = Distribution.Shared;
             this._exceptStrat = ExceptionStrategy.ThrowAll;
             this._socket = null;
             this._svcMgr = null;
+            return this;
         }
 
         public NetworkNodeBuilder SetName(string name)
@@ -89,9 +91,6 @@ namespace EppNet.Node
         {
             if (service == null)
                 throw new ArgumentNullException(nameof(service));
-
-            if (service.Node != null)
-                throw new InvalidOperationException("Service is already associated with a different NetworkNode!");
 
             // Ensure we have the service manager set. Add the service
             _svcMgr = (_svcMgr == null) ? service._serviceMgr : _svcMgr;
