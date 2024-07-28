@@ -16,9 +16,9 @@ namespace EppNet.Node
 {
 
     /// <summary>
-    /// Handy builder pattern for constructing a new <see cref="NetworkNode"/>!<br/>
-    /// <see cref="Build"/> will automatically register the generated <see cref="NetworkNode"/>,<br/>
-    /// if a <see cref="NetworkNode"/> has already been generated, it will unregister the old one.
+    /// Handy builder pattern for constructing new <see cref="NetworkNode"/>s!<br/>
+    /// You can create as many <see cref="NetworkNode"/>s as you would like, as long as you
+    /// <br/>use unique <see cref="Service"/> and <see cref="BaseSocket"/> instances.
     /// </summary>
     public sealed class NetworkNodeBuilder
     {
@@ -40,6 +40,9 @@ namespace EppNet.Node
 
         public NetworkNodeBuilder(Distribution distro) : this(string.Empty, distro) { }
 
+        /// <summary>
+        /// Resets all internal members
+        /// </summary>
         public NetworkNodeBuilder Reset()
         {
             this._name = string.Empty;
@@ -68,13 +71,21 @@ namespace EppNet.Node
             return this;
         }
 
+
+        /// <summary>
+        /// Tries to set the <see cref="BaseSocket"/> that will be associated with the newly constructed <see cref="NetworkNode"/>.<br/>
+        /// Provided socket mustn't be associated with another NetworkNode.<br/>
+        /// Setting this to null will have the newly constructed node pick a default socket. See: <see cref="NetworkNode.Socket"/>
+        /// </summary>
+        /// <param name="socket"></param>
+        /// <exception cref="InvalidOperationException">When you try to associate a socket instance with multiple network nodes</exception>
         public NetworkNodeBuilder SetSocket(BaseSocket socket)
         {
-            _socket = socket;
 
-            if (_socket.Node != null)
+            if (socket != null && socket.Node != null)
                 throw new InvalidOperationException("Socket is already associated with a different NetworkNode!");
 
+            _socket = socket;
             return this;
         }
 
@@ -86,6 +97,14 @@ namespace EppNet.Node
             _svcMgr.TryAddService(out service);
             return this;
         }
+
+        /// <summary>
+        /// Tries to add the specified <see cref="Service"/> to the internal <see cref="ServiceManager"/>.<br/>
+        /// Provided service mustn't be associated with another node!
+        /// </summary>
+        /// <param name="service">The service to add</param>
+        /// <exception cref="ArgumentNullException">When you try to add a null Service!</exception>
+        /// <exception cref="InvalidOperationException">When you try to associate a service instance with multiple network nodes</exception>
 
         public NetworkNodeBuilder WithService([NotNull] Service service)
         {
@@ -115,7 +134,8 @@ namespace EppNet.Node
             if (_socket != null)
                 _socket._Internal_SetupFor(node);
 
-            // We cannot create new nodes with the same socket or service manager
+            // Reset members that should be unique for every node
+            _name = string.Empty;
             _socket = null;
             _svcMgr = null;
 
