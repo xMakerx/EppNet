@@ -75,7 +75,7 @@ public class OrderedDictionary<TKey, TValue> : IOrderedDictionary<TKey, TValue> 
     public int Count => _keyedCollection.Count;
     public ICollection<TKey> Keys => _keyedCollection.Select(x => x.Key).ToList();
     public ICollection<TValue> Values => _keyedCollection.Select(x => x.Value).ToList();
-    public IEqualityComparer<TKey>? Comparer { get; private set; }
+    public IEqualityComparer<TKey> Comparer { get; private set; }
     #endregion
 
     #region Constructors
@@ -240,10 +240,10 @@ public class OrderedDictionary<TKey, TValue> : IOrderedDictionary<TKey, TValue> 
 
     #region IOrderedDictionary
     IDictionaryEnumerator IOrderedDictionary.GetEnumerator() => new DictionaryEnumerator<TKey, TValue>(this);
-    void IOrderedDictionary.Insert(int index, object key, object? value) => Insert(index, (TKey)key, (TValue)value!);
+    void IOrderedDictionary.Insert(int index, object key, object value) => Insert(index, (TKey)key, (TValue)value!);
     void IOrderedDictionary.RemoveAt(int index) => RemoveAt(index);
 
-    object? IOrderedDictionary.this[int index]
+    object IOrderedDictionary.this[int index]
     {
         get => this[index];
         set => this[index] = (TValue)value!;
@@ -251,7 +251,7 @@ public class OrderedDictionary<TKey, TValue> : IOrderedDictionary<TKey, TValue> 
     #endregion
 
     #region IDictionary
-    void IDictionary.Add(object key, object? value) => Add((TKey)key, (TValue)value!);
+    void IDictionary.Add(object key, object value) => Add((TKey)key, (TValue)value!);
     void IDictionary.Clear() => Clear();
     bool IDictionary.Contains(object key) => _keyedCollection.Contains((TKey)key);
     IDictionaryEnumerator IDictionary.GetEnumerator() => new DictionaryEnumerator<TKey, TValue>(this);
@@ -260,7 +260,7 @@ public class OrderedDictionary<TKey, TValue> : IOrderedDictionary<TKey, TValue> 
     ICollection IDictionary.Keys => (ICollection)Keys;
     void IDictionary.Remove(object key) => Remove((TKey)key);
     ICollection IDictionary.Values => (ICollection)Values;
-    object? IDictionary.this[object key]
+    object IDictionary.this[object key]
     {
         get => this[(TKey)key];
         set => this[(TKey)key] = (TValue)value!;
@@ -275,7 +275,7 @@ public class OrderedDictionary<TKey, TValue> : IOrderedDictionary<TKey, TValue> 
     #endregion
 }
 
-public delegate int NullableComparison<in T>(T? x, T? y);
+public delegate int NullableComparison<in T>(T x, T y);
 
 public class KeyedCollection2<TKey, TItem> : KeyedCollection<TKey, TItem> where TKey : notnull
 {
@@ -284,7 +284,7 @@ public class KeyedCollection2<TKey, TItem> : KeyedCollection<TKey, TItem> where 
     public KeyedCollection2(Func<TItem, TKey> getKeyForItemDelegate)
         : base() => _getKeyForItemDelegate = getKeyForItemDelegate ?? throw new ArgumentNullException(nameof(getKeyForItemDelegate));
 
-    public KeyedCollection2(Func<TItem, TKey> getKeyForItemDelegate, IEqualityComparer<TKey>? comparer)
+    public KeyedCollection2(Func<TItem, TKey> getKeyForItemDelegate, IEqualityComparer<TKey> comparer)
         : base(comparer) => _getKeyForItemDelegate = getKeyForItemDelegate ?? throw new ArgumentNullException(nameof(getKeyForItemDelegate));
 
     protected override TKey GetKeyForItem(TItem item) => _getKeyForItemDelegate(item);
@@ -302,7 +302,7 @@ public class Comparer2<T> : Comparer<T>
 
     public Comparer2(NullableComparison<T> comparison) => _compareFunction = comparison ?? throw new ArgumentNullException(nameof(comparison));
 
-    public override int Compare(T? x, T? y) => _compareFunction(x, y);
+    public override int Compare(T x, T y) => _compareFunction(x, y);
 }
 
 public sealed class DictionaryEnumerator<TKey, TValue> : IDictionaryEnumerator, IDisposable where TKey : notnull
@@ -315,7 +315,7 @@ public sealed class DictionaryEnumerator<TKey, TValue> : IDictionaryEnumerator, 
     public bool MoveNext() => _impl.MoveNext();
     public DictionaryEntry Entry => new(_impl.Current.Key, _impl.Current.Value);
     public object Key => _impl.Current.Key;
-    public object? Value => _impl.Current.Value;
+    public object Value => _impl.Current.Value;
     public object Current => Entry;
 
     public void Dispose() => _impl.Dispose();
