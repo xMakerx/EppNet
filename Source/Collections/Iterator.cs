@@ -10,16 +10,36 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace EppNet.Utilities
+namespace EppNet.Collections
 {
 
-    public sealed class Iterator<T>
+    public interface IIterator<out T>
+    {
+        /// <summary>
+        /// Checks if we have something next in the iterator
+        /// </summary>
+        /// <returns></returns>
+        public bool HasNext();
+
+        /// <summary>
+        /// Increments the internal index to the next one.
+        /// </summary>
+        /// <returns></returns>
+        public T Next();
+
+        /// <summary>
+        /// Fetches the current object
+        /// </summary>
+        /// <returns></returns>
+        public T Current();
+    }
+
+    public sealed class Iterator<T> : IIterator<T>
     {
         public int Index { get => _index; }
 
         private readonly IEnumerable<T> _enumerable;
         private List<T> _toIterate;
-
 
         private int _index;
 

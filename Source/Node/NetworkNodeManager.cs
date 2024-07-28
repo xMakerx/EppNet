@@ -6,11 +6,12 @@
 
 using ENet;
 
-using EppNet.Utilities;
-
-using System.Collections.Generic;
-using System;
+using EppNet.Collections;
 using EppNet.Logging;
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Node
 {
@@ -24,8 +25,6 @@ namespace EppNet.Node
         /// See <see cref="_Internal_TryRegisterNode(NetworkNode)"/> and <br/><see cref="_Internal_TryUnregisterNode(NetworkNode)"/>
         /// </summary>
         public static bool ENet_Initialized { private set; get; }
-
-        internal static Dictionary<Guid, NetworkNode> _nodes = new();
 
         /// <summary>
         /// Tries to initialize the ENet library with no special callbacks<br/>
@@ -86,6 +85,8 @@ namespace EppNet.Node
             return false;
         }
 
+        internal static OrderedDictionary<Guid, NetworkNode> _nodes = new();
+
         /// <summary>
         /// Tries to register the specified <see cref="NetworkNode"/>. <br/>
         /// Node mustn't be null and cannot be registered already.<br/><br/>
@@ -94,35 +95,45 @@ namespace EppNet.Node
         /// </summary>
         /// <param name="node">The node to register</param>
         /// <returns>Whether or not the node was registered</returns>
-        internal static bool _Internal_TryRegisterNode(NetworkNode node)
+        internal static bool _Internal_TryRegisterNode([NotNull] NetworkNode node)
         {
 
-            bool tryInitEnet = _nodes.Count == 0;
-            bool added = node != null && _nodes.TryAddEntry(node.UUID, node);
+            // Absolutely no duplicates
+            if (node == null || _nodes.ContainsKey(node.UUID))
+                return false;
 
-            if (tryInitEnet && added)
+            bool tryInitEnet = _nodes.Count == 0;
+            _nodes.Add(node.UUID, node);
+
+            if (tryInitEnet)
             {
                 // Try to initialize ENet with no special callbacks
                 if (InitializeENet())
+                {
                     node.Notify.Debug("Initialized C++ ENet library!");
 
-                // Let's call disposers just in case.
-                AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
-                {
-                    Iterator<NetworkNode> iterator = _nodes.Values.Iterator();
-
-                    while (iterator.HasNext())
+                    // Let's ensure we unregister nodes when the process ends.
+                    AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
                     {
-                        NetworkNode node = iterator.Next();
 
-                        if (_Internal_TryUnregisterNode(node))
-                            node.TryStop(true);
-                    }
-                };
+                        Dictionary<int, string> dict = new();
+                        dict.Iterator();
+
+                        Iterator<KeyValuePair<Guid, NetworkNode>> iterator = _nodes.Iterator();
+
+                        while (iterator.HasNext())
+                        {
+                            var pair = iterator.Next();
+                            NetworkNode node = pair.Value;
+
+                            if (_Internal_TryUnregisterNode(node))
+                                node.TryStop(true);
+                        }
+                    };
+                }
             }
 
-
-            return added;
+            return true;
         }
 
         /// <summary>
