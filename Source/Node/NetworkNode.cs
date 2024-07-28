@@ -76,16 +76,19 @@ namespace EppNet.Node
         private RuntimeFileMetadata _logMetadata;
         private bool _started;
 
-        public NetworkNode(Distribution distro)
+        internal NetworkNode(string name, Distribution distro, ExceptionStrategy exceptStrat, BaseSocket socket, ServiceManager serviceManager)
         {
-            this.Name = string.Empty;
+
+            if (distro == Distribution.Shared)
+                throw new InvalidOperationException("Invalid Distribution type! Must be either Server or Client!");
+
+            this.Name = name;
             this.UUID = Guid.NewGuid();
             this.Distro = distro;
-            this.ExceptionStrategy = ExceptionStrategy.ThrowAll;
+            this.ExceptionStrategy = exceptStrat;
 
-            this._index = NetworkNodeManager._nodes.Count;
-            this._serviceMgr = new(this);
-            this._socket = null;
+            this._serviceMgr = serviceManager ?? new(this);
+            this._socket = socket;
             this._logMetadata = null;
             this._started = false;
 
@@ -94,14 +97,13 @@ namespace EppNet.Node
             Notify.SetLogLevel(LogLevelFlags.All);
 
             // Let's try to register this
-            if (!NetworkNodeManager._Internal_TryRegisterNode(this))
+            if (!NetworkNodeManager._Internal_TryRegisterNode(this, out _index))
                 throw new InvalidOperationException("Node has already been added!");
         }
 
-        public NetworkNode(string name, Distribution distro) : this(distro)
-        {
-            this.Name = name;
-        }
+        public NetworkNode(Distribution distro) : this(string.Empty, distro, ExceptionStrategy.ThrowAll, null, null) { }
+
+        public NetworkNode(string name, Distribution distro) : this(name, distro, ExceptionStrategy.ThrowAll, null, null) { }
 
         /// <summary>
         /// Tries to start this NetworkNode:

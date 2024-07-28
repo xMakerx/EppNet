@@ -95,8 +95,9 @@ namespace EppNet.Node
         /// </summary>
         /// <param name="node">The node to register</param>
         /// <returns>Whether or not the node was registered</returns>
-        internal static bool _Internal_TryRegisterNode([NotNull] NetworkNode node)
+        internal static bool _Internal_TryRegisterNode([NotNull] NetworkNode node, out int index)
         {
+            index = _nodes.Count;
 
             // Absolutely no duplicates
             if (node == null || _nodes.ContainsKey(node.UUID))
@@ -141,11 +142,11 @@ namespace EppNet.Node
         /// <param name="node">The node to register</param>
         /// <returns>Whether or not the node was unregistered</returns>
 
-        internal static bool _Internal_TryUnregisterNode(NetworkNode node)
+        internal static bool _Internal_TryUnregisterNode(NetworkNode node, bool manageENet = true)
         {
             bool removed = node != null && _nodes.Remove(node.UUID);
 
-            if (removed)
+            if (removed && manageENet)
                 _Internal_TryDeinitializeENet();
 
             return removed;

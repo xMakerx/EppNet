@@ -5,14 +5,17 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Data.Datagrams;
+using EppNet.Services;
+
+using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Time
 {
 
-    public class Clock
+    public class Clock : IRunnable
     {
 
-        public readonly ClockStrategy Strategy;
+        public ClockStrategy Strategy { get => _strat; }
 
         public float Latency { internal set; get; }
 
@@ -26,31 +29,37 @@ namespace EppNet.Time
         /// </summary>
         public ulong RoundTripTime { internal set; get; }
 
-        protected internal bool _initialized;
+        protected internal bool _started;
+        protected internal ClockStrategy _strat;
 
-        public Clock()
+        internal Clock()
         {
-            this.Strategy = new CommonClockStrategy(this, 5000L);
+            this._strat = new CommonClockStrategy(this, 5000L);
         }
 
-        public Clock(ClockStrategy strat)
+        internal Clock([NotNull] ClockStrategy strat)
         {
-            this.Strategy = strat;
+            this._strat = strat;
         }
 
-        public void Initialize()
+        public bool Start()
         {
-            // Ensure first initialization.
-            if (_initialized)
-                return;
+            if (_started)
+                return false;
 
-            Strategy.Initialize();
-            _initialized = true;
+            _Internal_Reset();
+            _started = true;
+            return true;
         }
 
-        public void Tick(float delta)
+        public bool Stop()
         {
-            Strategy.Tick(delta);
+            if (!_started)
+                return false;
+
+            _started = false;
+            _Internal_Reset();
+            return true;
         }
 
         /// <summary>
@@ -68,6 +77,25 @@ namespace EppNet.Time
             Strategy.ProcessPong(ping_dg);
         }
 
+        private void _Internal_Reset()
+        {
+            this.Latency = -1f;
+            this.LatencyDelta = 1f;
+            this.Time = this.RoundTripTime = 0L;
+            _strat.Reset();
+        }
+
+        internal bool _Internal_Tick(float delta)
+        {
+            if (!_started)
+            {
+                // Cannot tick the clock when it hasn't been started yet!
+                return false;
+            }
+
+            Strategy.Tick(delta);
+            return true;
+        }
 
     }
 

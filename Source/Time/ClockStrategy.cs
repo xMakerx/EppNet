@@ -72,18 +72,19 @@ namespace EppNet.Time
             this.LatencySamples = DEFAULT_LATENCY_SAMPLES;
         }
 
-        public void Initialize()
+        public void Reset()
         {
-            if (Clock._initialized)
-                return;
-
+            // Reset our millisecond based timestamps
             this.LastSync = new(TimestampType.Milliseconds, true, 0L);
             this.LastTick = new(TimestampType.Milliseconds, true, 0L);
             this.LastPing = new(TimestampType.Milliseconds, true, 0L);
 
+            // Reset stats related to latency
             this._latency_samples = new float[LatencySamples];
             this._latency_samples_idx = 0;
+            this._num_latency_samples = 0;
 
+            // Reset the decimal collector
             this._decimal_collector = 0f;
         }
 

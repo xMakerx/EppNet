@@ -16,7 +16,9 @@ namespace EppNet.Services
     public class ServiceManager : INodeDescendant
     {
 
-        public NetworkNode Node { get; }
+        public NetworkNode Node { get => _node; }
+
+        internal NetworkNode _node;
 
         /// <summary>
         /// Generic List storage because services aren't going to be
@@ -26,10 +28,15 @@ namespace EppNet.Services
         /// </summary>
         protected List<Service> _services;
 
-        public ServiceManager(NetworkNode node)
+        internal ServiceManager()
         {
-            this.Node = node;
+            this._node = null;
             this._services = new();
+        }
+
+        public ServiceManager([NotNull] NetworkNode node) : this()
+        {
+            this._node = node;
         }
 
         /// <summary>

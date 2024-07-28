@@ -17,27 +17,15 @@ namespace EppNet.Sockets
     public class ClientSocket : BaseSocket
     {
 
-        public ClientSocket(NetworkNode node) : base(node, SocketType.Client)
-        {
+        public ClientSocket() : base(SocketType.Client) { }
 
-        }
+        public ClientSocket(NetworkNode node) : base(node, SocketType.Client) { }
 
         public bool ConnectTo(string host, ushort port)
         {
-            if (IsOpen())
-            {
-                Node.HandleException(new InvalidOperationException("Already connected to a remote host! Have you tried disconnecting first?"));
-                return false;
-            }
-
             this.HostName = host;
             this.Port = port;
-
-            // Create our ENet host and connect
-            this._enet_host = new();
-            _enet_host.Create();
-            _enet_peer = _enet_host.Connect(_enet_addr);
-            return true;
+            return Create();
         }
 
         public void ConnectTo(string host, int port) => ConnectTo(host, Convert.ToUInt16(port));

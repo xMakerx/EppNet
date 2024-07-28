@@ -43,7 +43,7 @@ namespace EppNet.Services
             get => _status;
         }
 
-        protected readonly ServiceManager _serviceMgr;
+        internal readonly ServiceManager _serviceMgr;
 
         protected ServiceState _status = ServiceState.Offline;
 

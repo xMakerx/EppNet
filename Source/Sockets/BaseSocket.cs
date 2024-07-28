@@ -11,7 +11,10 @@ using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Time;
 
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Sockets
 {
@@ -28,9 +31,9 @@ namespace EppNet.Sockets
 
         public ILoggable Notify => this;
 
-        public readonly NetworkNode Node;
-        public readonly Clock Clock;
-        public readonly ConnectionManager ConnectionManager;
+        public NetworkNode Node { get => _node; }
+        public Clock Clock { get => _clock; }
+        public ConnectionManager ConnectionManager { get => _connMgr; }
 
         public SocketType Type { get => _type; }
 
@@ -112,6 +115,9 @@ namespace EppNet.Sockets
         public Timestamp CreateTimeMono;
         public Timestamp LastPollMono;
 
+        internal NetworkNode _node;
+        protected ConnectionManager _connMgr;
+
         protected Host _enet_host;
         protected Peer? _enet_peer;
         protected Address _enet_addr;
@@ -123,35 +129,10 @@ namespace EppNet.Sockets
         private int _maxClients;
 
         protected readonly SocketType _type;
-        protected readonly Clock _clock;
+        internal Clock _clock;
 
-        protected BaseSocket(NetworkNode node, SocketType type)
+        protected BaseSocket(SocketType type)
         {
-            if (node == null)
-                throw new ArgumentNullException("Must have a valid NetworkNode instance!");
-
-            // Set NetworkNode, ServiceManager, ConnectionManager, and Clock
-            this.Node = node;
-
-            if (Node._socket != null)
-            {
-                Node.HandleException(new InvalidOperationException("NetworkNode cannot have more than one Socket associated with it!"));
-                return;
-            }
-
-            // Let's set Node to use this
-            Node._Internal_SetSocket(this);
-
-            // Fetches or creates a connection manager
-            ConnectionManager = Node.Services.GetService<ConnectionManager>();
-
-            if (ConnectionManager == null)
-            {
-                ConnectionManager = new ConnectionManager(Node.Services);
-                Node.Services.TryAddService(ConnectionManager);
-            }
-
-            this.Clock = new();
             this.LastPollMono = new Timestamp(TimestampType.Milliseconds, true, 0L);
             this.CreateTimeMono = new Timestamp(TimestampType.Milliseconds, true, 0L);
 
@@ -161,12 +142,19 @@ namespace EppNet.Sockets
             this._enet_addr = new();
 
             // Backing fields for props
+            this._node = null;
+            this._connMgr = null;
             this._type = type;
+            this._clock = new();
             this._ip = _hostName = string.Empty;
             this._port = 0;
         }
 
+        protected BaseSocket(NetworkNode node, SocketType type) : this(type) => _Internal_SetupFor(node);
+
         ~BaseSocket() => Dispose(false);
+
+        
 
         public virtual void OnPeerConnected(Peer peer)
         {
@@ -228,6 +216,11 @@ namespace EppNet.Sockets
 
         public virtual bool Create()
         {
+            if (_node == null || _connMgr == null)
+            {
+                Notify.Warn("Cannot create the socket without a valid NetworkNode and ConnectionManager service");
+                return false;
+            }
 
             if (IsOpen())
             {
@@ -258,14 +251,17 @@ namespace EppNet.Sockets
 
                     case SocketType.Client:
                         _enet_host.Create();
-                        _enet_host.Connect(_enet_addr);
+                        _enet_peer = _enet_host.Connect(_enet_addr);
 
                         Notify.Info($"Trying to connect to {displayIP}:{Port}...");
                         break;
                 }
 
+                // Let's begin our clock!
+                Clock.Start();
+
                 CreateTimeMono.Value = Library.Time;
-                Notify.Debug("Created ENet host!");
+                Notify.Debug("Successfully created the Socket!");
             }
             catch (Exception ex)
             {
@@ -278,6 +274,8 @@ namespace EppNet.Sockets
 
         public void Dispose(bool disposing)
         {
+            Clock?.Stop();
+
             if (!IsServer())
                 _enet_peer?.DisconnectNow(0);
 
@@ -298,6 +296,68 @@ namespace EppNet.Sockets
         /// <returns></returns>
         public bool IsServer() => _type == SocketType.Server;
         public bool IsOpen() => _enet_host != null;
+
+        /// <summary>
+        /// Tries to update the <see cref="ClockStrategy"/> of the internal <see cref="Clock"/> if <see cref="IsOpen"/> == false
+        /// </summary>
+        /// <param name="strategy"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+
+        public bool SetClockStrategy([NotNull] ClockStrategy strategy)
+        {
+            if (strategy == null)
+                throw new ArgumentNullException("Must have a valid ClockStrategy instance!");
+
+            if (IsOpen())
+            {
+                InvalidOperationException exception = new InvalidOperationException("Cannot manage the clock with the socket open!");
+
+                if (Node != null)
+                {
+                    Node.HandleException(exception);
+                    return false;
+                }
+
+                // Don't have a node attached. Let's scream
+                throw exception;
+            }
+
+            _clock._strat = strategy;
+            return true;
+        }
+
+        internal void _Internal_SetupFor([NotNull] NetworkNode node)
+        {
+            if (node == null)
+                throw new ArgumentNullException("Must have a valid NetworkNode instance!");
+
+            // Set NetworkNode, ServiceManager, ConnectionManager, and Clock
+            this._node = node;
+
+            if (Node._socket != null)
+            {
+                Node.HandleException(new InvalidOperationException("NetworkNode cannot have more than one Socket associated with it!"));
+                return;
+            }
+
+            // Let's set Node to use this
+            Node._Internal_SetSocket(this);
+
+            // Fetches or creates a connection manager
+            _connMgr = Node.Services.GetService<ConnectionManager>();
+
+            if (_connMgr == null)
+            {
+                _connMgr = new ConnectionManager(Node.Services);
+                Node.Services.TryAddService(_connMgr);
+            }
+        }
+
+        internal void _Internal_SetupClock([NotNull] Clock clock)
+        {
+
+        }
 
     }
 }

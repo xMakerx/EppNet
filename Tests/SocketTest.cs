@@ -17,8 +17,10 @@ namespace EppNet.Tests
 
         public SocketTest()
         {
+            NetworkNodeBuilder builder = new NetworkNodeBuilder("SocketTest", Distribution.Server)
+                .SetExceptionStrategy(Exceptions.ExceptionStrategy.LogOnly);
 
-            NetworkNode node = new(Distribution.Server);
+            NetworkNode node = builder.Build();
 
             ServerSocket serverSocket = node.Socket as ServerSocket;
             serverSocket.Port = 4296;
