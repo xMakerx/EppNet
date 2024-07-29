@@ -5,14 +5,28 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Core;
+using EppNet.Data;
 using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Sockets;
 
 using System;
+using System.Threading;
 
 namespace EppNet.Tests
 {
+
+    public class Thing
+    {
+        string l = "lol";
+
+        public Thing()
+        {
+            Console.WriteLine("HELLO!");
+        }
+
+        ~Thing() => Console.WriteLine("Goodbye!");
+    }
 
     public class SocketTest
     {
@@ -24,11 +38,20 @@ namespace EppNet.Tests
 
             NetworkNode node = builder.Build();
 
-            ServerSocket serverSocket = node.Socket as ServerSocket;
-            serverSocket.Port = 4296;
-            serverSocket.Notify.SetLogLevel(LogLevelFlags.All);
+            using (node)
+            {
+                ServerSocket serverSocket = node.Socket as ServerSocket;
+                serverSocket.Port = 4296;
+                serverSocket.Notify.SetLogLevel(LogLevelFlags.All);
 
-            node.TryStart();
+                node.TryStart();
+
+                NetworkNodeManager._Internal_TryUnregisterNode(node);
+            }
+
+            node.Set("thing", "3");
+            Console.WriteLine("thing: " + node.Get("thing"));
+            Console.WriteLine(node.GetOrCreateData());
         }
 
         public static void Main(string[] args)

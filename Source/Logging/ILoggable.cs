@@ -6,6 +6,7 @@
 /// </summary>
 //////////////////////////////////////////////
 
+using EppNet.Data;
 using EppNet.Node;
 
 using Serilog.Events;
@@ -289,8 +290,13 @@ namespace EppNet.Logging
             [CallerMemberName] string callerMemberName = null)
         {
             string filename = _Internal_CreateOrGetMetadata(loggable).Filename;
+            string categoryName = filename;
+
+            if (loggable is INameable nameable && nameable.IsNameValid())
+                categoryName = $"{filename}-{nameable.Name}";
+
             string memberName = ResolveMemberName(callerMemberName);
-            string output = $"[{filename}#{memberName}()] {msgData.Message}";
+            string output = $"[{categoryName}#{memberName}()] {msgData.Message}";
 
             if (!loggable.GetLogLevel().IsOn(level))
                 return false;

@@ -22,12 +22,12 @@ namespace EppNet.Node
     /// 
     /// </summary>
 
-    public class NetworkNode : ILoggable, IEquatable<NetworkNode>, IDataHolder
+    public class NetworkNode : ILoggable, IEquatable<NetworkNode>, IDataHolder, INameable
     {
 
         public ILoggable Notify { get => this; }
 
-        public string Name;
+        public string Name { set; get; }
         public readonly Guid UUID;
         public readonly Distribution Distro;
 
@@ -110,9 +110,11 @@ namespace EppNet.Node
 
         public void Dispose(bool disposing)
         {
+            Notify.Verbose("Disposing: " + disposing);
             NetworkNodeManager._Internal_TryUnregisterNode(this);
             TryStop(!disposing);
 
+            // Ensure our custom data is cleaned up
             IDataHolder.DeleteAllData(this);
         }
 

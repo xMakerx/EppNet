@@ -140,7 +140,7 @@ namespace EppNet.Node
         /// <param name="node">The node to register</param>
         /// <returns>Whether or not the node was unregistered</returns>
 
-        internal static bool _Internal_TryUnregisterNode(NetworkNode node, bool manageENet = true)
+        internal static bool _Internal_TryUnregisterNode([NotNull] NetworkNode node, bool manageENet = true)
         {
             bool removed = node != null && _nodes.Remove(node.UUID);
 
