@@ -4,10 +4,10 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.Core
+namespace EppNet
 {
 
-    public enum Distribution : int
+    public enum Distribution
     {
         /// <summary>
         /// Types or network objects with this distribution setting are

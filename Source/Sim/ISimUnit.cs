@@ -41,12 +41,12 @@ namespace EppNet.Sim
         public void RecalculateZoneBounds() { }
 
         /// <summary>
-        /// Called by the <see cref="ObjectManagerService"/> upon successful creation
+        /// Called by the <see cref="ObjectService"/> upon successful creation
         /// </summary>
         public void OnCreate(ObjectAgent agent) { }
 
         /// <summary>
-        /// Requests the <see cref="ObjectManagerService"/> to delete this
+        /// Requests the <see cref="ObjectService"/> to delete this
         /// TODO: ISimUnit: Implement command functionality to call this code at the end of a tick
         /// </summary>
         /// <returns>Whether or not the request for deletion was successful</returns>
@@ -57,18 +57,18 @@ namespace EppNet.Sim
             if (agent == null)
                 return false;
 
-            return agent.ObjectManager.TryRequestDelete(agent.ID);
+            return agent.Service.TryRequestDelete(agent.ID);
         }
 
         /// <summary>
-        /// Called by the <see cref="ObjectManagerService"/> upon deletion.<br/>
+        /// Called by the <see cref="ObjectService"/> upon deletion.<br/>
         /// Guaranteed to be called once.
         /// </summary>
 
         public void OnDelete() { }
 
         /// <summary>
-        /// Called by the <see cref="ObjectManagerService"/> when deletion is requested successfully.<br/>
+        /// Called by the <see cref="ObjectService"/> when deletion is requested successfully.<br/>
         /// Guaranteed to be called once.
         /// </summary>
 
@@ -90,7 +90,7 @@ namespace EppNet.Sim
         {
             foreach (NetworkNode node in NetworkNodeManager._nodes.Values)
             {
-                ObjectManagerService manager = node.Services.GetService<ObjectManagerService>();
+                ObjectService manager = node.Services.GetService<ObjectService>();
 
                 if (manager != null)
                 {

@@ -16,7 +16,7 @@ using System.Collections.Concurrent;
 namespace EppNet.Objects
 {
 
-    public class ObjectManagerService : Service
+    public class ObjectService : Service
     {
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace EppNet.Objects
         /// </summary>
         protected readonly HashSet<ObjectSlot> _deleteLater;
 
-        public ObjectManagerService(ServiceManager svcMgr) : base(svcMgr)
+        public ObjectService(ServiceManager svcMgr) : base(svcMgr)
         {
             this._id2Slot = new();
             this._unit2Slot = new();

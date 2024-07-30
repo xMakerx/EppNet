@@ -32,7 +32,7 @@ namespace EppNet.Snapshots
         public ObjectSnapshot(ObjectAgent @object, string header, Timestamp time) : base(header, time)
         {
             if (@object == null)
-                @object.ObjectManager.Notify.Error("Tried to create a new ObjectState with a NULL ObjectAgent!",
+                @object.Service.Notify.Error("Tried to create a new ObjectState with a NULL ObjectAgent!",
                     new ArgumentNullException(nameof(@object), "ObjectAgent argument cannot be null!"));
 
             this.Object = @object;
@@ -65,7 +65,7 @@ namespace EppNet.Snapshots
                 string key = list.GetKeyAtIndex(index);
                 ObjectMemberDefinition memDef = list[key];
 
-                if (memDef.IsProperty() || (memDef.IsMethod() && memDef.Attribute.Flags.IsFlagSet(Core.NetworkFlags.Snapshot)))
+                if (memDef.IsProperty() || (memDef.IsMethod() && memDef.Attribute.Flags.IsFlagSet(NetworkFlags.Snapshot)))
                 {
 
                     object currentValue = memDef.InvokeGetter(Object);
@@ -100,7 +100,7 @@ namespace EppNet.Snapshots
             if (obj is ObjectSnapshot x)
                 return CompareTo(x);
 
-            Object.ObjectManager.Notify.Error("Invalid comparison!", new ArgumentException("Invalid comparison!", nameof(obj)));
+            Object.Service.Notify.Error("Invalid comparison!", new ArgumentException("Invalid comparison!", nameof(obj)));
             return 1;
         }
     }

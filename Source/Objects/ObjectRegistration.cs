@@ -228,7 +228,7 @@ namespace EppNet.Objects
 
                         MethodInfo method = (member as MethodInfo);
 
-                        if (netAttr.Flags.IsFlagSet(Core.NetworkFlags.Snapshot))
+                        if (netAttr.Flags.IsFlagSet(NetworkFlags.Snapshot))
                         {
 
                             if (getterMthd == null)

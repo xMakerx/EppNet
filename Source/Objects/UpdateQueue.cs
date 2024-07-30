@@ -27,7 +27,7 @@ namespace EppNet.Objects
                 return false;
 
             var netAttr = item.MemberDefinition.Attribute;
-            bool snapshotUpdate = netAttr.Flags.IsFlagSet(Core.NetworkFlags.Snapshot);
+            bool snapshotUpdate = netAttr.Flags.IsFlagSet(NetworkFlags.Snapshot);
 
             // Ensure that the update is valid
             if ((snapshotUpdate && IsSnapshotQueue) || (!snapshotUpdate && !IsSnapshotQueue))

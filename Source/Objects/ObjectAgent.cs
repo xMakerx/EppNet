@@ -4,9 +4,11 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
+using EppNet.Collections;
 using EppNet.Sim;
 
-using System.Collections.Generic;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Objects
 {
@@ -16,12 +18,15 @@ namespace EppNet.Objects
     /// innerworkings of objects in the system into this class.
     /// </summary>
 
-    public class ObjectAgent
+    public class ObjectAgent : OrderedDictionary<long, ObjectAgent>, IEquatable<ObjectAgent>
     {
 
-        public readonly ObjectManagerService ObjectManager;
+        public readonly ObjectService Service;
         public readonly ISimUnit UserObject;
+        public readonly ObjectSlot Slot;
+
         public readonly ObjectRegistration Metadata;
+
         public readonly long ID;
 
         public int TicksUntilDeletion { internal set; get; }
@@ -29,9 +34,23 @@ namespace EppNet.Objects
         public UpdateQueue OutgoingReliableUpdates { protected set; get; }
         public UpdateQueue OutgoingSnapshotUpdates { protected set; get; }
 
-        internal ObjectAgent(ObjectManagerService manager, ObjectRegistration registration, ISimUnit userObject, long id)
+        internal ObjectAgent([NotNull] ObjectService objService, [NotNull] ObjectRegistration registration, [NotNull] ISimUnit userObject, long id)
         {
-            this.ObjectManager = manager;
+            object[] validate = new object[3] { objService, registration, userObject };
+            foreach (object o in validate)
+            {
+                if (o == null)
+                {
+                    var exception = new ArgumentNullException(nameof(o));
+
+                    if (objService != null)
+                        objService.Node.HandleException(exception);
+                    else
+                        throw exception;
+                }
+            }
+
+            this.Service = objService;
             this.Metadata = registration;
             this.UserObject = userObject;
             this.ID = id;
@@ -63,6 +82,7 @@ namespace EppNet.Objects
 
         public bool IsOtherValid(ObjectAgent other) => other != null && other != this;
 
+        public bool Equals(ObjectAgent other) => UserObject == other.UserObject && ID == other.ID;
     }
 
 }

@@ -47,11 +47,12 @@ namespace EppNet.Tests
                 node.TryStart();
 
                 NetworkNodeManager._Internal_TryUnregisterNode(node);
+
+                node.Set("thing", "3");
+                Console.WriteLine("thing: " + node.Get("thing"));
+                Console.WriteLine(node.GetOrCreateData());
             }
 
-            node.Set("thing", "3");
-            Console.WriteLine("thing: " + node.Get("thing"));
-            Console.WriteLine(node.GetOrCreateData());
         }
 
         public static void Main(string[] args)

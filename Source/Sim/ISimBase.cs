@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Time;
 using EppNet.Sockets;
 
 namespace EppNet.Sim
@@ -11,7 +12,7 @@ namespace EppNet.Sim
 
     public interface ISimBase
     {
-        public EppNet.Time.Clock GetClock();
+        public Clock GetClock();
         public BaseSocket GetSocket();
 
     }

@@ -9,13 +9,11 @@ using Disruptor.Dsl;
 using ENet;
 
 using EppNet.Attributes;
-using EppNet.Core;
-using EppNet.Data;
 using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Sockets;
-using EppNet.Utilities;
 using EppNet.Time;
+using EppNet.Utilities;
 
 using Serilog;
 
@@ -255,7 +253,7 @@ namespace EppNet.Sim
             sim.Start();
         }
 
-        public EppNet.Time.Clock GetClock() => Clock;
+        public Clock GetClock() => Clock;
         public BaseSocket GetSocket() => Socket;
     }
 

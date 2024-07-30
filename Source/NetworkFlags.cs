@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.Core
+namespace EppNet
 {
 
     public enum NetworkFlags : byte
