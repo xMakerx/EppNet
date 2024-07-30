@@ -6,6 +6,7 @@
 
 using EppNet.Collections;
 using EppNet.Sim;
+using EppNet.Utilities;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -36,20 +37,7 @@ namespace EppNet.Objects
 
         internal ObjectAgent([NotNull] ObjectService objService, [NotNull] ObjectRegistration registration, [NotNull] ISimUnit userObject, long id)
         {
-            object[] validate = new object[3] { objService, registration, userObject };
-            foreach (object o in validate)
-            {
-                if (o == null)
-                {
-                    var exception = new ArgumentNullException(nameof(o));
-
-                    if (objService != null)
-                        objService.Node.HandleException(exception);
-                    else
-                        throw exception;
-                }
-            }
-
+            Guard.AgainstNull(objService, registration, userObject);
             this.Service = objService;
             this.Metadata = registration;
             this.UserObject = userObject;

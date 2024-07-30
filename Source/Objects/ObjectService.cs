@@ -359,7 +359,6 @@ namespace EppNet.Objects
             {
                 string msg = $"An error occurred while running user {codeName} function for Object ID {agent.ID}";
                 Notify.Error(msg, e);
-                _serviceMgr.Node.HandleException(e);
                 return false;
             }
 
