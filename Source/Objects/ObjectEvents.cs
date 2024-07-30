@@ -9,6 +9,32 @@ using EppNet.Time;
 namespace EppNet.Objects
 {
 
+    public readonly struct ObjectCreatedEvent
+    {
+
+        public readonly ObjectSlot Slot;
+        public readonly Timestamp Timestamp;
+
+        public ObjectCreatedEvent(ObjectService service, ObjectSlot slot)
+        {
+            this.Slot = slot;
+            this.Timestamp = service.Time();
+        }
+
+    }
+
+    public readonly struct ObjectDeletedEvent
+    {
+        public readonly ObjectSlot Slot;
+        public readonly Timestamp Timestamp;
+
+        public ObjectDeletedEvent(ObjectService service, ObjectSlot slot)
+        {
+            this.Slot = slot;
+            this.Timestamp = service.Time();
+        }
+    }
+
     public readonly struct StateChangedEvent
     {
         public readonly EnumObjectState NewState;

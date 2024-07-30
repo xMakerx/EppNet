@@ -281,7 +281,7 @@ namespace EppNet.Objects
                 };
 
                 // Raise our event that a new object was created
-                OnObjectCreated?.Invoke(new(slot));
+                OnObjectCreated?.Invoke(new(this, slot));
 
                 // Running OnCreate user-code shouldn't brick the object manager.
                 // Call it wrapped in a try-catch to manage issues.
@@ -384,7 +384,7 @@ namespace EppNet.Objects
                 slot.Agent.TicksUntilDeletion = -1;
 
             // Raise our event that an object was deleted
-            OnObjectDeleted?.Invoke(new(slot));
+            OnObjectDeleted?.Invoke(new(this, slot));
 
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong
