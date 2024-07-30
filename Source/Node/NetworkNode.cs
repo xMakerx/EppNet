@@ -9,6 +9,7 @@ using EppNet.Exceptions;
 using EppNet.Logging;
 using EppNet.Services;
 using EppNet.Sockets;
+using EppNet.Time;
 
 using Serilog;
 using System;
@@ -65,6 +66,19 @@ namespace EppNet.Node
                 }
 
                 return _socket;
+            }
+
+        }
+
+        public Timestamp Time
+        {
+
+            get
+            {
+                if (Socket == null)
+                    return Timestamp.FromMonoNow();
+
+                return new Timestamp(TimestampType.Milliseconds, false, (long)Socket.Clock.Time);
             }
 
         }

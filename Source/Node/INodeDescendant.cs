@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Time;
+
 using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Node

@@ -21,7 +21,15 @@ namespace EppNet.Time
 
         public float LatencyDelta { internal set; get; }
 
-        public ulong Time { internal set; get; }
+        public ulong Time
+        {
+            internal set
+            {
+                _time = value;
+            }
+
+            get => _time;
+        }
 
         /// <summary>
         /// ENet also provides this, but this is used internally and is calculated
@@ -31,6 +39,7 @@ namespace EppNet.Time
 
         protected internal bool _started;
         protected internal ClockStrategy _strat;
+        protected internal ulong _time;
 
         internal Clock()
         {

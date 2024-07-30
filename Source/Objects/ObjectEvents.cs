@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: ChildEvents.cs
+/// Filename: ObjectEvents.cs
 /// Date: July 30, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
@@ -9,21 +9,33 @@ using EppNet.Time;
 namespace EppNet.Objects
 {
 
+    public readonly struct StateChangedEvent
+    {
+        public readonly EnumObjectState NewState;
+        public readonly EnumObjectState OldState;
+
+        public readonly Timestamp Timestamp;
+
+        public StateChangedEvent(ObjectAgent agent, EnumObjectState newState, EnumObjectState oldState)
+        {
+            this.NewState = newState;
+            this.OldState = oldState;
+            this.Timestamp = TimeExtensions.DetermineCurrentTime(agent);
+        }
+
+    }
+
     public readonly struct ParentChangedEvent
     {
         public readonly ObjectAgent NewParent;
         public readonly ObjectAgent OldParent;
-
-        /// <summary>
-        /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
-        /// </summary>
         public readonly Timestamp Timestamp;
 
         public ParentChangedEvent(ObjectAgent newParent, ObjectAgent oldParent)
         {
             this.NewParent = newParent;
             this.OldParent = oldParent;
-            this.Timestamp = Timestamp.FromMonoNow();
+            this.Timestamp = TimeExtensions.DetermineCurrentTime(newParent, oldParent);
         }
     }
 
@@ -31,16 +43,12 @@ namespace EppNet.Objects
     {
 
         public readonly ObjectAgent Object;
-
-        /// <summary>
-        /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
-        /// </summary>
         public readonly Timestamp Timestamp;
 
         public ChildAddedEvent(ObjectAgent @object)
         {
             this.Object = @object;
-            this.Timestamp = Timestamp.FromMonoNow();
+            this.Timestamp = TimeExtensions.DetermineCurrentTime(@object);
         }
 
     }
@@ -49,16 +57,12 @@ namespace EppNet.Objects
     {
 
         public readonly ObjectAgent Object;
-
-        /// <summary>
-        /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
-        /// </summary>
         public readonly Timestamp Timestamp;
 
         public ChildRemovedEvent(ObjectAgent @object)
         {
             this.Object = @object;
-            this.Timestamp = Timestamp.FromMonoNow();
+            this.Timestamp = TimeExtensions.DetermineCurrentTime(@object);
         }
 
     }

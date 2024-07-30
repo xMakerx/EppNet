@@ -33,12 +33,16 @@ namespace EppNet.Objects
         public readonly long ID;
 
         /// <summary>
-        /// Actions
+        /// Events
         /// </summary>
 
+        public Action<StateChangedEvent> OnStateChanged;
+
+        // Parent-child relationship events
         public Action<ParentChangedEvent> OnParentChanged;
         public Action<ChildAddedEvent> OnChildAdded;
         public Action<ChildRemovedEvent> OnChildRemoved;
+
 
         public NetworkNode Node { get => Service.Node; }
         public ObjectAgent Parent
@@ -52,6 +56,12 @@ namespace EppNet.Objects
                     var oldParent = _parent;
                     _parent = value;
 
+                    if (oldParent != null)
+                        oldParent.OnStateChanged -= _Internal_OnParentStateChanged;
+
+                    if (_parent != null)
+                        _parent.OnStateChanged += _Internal_OnParentStateChanged;
+
                     OnParentChanged?.Invoke(new(value, oldParent));
                 }
 
@@ -61,6 +71,21 @@ namespace EppNet.Objects
 
         }
 
+        public EnumObjectState State
+        {
+            internal set
+            {
+                if (value != _state)
+                {
+                    var oldState = _state;
+                    _state = value;
+                    OnStateChanged?.Invoke(new StateChangedEvent(this, value, oldState));
+                }
+            }
+
+            get => _state;
+        }
+
         public int TicksUntilDeletion { internal set; get; }
 
         public UpdateQueue OutgoingReliableUpdates { protected set; get; }
@@ -68,6 +93,7 @@ namespace EppNet.Objects
 
         internal ObjectAgent _parent;
         internal List<ObjectAgent> _children;
+        internal EnumObjectState _state;
 
         internal ObjectAgent([NotNull] ObjectService objService, [NotNull] ObjectRegistration registration, [NotNull] ISimUnit userObject, long id)
         {
@@ -191,6 +217,11 @@ namespace EppNet.Objects
             Parent?.RemoveChild(this);
             ClearAllChildren();
             _children = null;
+        }
+
+        protected void _Internal_OnParentStateChanged(StateChangedEvent @event)
+        {
+            this.State = @event.NewState;
         }
 
         protected bool _Internal_AddChild([NotNull] ObjectAgent child)

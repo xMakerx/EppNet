@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using EppNet.Utilities;
+using EppNet.Collections;
 
 namespace EppNet.Objects
 {
@@ -161,10 +162,10 @@ namespace EppNet.Objects
             if (stopped)
             {
                 // Let's delete our objects
-                HashSet<ObjectSlot> toDelete = new(_id2Slot.Values);
+                Iterator<ObjectSlot> iterator = _id2Slot.Values.Iterator();
 
-                foreach (ObjectSlot slot in toDelete)
-                    _Internal_DeleteObject(slot);
+                while (iterator.HasNext())
+                    _Internal_DeleteObject(iterator.Next());
             }
 
             return stopped;
@@ -388,6 +389,9 @@ namespace EppNet.Objects
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong
             _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDelete);
+
+            // Call dispose
+            slot.Agent.Dispose();
 
             // Let's set our state to deleted.
             slot.State = EnumObjectState.Deleted;

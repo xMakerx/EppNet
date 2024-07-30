@@ -50,12 +50,29 @@ namespace EppNet.Objects
         /// <summary>
         /// The state associated with the <see cref="ObjectAgent"/> in this slot.
         /// </summary>
-        public EnumObjectState State;
+        public EnumObjectState State
+        {
+
+            internal set
+            {
+                if (value != _state)
+                {
+                    if (Agent != null)
+                        Agent.State = value;
+                    else
+                        _state = value;
+                }
+            }
+
+            get => (Agent != null ? Agent.State : _state);
+        }
 
         /// <summary>
         /// A pointer to the <see cref="ObjectAgent"/> i.e. controller for the user object.
         /// </summary>
         public ObjectAgent Agent;
+
+        private EnumObjectState _state;
 
         /// <summary>
         /// Instantiates a new default <see cref="ObjectSlot"/> with ID -1, <see cref="EnumObjectState.Unknown"/>,
@@ -65,15 +82,13 @@ namespace EppNet.Objects
         public ObjectSlot()
         {
             this.ID = -1L;
-            this.State = EnumObjectState.Unknown;
+            this._state = EnumObjectState.Unknown;
             this.Agent = null;
         }
 
-        public ObjectSlot(long id)
+        public ObjectSlot(long id) : this()
         {
             this.ID = id;
-            this.State = EnumObjectState.Unknown;
-            this.Agent = null;
         }
 
         /// <summary>
