@@ -12,6 +12,7 @@ using EppNet.Sim;
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using EppNet.Utilities;
 
 namespace EppNet.Objects
 {
@@ -312,11 +313,8 @@ namespace EppNet.Objects
 
         protected bool _Internal_SafeUserCodeCall(ObjectAgent agent, EnumUserCodeType userCode)
         {
-            if (agent == null)
-            {
-                Notify.Error("Tried to call user code on a null ObjectAgent!");
+            if (!this.IsNotNull(agent, message: "Tried to call user code on a null ObjectAgent!"))
                 return false;
-            }
 
             string codeName = string.Empty;
 

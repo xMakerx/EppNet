@@ -20,32 +20,6 @@ namespace EppNet.Utilities
     /// </summary>
     public static class Guard
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AgainstDefault<THost, TArg>(this THost host, TArg arg) where THost : class where TArg : struct => AgainstDefault(host, arg, null);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AgainstDefault<THost, TArg>(this THost host, TArg arg, TemplatedMessage? tmpMsg, bool fatal = false) where THost : class where TArg : struct
-        {
-            TArg d = default;
-
-            if (!d.Equals(arg))
-                return true;
-
-            return _DoErrorHandling(host, arg, tmpMsg, fatal);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AgainstNull<THost, TArg>(this THost host, TArg arg) where THost : class where TArg : class => AgainstNull(host, arg, null);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool AgainstNull<THost, TArg>(this THost host, TArg arg, TemplatedMessage? tmpMsg, bool fatal = false) where THost : class where TArg : class
-        {
-
-            if (arg is not null)
-                return true;
-
-            return _DoErrorHandling(host, arg, tmpMsg, fatal);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AgainstNull(params object[] arguments)
@@ -83,20 +57,84 @@ namespace EppNet.Utilities
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool _DoErrorHandling<THost, TArg>(THost host, TArg arg, TemplatedMessage? tmpMsg, bool fatal = false) where THost : class
-        {
-            ArgumentNullException exp = new(tmpMsg.HasValue ? tmpMsg.Value.Message : nameof(arg));
+        public static bool IsNotDefault<THost, TArg>(this THost host, TArg arg, [CallerMemberName] string callerMemberName = null) where THost : class where TArg : struct
+            => IsNotDefault(host, arg, null, false, callerMemberName);
 
-            if (tmpMsg.HasValue && host is ILoggable loggable)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotDefault<THost, TArg>(this THost host, TArg arg, string message, bool fatal = false, [CallerMemberName] string callerMemberName = null) where THost : class where TArg : struct
+        {
+            return IsNotDefault(host, arg, new TemplatedMessage(message), fatal, callerMemberName);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotDefault<THost, TArg>(this THost host, TArg arg, TemplatedMessage tmpMsg, bool fatal = false, [CallerMemberName] string callerMemberName = null) where THost : class where TArg : struct
+        {
+            TArg d = default;
+
+            if (!d.Equals(arg))
+                return true;
+
+            return _Internal_DoErrorHandling(host, tmpMsg, fatal, callerMemberName);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotNull<THost, TArg>(this THost host, TArg arg, [CallerMemberName] string callerMemberName = null) where THost : class where TArg : class
+            => IsNotNull(host, arg, null, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotNull<THost, TArg>(this THost host, TArg arg, string message, [CallerMemberName] string callerMemberName = null) where THost : class where TArg : class
+        {
+            return IsNotNull(host, arg, new TemplatedMessage(message), false, callerMemberName);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotNull<THost, TArg>(this THost host, TArg arg, TemplatedMessage tmpMsg, bool fatal = false, [CallerMemberName] string callerMemberName = null) where THost : class where TArg : class
+        {
+
+            if (arg is not null)
+                return true;
+
+            return _Internal_DoErrorHandling(host, tmpMsg, fatal, callerMemberName);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotNull<THost>(this THost host, [CallerMemberName] string callerMemberName = null, params object[] arguments) where THost : class
+            => IsNotNull(host, null, false, arguments, callerMemberName);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotNull<THost>(this THost host, TemplatedMessage tmpMsg, bool fatal = false, [CallerMemberName] string callerMemberName = null, params object[] arguments) where THost : class
+        {
+
+            foreach (object arg in arguments)
+            {
+                if (arg is null)
+                {
+                    _Internal_DoErrorHandling(host, tmpMsg, fatal, callerMemberName);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool _Internal_DoErrorHandling<THost>(THost host, TemplatedMessage tmpMsg, bool fatal = false, [CallerMemberName] string callerMemberName = null)
+            where THost : class
+        {
+            ArgumentNullException exp = new();
+
+            if (!string.IsNullOrEmpty(tmpMsg.Message) && host is ILoggable loggable)
             {
                 if (fatal)
-                    loggable.Notify.Fatal(tmpMsg.Value, exp);
+                    loggable.Notify.Fatal(tmpMsg, exp, callerMemberName: callerMemberName);
                 else
-                    loggable.Notify.Error(tmpMsg.Value, exp);
+                    loggable.Notify.Error(tmpMsg, exp, callerMemberName: callerMemberName);
 
             }
             else if (host is INodeDescendant nDesc)
                 nDesc.Node.HandleException(exp);
+            else
+                throw exp;
 
             return false;
         }
