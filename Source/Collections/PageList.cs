@@ -23,6 +23,7 @@ namespace EppNet.Collections
         protected List<Page<T>> _pages;
 
         internal int _pageIndexWithAvaliability;
+        private object _pageLock;
 
         public PageList(int itemsPerPage)
         {
@@ -30,6 +31,7 @@ namespace EppNet.Collections
             this._itemIndexToPageIndexMult = 1f / itemsPerPage;
             this._pages = new List<Page<T>>();
             this._pageIndexWithAvaliability = -1;
+            this._pageLock = new object();
         }
 
         public void DoOnActive(Action<T> action)
@@ -38,64 +40,86 @@ namespace EppNet.Collections
                 _pages[i].DoOnActive(action);
         }
 
-        public int PurgeEmptyPages()
+        public void Clear()
         {
-            Iterator<Page<T>> iterator = _pages.Iterator();
-            int purged = 0;
-
-            while (iterator.HasNext())
+            for (int i = 0; i < _pages.Count; i++)
             {
-                Page<T> page = iterator.Next();
-
-                if (page.IsEmpty())
-                {
-                    _pages.Remove(page);
-                    purged++;
-                }
+                Page<T> page = _pages[i];
+                page.ClearAll();
             }
 
-            return purged;
+            _pages.Clear();
+        }
+
+        public int PurgeEmptyPages()
+        {
+            lock (_pageLock)
+            {
+                Iterator<Page<T>> iterator = _pages.Iterator();
+                int purged = 0;
+
+                while (iterator.HasNext())
+                {
+                    Page<T> page = iterator.Next();
+
+                    if (page.IsEmpty())
+                    {
+                        _pages.Remove(page);
+                        purged++;
+                    }
+                }
+
+                return purged;
+            }
         }
 
         public bool TryAllocate(in long id, out T allocated)
         {
             int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
 
-            if (pageIndex >= _pages.Count)
+            lock (_pageLock)
             {
-                // We don't have a page for this
-                int pagesToAllocate = pageIndex - _pages.Count;
-
-                for (int i = _pages.Count; i < pagesToAllocate; i++)
+                if (pageIndex >= _pages.Count)
                 {
-                    Page<T> newPage = new(this, i, ItemsPerPage);
-                    _pages.Add(newPage);
-                }
-            }
-            
-            Page<T> page = _pages[pageIndex];
+                    // We don't have a page for this
+                    int pagesToAllocate = pageIndex - _pages.Count;
 
-            int index = Convert.ToInt32(id - page.StartIndex);
-            allocated = page[index];
-            return allocated.IsFree();
+                    for (int i = _pages.Count; i < pagesToAllocate; i++)
+                    {
+                        Page<T> newPage = new(this, i, ItemsPerPage);
+                        _pages.Add(newPage);
+                    }
+                }
+
+                Page<T> page = _pages[pageIndex];
+
+                int index = Convert.ToInt32(id - page.StartIndex);
+                allocated = page[index];
+                return allocated.IsFree();
+            }
+
         }
 
         public bool TryAllocate(out T allocated)
         {
             Page<T> page;
 
-            if (_pageIndexWithAvaliability != -1)
-                // We know that this page has availability
-                page = _pages[_pageIndexWithAvaliability];
-            else
+            lock (_pageLock)
             {
-                // We don't have a page with availability
-                // Allocate one.
-                page = new Page<T>(this, _pages.Count, ItemsPerPage);
-                _pages.Add(page);
+                if (_pageIndexWithAvaliability != -1)
+                    // We know that this page has availability
+                    page = _pages[_pageIndexWithAvaliability];
+                else
+                {
+                    // We don't have a page with availability
+                    // Allocate one.
+                    page = new Page<T>(this, _pages.Count, ItemsPerPage);
+                    _pages.Add(page);
+                }
+
+                return page.TryAllocate(out allocated);
             }
 
-            return page.TryAllocate(out allocated);
         }
 
         public bool TryFree(T toFree)
@@ -106,24 +130,40 @@ namespace EppNet.Collections
 
         public bool IsAvailable(long id)
         {
-            int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult) - 1;
+            lock (_pageLock)
+            {
+                int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult) - 1;
 
-            if (pageIndex >= _pages.Count)
-                return false;
+                if (pageIndex >= _pages.Count)
+                    return false;
 
-            Page<T> page = _pages[pageIndex];
-            return page[Convert.ToInt32(id - page.StartIndex)].IsFree();
+                Page<T> page = _pages[pageIndex];
+                return page[Convert.ToInt32(id - page.StartIndex)].IsFree();
+            }
+        }
+
+        public bool TryGetById(long id, out T item)
+        {
+            lock (_pageLock)
+            {
+                int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
+
+                if (pageIndex > _pages.Count)
+                {
+                    item = default;
+                    return false;
+                }
+
+                Page<T> page = _pages[pageIndex];
+                item = page[ItemIdToPageIndex(page, id)];
+                return true;
+            }
         }
 
         public T Get(long id)
         {
-            int pageIndex = (int) Math.Floor(id * _itemIndexToPageIndexMult);
-
-            if (pageIndex > _pages.Count)
-                return default;
-
-            Page<T> page = _pages[pageIndex];
-            return page[ItemIdToPageIndex(page, id)];
+            TryGetById(id, out T item);
+            return item;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -150,7 +190,7 @@ namespace EppNet.Collections
     public interface IPageable : IDisposable
     {
         public IPage Page { internal set; get; }
-        public int ID { set; get; }
+        public long ID { set; get; }
 
         public bool IsFree();
     }
@@ -239,6 +279,14 @@ namespace EppNet.Collections
 
         }
 
+        public void ClearAll()
+        {
+            for (int i = 0; i < Count; i++)
+                TryFree(this[i]);
+
+            Clear();
+        }
+
         public bool TryAllocate(out T allocated)
         {
 
@@ -256,7 +304,7 @@ namespace EppNet.Collections
         {
             if (!item.IsFree())
             {
-                int index = item.ID - StartIndex;
+                int index = Convert.ToInt32(item.ID - StartIndex);
 
                 item.Dispose();
                 _Internal_UpdateBit(index, false);

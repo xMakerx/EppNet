@@ -6,14 +6,17 @@
 /// Simulation units are components that propagate updates
 /// on the network
 
+using EppNet.Data;
 using EppNet.Node;
 using EppNet.Objects;
 
 namespace EppNet.Sim
 {
 
-    public interface ISimUnit
+    public interface ISimUnit : IDataHolder
     {
+
+        long ID { set; get; }
 
         public void AnnounceGenerate() { }
         public void OnGenerate() { }
@@ -118,6 +121,8 @@ namespace EppNet.Sim
 
             return -1;
         }
+
+        void System.IDisposable.Dispose() => DeleteAllData(this);
 
     }
 

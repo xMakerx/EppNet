@@ -4,12 +4,14 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Collections;
+
 using System;
 
 namespace EppNet.Objects
 {
 
-    public struct ObjectSlot : IEquatable<ObjectSlot>
+    public struct ObjectSlot : IPageable, IEquatable<ObjectSlot>
     {
 
 
@@ -41,11 +43,13 @@ namespace EppNet.Objects
 
         #endregion
 
+        public IPage Page { set; get; }
+
         /// <summary>
         /// The ID associated with this slot<br/>
         /// If this represents a valid ObjectSlot, the ID would be positive.
         /// </summary>
-        public readonly long ID;
+        public long ID { set; get; }
 
         /// <summary>
         /// The state associated with the <see cref="ObjectAgent"/> in this slot.
@@ -90,6 +94,16 @@ namespace EppNet.Objects
         {
             this.ID = id;
         }
+
+        public void Dispose()
+        {
+            Agent?.Dispose();
+            Agent = null;
+
+            _state = EnumObjectState.Unknown;
+        }
+
+        public readonly bool IsFree() => Agent != null;
 
         /// <summary>
         /// Checks if the specified object is a <see cref="ObjectSlot"/> with the same ID

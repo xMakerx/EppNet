@@ -40,8 +40,7 @@ namespace EppNet.Objects
             AnnounceGenerate  = 4
         }
 
-        protected readonly ConcurrentDictionary<long, ObjectSlot> _id2Slot;
-        protected readonly ConcurrentDictionary<ISimUnit, ObjectSlot> _unit2Slot;
+        protected readonly PageList<ObjectSlot> _objects;
 
         /// <summary>
         /// This HashSet contains objects that are meant to be deleted later. <br/>
@@ -51,8 +50,7 @@ namespace EppNet.Objects
 
         public ObjectService(ServiceManager svcMgr) : base(svcMgr)
         {
-            this._id2Slot = new();
-            this._unit2Slot = new();
+            this._objects = new(256);
             this._deleteLater = new();
         }
 
@@ -60,18 +58,8 @@ namespace EppNet.Objects
         {
             ISimUnit unit = slot.Agent?.UserObject;
 
-            if (unit == null)
-            {
-                // We have to locate our unit
-                foreach (KeyValuePair<ISimUnit, ObjectSlot> kvp in _unit2Slot)
-                {
-                    if (kvp.Value == slot)
-                    {
-                        unit = kvp.Key;
-                        break;
-                    }
-                }
-            }
+            if (unit == null && _objects.TryGetById(slot.ID, out ObjectSlot found))
+                unit = found.Agent?.UserObject;
 
             return unit;
         }
@@ -84,7 +72,7 @@ namespace EppNet.Objects
                 return default;
             }
 
-            if (!_unit2Slot.TryGetValue(unit, out var slot))
+            if (!_objects.TryGetById(unit.ID, out ObjectSlot slot))
                 Notify.Warning(new TemplatedMessage("Tried to fetch ObjectSlot for unknown ISimUnit??"));
 
             return slot;
@@ -92,8 +80,12 @@ namespace EppNet.Objects
 
         public ObjectAgent GetAgentById(long id)
         {
-            _id2Slot.TryGetValue(id, out var slot);
-            return slot.Agent;
+            ObjectAgent agent = null;
+
+            if (_objects.TryGetById(id, out ObjectSlot slot))
+                agent = slot.Agent;
+
+            return agent;
         }
 
         public ObjectAgent GetAgentFor(ISimUnit unit)
@@ -128,7 +120,7 @@ namespace EppNet.Objects
         public bool TryRequestDelete(long id, uint ticksUntilDeletion = 10)
         {
 
-            if (id != -1 && _id2Slot.TryGetValue(id, out var slot))
+            if (id != -1 && _objects.TryGetById(id, out ObjectSlot slot))
             {
                 // Great! We know what this object is!
                 // We can only delete an object if it's in the generated or disabled state
@@ -154,7 +146,7 @@ namespace EppNet.Objects
             return false;
         }
 
-        public bool IsIdAvailable(long id) => !_id2Slot.ContainsKey(id);
+        public bool IsIdAvailable(long id) => _objects.IsAvailable(id);
 
         public override bool Stop()
         {
@@ -162,10 +154,7 @@ namespace EppNet.Objects
             if (stopped)
             {
                 // Let's delete our objects
-                Iterator<ObjectSlot> iterator = _id2Slot.Values.Iterator();
-
-                while (iterator.HasNext())
-                    _Internal_DeleteObject(iterator.Next());
+                _objects.Clear();
             }
 
             return stopped;
@@ -271,14 +260,18 @@ namespace EppNet.Objects
                     return null;
                 }
 
-                id = (id == -1) ? _Internal_AllocateId() : id;
+                ObjectSlot slot;
+
+                if (id == -1)
+                    _objects.TryAllocate(out slot);
+                else
+                    _objects.TryAllocate(id, out slot);
+
+                id = slot.ID;
                 agent = new(this, registration, unit, id);
 
-                ObjectSlot slot = new(id)
-                {
-                    Agent = agent,
-                    State = EnumObjectState.WaitingForState
-                };
+                slot.Agent = agent;
+                slot.State = EnumObjectState.WaitingForState;
 
                 // Raise our event that a new object was created
                 OnObjectCreated?.Invoke(new(this, slot));
@@ -286,9 +279,6 @@ namespace EppNet.Objects
                 // Running OnCreate user-code shouldn't brick the object manager.
                 // Call it wrapped in a try-catch to manage issues.
                 _Internal_SafeUserCodeCall(agent, EnumUserCodeType.OnCreate);
-
-                _id2Slot.TryAdd(id, slot);
-                _unit2Slot.TryAdd(unit, slot);
 
                 Notify.Debug(new TemplatedMessage("Created new Object of Type {typeName} with ID {id}! Custom Constructor={custom}",
                     typeName, id, customGenerator));
@@ -374,10 +364,7 @@ namespace EppNet.Objects
             }
 
             ISimUnit unit = GetSimUnitFor(slot);
-            bool success = true;
-
-            success &= _id2Slot.TryRemove(slot, out var _);
-            success &= _unit2Slot.TryRemove(unit, out var _);
+            bool success = _objects.TryFree(slot);
 
             // Let's reset ticks left until deletion (if agent is valid)
             if (slot.Agent != null)
@@ -391,7 +378,7 @@ namespace EppNet.Objects
             _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDelete);
 
             // Call dispose
-            slot.Agent.Dispose();
+            slot.Dispose();
 
             // Let's set our state to deleted.
             slot.State = EnumObjectState.Deleted;

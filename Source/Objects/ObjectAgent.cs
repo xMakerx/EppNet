@@ -43,7 +43,6 @@ namespace EppNet.Objects
         public Action<ChildAddedEvent> OnChildAdded;
         public Action<ChildRemovedEvent> OnChildRemoved;
 
-
         public NetworkNode Node { get => Service.Node; }
         public ObjectAgent Parent
         {
@@ -102,6 +101,8 @@ namespace EppNet.Objects
             this.Service = objService;
             this.Metadata = registration;
             this.UserObject = userObject;
+            this.UserObject.ID = id;
+
             this.ID = id;
 
             this._parent = null;

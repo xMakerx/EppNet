@@ -17,6 +17,7 @@ namespace EppNet.Tests
     {
 
         public int Apples;
+        public long ID { set; get; }
 
         public TestNetworkObj(int apples)
         {
