@@ -199,7 +199,7 @@ namespace EppNet.Collections
     {
 
         internal const int _primSize = 64;
-        internal const float _multiplier = 1 / ((float)_primSize);
+        internal const float _multiplier = 1f / ((float)_primSize);
 
         public readonly PageList<T> List;
         public readonly int Index;

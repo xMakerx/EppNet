@@ -4,16 +4,15 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Collections;
 using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Services;
 using EppNet.Sim;
+using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using EppNet.Utilities;
-using EppNet.Collections;
 
 namespace EppNet.Objects
 {
