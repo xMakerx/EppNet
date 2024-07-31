@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace EppNet.Utilities
 {
@@ -18,6 +19,7 @@ namespace EppNet.Utilities
         /// <param name="b"></param>
         /// <param name="bitIndex"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsBitOn(this byte b, int bitIndex)
         {
             if (-1 < bitIndex && bitIndex < 8)
@@ -34,6 +36,7 @@ namespace EppNet.Utilities
         /// <param name="bitIndex"></param>
         /// <returns>The updated byte or the same byte if index was out of range. </returns>
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte EnableBit(this byte b, int bitIndex)
         {
             if (-1 < bitIndex && bitIndex < 8)
@@ -51,6 +54,7 @@ namespace EppNet.Utilities
         /// <param name="bitIndex"></param>
         /// <returns></returns>
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ResetBit(this byte b, int bitIndex)
         {
             if (-1 < bitIndex && bitIndex < 8)
