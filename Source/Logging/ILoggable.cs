@@ -30,6 +30,21 @@ namespace EppNet.Logging
     public static class ILoggableExtensions
     {
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string GetPrefix(this ILoggable loggable, string callerMemberName)
+        {
+            string filename = _Internal_CreateOrGetMetadata(loggable).Filename;
+            string categoryName = filename;
+
+            if (loggable is INameable nameable && nameable.IsNameValid())
+                categoryName = $"{filename}-{nameable.Name}";
+
+            string memberName = ResolveMemberName(callerMemberName);
+
+            return $"[{categoryName}#{memberName}()]";
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string ResolveMemberName(string callerMemberName)
             => callerMemberName == ".ctor" ? "ctor" : callerMemberName;
 
@@ -289,14 +304,8 @@ namespace EppNet.Logging
             Exception exception = null,
             [CallerMemberName] string callerMemberName = null)
         {
-            string filename = _Internal_CreateOrGetMetadata(loggable).Filename;
-            string categoryName = filename;
 
-            if (loggable is INameable nameable && nameable.IsNameValid())
-                categoryName = $"{filename}-{nameable.Name}";
-
-            string memberName = ResolveMemberName(callerMemberName);
-            string output = $"[{categoryName}#{memberName}()] {msgData.Message}";
+            string output = $"{loggable.GetPrefix(callerMemberName)} {msgData.Message}";
 
             if (!loggable.GetLogLevel().IsOn(level))
                 return false;

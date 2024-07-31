@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
+
 using System;
 
 namespace EppNet.Attributes
@@ -11,11 +13,11 @@ namespace EppNet.Attributes
     public abstract class NetworkMemberAttribute : Attribute
     {
 
-        public NetworkFlags Flags { internal set; get; }
+        public SlottableEnum Flags { internal set; get; }
 
         protected NetworkMemberAttribute() : this(NetworkFlags.None) { }
 
-        protected NetworkMemberAttribute(NetworkFlags flags)
+        protected NetworkMemberAttribute(SlottableEnum flags)
         {
             this.Flags = flags;
         }

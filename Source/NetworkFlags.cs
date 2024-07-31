@@ -4,43 +4,50 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
+
+using System.Collections.Generic;
+
 namespace EppNet
 {
 
-    public enum NetworkFlags : byte
+    public static class NetworkFlags
     {
+
+        private static readonly List<SlottableEnum> _flagsList = new();
+
         /// <summary>
         /// Method calls orchestrated by the server.
         /// </summary>
-        None            = 0,
+        public static readonly SlottableEnum None = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "None", 1);
 
         /// <summary>
         /// Method must be called to generate the object.
         /// </summary>
-        Required        = 1 << 0,
+        public static readonly SlottableEnum Required = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Required", 2);
 
         /// <summary>
         /// "If a tree falls in the forest and no one's there to hear it, does it make a sound?"
         /// The answer in this case is no. Only parties interested in the object at the time
         /// of the method call will be informed. Server is solely in charge of updates.
         /// </summary>
-        Broadcast       = 1 << 1,
+        public static readonly SlottableEnum Broadcast = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Broadcast", 3);
 
         /// <summary>
         /// Method can be sent by a client.
         /// </summary>
-        ClientSend      = 1 << 2,
+        public static readonly SlottableEnum ClientSend = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "ClientSend", 4);
 
         /// <summary>
         /// Method can only be sent by the object's owner.
         /// </summary>
-        OwnerSend       = 1 << 3,
+        public static readonly SlottableEnum OwnerSend = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "OwnerSend", 4);
 
         /// <summary>
         /// Method call is stored so it can be propagated to parties
         /// that gain interest in the object after the update.
         /// </summary>
-        Persistant      = 1 << 4,
+        public static readonly SlottableEnum Persistant = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Persistant", 5);
 
         /// <summary>
         /// Data passed to this method is recorded for interpolation and extrapolation between
@@ -49,8 +56,7 @@ namespace EppNet
         /// <br/>Implies <see cref="Persistant"/> as the latest snapshot value is
         /// sent to new parties that gain interest.
         /// </summary>
-        Snapshot        = 1 << 5,
-
+        public static readonly SlottableEnum Snapshot = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Snapshot", 5);
     }
 
 }

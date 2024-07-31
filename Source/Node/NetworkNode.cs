@@ -78,7 +78,7 @@ namespace EppNet.Node
                 if (Socket == null)
                     return Timestamp.FromMonoNow();
 
-                return new Timestamp(TimestampType.Milliseconds, false, (long)Socket.Clock.Time);
+                return new Timestamp(TimestampType.Milliseconds, false, (long) Socket.Clock.Time);
             }
 
         }

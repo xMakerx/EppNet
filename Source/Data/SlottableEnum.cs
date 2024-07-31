@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Utilities;
+
 using System;
 using System.Collections;
 
@@ -14,6 +16,16 @@ namespace EppNet.Data
     {
 
         #region Static access and operators
+
+        internal static SlottableEnum _Internal_CreateAndAddTo(IList group, string name, uint slot)
+        {
+            Guard.AgainstNull(group);
+            int index = group.Count;
+
+            SlottableEnum nEnum = new(group, name, slot, 1 << index);
+            group.Add(nEnum);
+            return nEnum;
+        }
 
         internal static void _Internal_ValidateEnums(SlottableEnum left, SlottableEnum right)
         {
@@ -78,6 +90,12 @@ namespace EppNet.Data
             this.Slot = slot;
             this.Value = value;
         }
+
+        public readonly bool Fits(SlottableEnum other) => other.Group == Group && other.Slot != Slot;
+
+        public readonly bool IsOn(SlottableEnum other) => Fits(other) && (Value & other.Value) == other.Value;
+
+        public readonly bool IsOff(SlottableEnum other) => !IsOn(other);
 
         public readonly TypeCode GetTypeCode() => TypeCode.Object;
 
@@ -151,23 +169,4 @@ namespace EppNet.Data
 
     }
 
-    public static class SlottableEnumExtensions
-    {
-
-        public static bool Fits(this SlottableEnum left, SlottableEnum right) => (left.Group == right.Group) && left.Slot != right.Slot;
-
-        public static bool IsOn(this SlottableEnum left, SlottableEnum right)
-        {
-            if (left.Group != right.Group)
-                return false;
-
-            if (left.Slot == right.Slot)
-                return false;
-
-            return (left.Value & right.Value) == right.Value;
-        }
-
-        public static bool IsOff(this SlottableEnum left, SlottableEnum right) => !left.IsOn(right);
-
-    }
 }

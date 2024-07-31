@@ -6,6 +6,7 @@
 
 using EppNet.Attributes;
 using EppNet.Core;
+using EppNet.Data;
 using EppNet.Sim;
 
 using System;
@@ -24,7 +25,7 @@ namespace EppNet.Objects
         public readonly Type ClassType;
         public readonly string Name;
         public readonly NetworkMemberAttribute Attribute;
-        public readonly NetworkFlags Flags;
+        public readonly SlottableEnum Flags;
         public readonly Type[] ParameterTypes;
         public readonly ObjectMethodCall Activator;
 

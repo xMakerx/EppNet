@@ -7,7 +7,6 @@
 using EppNet.Attributes;
 using EppNet.Logging;
 using EppNet.Registers;
-using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
@@ -228,7 +227,7 @@ namespace EppNet.Objects
 
                         MethodInfo method = (member as MethodInfo);
 
-                        if (netAttr.Flags.IsFlagSet(NetworkFlags.Snapshot))
+                        if (netAttr.Flags.IsOn(NetworkFlags.Snapshot))
                         {
 
                             if (getterMthd == null)

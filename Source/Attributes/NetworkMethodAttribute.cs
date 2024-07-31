@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Core;
+using EppNet.Data;
 
 using System;
 using System.Reflection;
@@ -24,7 +24,7 @@ namespace EppNet.Attributes
 
         public NetworkMethodAttribute() : this(NetworkFlags.None) { }
 
-        public NetworkMethodAttribute(NetworkFlags flags)
+        public NetworkMethodAttribute(SlottableEnum flags)
         {
             this.Flags = flags;
             this.Getter = null;
