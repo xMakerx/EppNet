@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace EppNet.Collections
 {
@@ -175,6 +176,7 @@ namespace EppNet.Collections
         public Action<T> OnFree;
 
         private readonly long[] _allocated;
+        private readonly object _allocationLock;
 
         internal Page([NotNull] PageList<T> list, int index, int size) : base(size)
         {
@@ -186,6 +188,7 @@ namespace EppNet.Collections
             this.AvailableIndex = 0;
 
             this._allocated = new long[(int)Math.Ceiling(Size * _multiplier)];
+            this._allocationLock = new();
 
             int aIndex = 0;
             for (int i = 0; i < size; i++)
@@ -206,26 +209,30 @@ namespace EppNet.Collections
 
         public void DoOnActive(Action<T> action)
         {
-            if (Empty)
-                return;
-
-            for (int i = 0; i < _allocated.Length; i++)
+            lock (_allocationLock)
             {
-                long marker = _allocated[i];
 
-                // Nothing to iterate
-                if (marker == 0L)
-                    continue;
+                if (Empty)
+                    return;
 
-                for (int bit = 0; bit < _primSize; bit++)
+                for (int i = 0; i < _allocated.Length; i++)
                 {
-                    if ((marker & (1 << bit)) != 0)
-                    {
-                        // We found something!
-                        int index = StartIndex + (i * _primSize) + bit;
+                    long marker = _allocated[i];
 
-                        T item = this[index];
-                        action.Invoke(item);
+                    // Nothing to iterate
+                    if (marker == 0L)
+                        continue;
+
+                    for (int bit = 0; bit < _primSize; bit++)
+                    {
+                        if ((marker & (1 << bit)) != 0)
+                        {
+                            // We found something!
+                            int index = StartIndex + (i * _primSize) + bit;
+
+                            T item = this[index];
+                            action.Invoke(item);
+                        }
                     }
                 }
             }
@@ -249,7 +256,7 @@ namespace EppNet.Collections
         {
             if (!item.IsFree())
             {
-                int index = ItemIDToIndex(item);
+                int index = item.ID - StartIndex;
 
                 item.Dispose();
                 _Internal_UpdateBit(index, false);
@@ -260,7 +267,7 @@ namespace EppNet.Collections
                 IsEmpty();
 
                 if (AvailableIndex == -1 || index < AvailableIndex)
-                    AvailableIndex = index;
+                    Interlocked.Exchange(ref AvailableIndex, index);
 
                 return true;
             }
@@ -269,26 +276,22 @@ namespace EppNet.Collections
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ItemIDToIndex([NotNull] T item)
-        {
-            Guard.AgainstNull(item);
-            return item.ID - StartIndex;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsEmpty()
         {
-            for (int i = 0; i < _allocated.Length; i++)
+            lock (_allocationLock)
             {
-                if (_allocated[i] != 0L)
+                for (int i = 0; i < _allocated.Length; i++)
                 {
-                    Empty = false;
-                    break;
+                    if (_allocated[i] != 0L)
+                    {
+                        Empty = false;
+                        break;
+                    }
                 }
-            }
 
-            Empty = true;
-            return Empty;
+                Empty = true;
+                return Empty;
+            }
         }
 
         public int GetIndex() => Index;
@@ -297,32 +300,37 @@ namespace EppNet.Collections
         {
             AvailableIndex = -1;
 
-            bool foundFree = false;
-            for (int i = 0; i < _allocated.Length; i++)
+            lock (_allocationLock)
             {
-                long marker = _allocated[i];
 
-                if (marker == long.MaxValue)
-                    continue;
+                bool foundFree = false;
 
-                for (int bit = 0; bit < _primSize; bit++)
+                for (int i = 0; i < _allocated.Length; i++)
                 {
-                    if ((marker & (1 << bit)) == 0)
+                    long marker = _allocated[i];
+
+                    if (marker == long.MaxValue)
+                        continue;
+
+                    for (int bit = 0; bit < _primSize; bit++)
                     {
-                        this.AvailableIndex = StartIndex + (i * _primSize) + bit;
-                        foundFree = true;
+                        if ((marker & (1 << bit)) == 0)
+                        {
+                            Interlocked.Exchange(ref AvailableIndex, StartIndex + (i * _primSize) + bit);
+                            foundFree = true;
+                            break;
+                        }
+                    }
+
+                    if (foundFree)
+                    {
+                        if (List._pageIndexWithAvaliability == -1 || List._pageIndexWithAvaliability > Index)
+                            Interlocked.Exchange(ref List._pageIndexWithAvaliability, Index);
                         break;
                     }
                 }
-
-                if (foundFree)
-                {
-                    if (List._pageIndexWithAvaliability == -1 || List._pageIndexWithAvaliability > Index)
-                        List._pageIndexWithAvaliability = Index;
-                    break;
-                }
             }
-            
+
         }
 
         protected void _Internal_DoAllocate(int index, out T allocated)
@@ -344,11 +352,15 @@ namespace EppNet.Collections
             int bitIndex = index - (longIndex * _primSize);
 
             long buffer = _allocated[longIndex];
+            
+            lock (_allocationLock)
+            {
+                if (on)
+                    _allocated[longIndex] = buffer | (1 << bitIndex);
+                else
+                    _allocated[longIndex] = buffer & ~(1 << bitIndex);
+            }
 
-            if (on)
-                _allocated[longIndex] = buffer | (1 << bitIndex);
-            else
-                _allocated[longIndex] = buffer & ~(1 << bitIndex);
         }
 
     }
