@@ -132,7 +132,7 @@ namespace EppNet.Collections
         {
             lock (_pageLock)
             {
-                int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult) - 1;
+                int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
 
                 if (pageIndex >= _pages.Count)
                     return false;
