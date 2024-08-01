@@ -89,11 +89,8 @@ namespace EppNet.Objects
 
         public ObjectAgent GetAgentFor(ISimUnit unit)
         {
-            if (unit == null)
-            {
-                Notify.Debug(new TemplatedMessage("Tried to fetch ObjectAgent for a null ISimUnit??"));
+            if (!this.IsNotNull(unit, "Tried to fetch ObjectAgent for a null ISimUnit??"))
                 return null;
-            }
 
             ObjectSlot slot = GetSlotFor(unit);
             return slot.Agent;
@@ -183,23 +180,11 @@ namespace EppNet.Objects
             base.Update();
         }
 
-        protected long _Internal_AllocateId()
-        {
-            long id;
-            do
-            {
-                id = Random.Shared.NextInt64();
-            } while (!IsIdAvailable(id));
-
-            return id;
-        }
-
         protected ObjectAgent _Internal_CreateObject(ObjectRegistration registration, long id = -1)
         {
 
             if (Status != ServiceState.Online)
             {
-                // We weren't provided an object registration but were provided an ID
                 var msg = new TemplatedMessage("Cannot create an Object while the ObjectManager Service is offline!");
                 Notify.Fatal(msg);
                 return null;
@@ -287,7 +272,6 @@ namespace EppNet.Objects
                 // Something went wrong somewhere else?
                 Notify.Fatal(new TemplatedMessage("Failed to create Object of Type {typeName} with ID {id}! Dynamic object generation failed! Custom Constructor={custom}",
                         typeName, id, customGenerator), e);
-                _serviceMgr.Node.HandleException(e);
             }
 
             return agent;
