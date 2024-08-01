@@ -447,24 +447,19 @@ namespace EppNet.Collections
                     if (marker == ulong.MaxValue)
                         continue;
 
-                    #if NET7_0_OR_GREATER
-                        int zeros = System.Numerics.BitOperations.LeadingZeroCount(marker);
+                    int zeros;
 
-                        if (zeros != 0)
-                        {
-                            firstFree = (i * _primSize) + (_primSize - zeros);
-                            break;
-                        }
+                    #if NET7_0_OR_GREATER
+                        zeros = System.Numerics.BitOperations.LeadingZeroCount(marker);
                     #else
-                        for (int bit = _primSize - 1; bit > -1; bit--)
-                        {
-                            if (((int) marker & (1UL << bit)) == 0)
-                            {
-                                firstFree = (i * _primSize) + (_primSize - bit);
-                                break;
-                            }
-                        }
+                        zeros = Backports.LeadingZeroCount(marker);
                     #endif
+
+                    if (zeros != 0)
+                    {
+                        firstFree = (i * _primSize) + (_primSize - zeros);
+                        break;
+                    }
                 }
 
                 if (firstFree != -1)
