@@ -281,10 +281,11 @@ namespace EppNet.Collections
 
             for (int i = 0; i < Size; i++)
             {
-                T item = new();
-                item.Page = this;
-                item.ID = StartIndex + i;
-                _data[i] = item;
+                _data[i] = new()
+                {
+                    Page = this,
+                    ID = StartIndex + i
+                };
             }
 
             this._allocated = new ulong[Size / _primSize];
@@ -309,14 +310,13 @@ namespace EppNet.Collections
                     if (marker == 0UL)
                         continue;
 
-                    for (int bit = _primSize - 1; bit > -1; bit--)
+                    for (int bit = 0; bit < _primSize; bit++)
                     {
                         if ((marker & (1UL << bit)) == 0)
                             continue;
 
                         // This bit is active
-                        int normalized = _primSize - bit;
-                        int index = StartIndex + (i * _primSize) + normalized;
+                        int index = StartIndex + (i * _primSize) + bit;
                         T item = this[index];
                         action.Invoke(item);
                     }
@@ -408,7 +408,7 @@ namespace EppNet.Collections
 
         public int GetIndex() => Index;
 
-        public string GetFreeString()
+        public string GetBitString()
         {
             StringBuilder builder = new();
 

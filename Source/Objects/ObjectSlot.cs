@@ -41,8 +41,8 @@ namespace EppNet.Objects
             };
         }
 
-        public static bool operator ==(ObjectSlot left, ObjectSlot right) => left.Equals(right) && left.Agent == right.Agent;
-        public static bool operator !=(ObjectSlot left, ObjectSlot right) => !(left.Equals(right) && left.Agent == right.Agent);
+        public static bool operator ==(ObjectSlot left, ObjectSlot right) => left?.Equals(right) == true;
+        public static bool operator !=(ObjectSlot left, ObjectSlot right) => left?.Equals(right) != true;
 
         #endregion
 
@@ -122,7 +122,7 @@ namespace EppNet.Objects
         public override bool Equals(object obj)
         {
             if (obj is ObjectSlot otherObjSlot)
-                return Equals(otherObjSlot);
+                return otherObjSlot.ID == ID && otherObjSlot.Agent == Agent;
 
             return false;
         }
@@ -133,7 +133,7 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="other"></param>
         /// <returns>Whether or not the provided ObjectSlot has an equivalent ID</returns>
-        public bool Equals(ObjectSlot other) => other.ID == ID;
+        public bool Equals(ObjectSlot other) => other?.ID == ID && other?.Agent == Agent;
 
         /// <summary>
         /// Fetches the hash code associated with our ID.

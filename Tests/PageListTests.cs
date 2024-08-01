@@ -34,7 +34,30 @@ namespace EppNet.Tests
             Assert.IsTrue(objs._pages.Count == 1, "More than 1 page allocated!");
             Assert.IsTrue(objs._pages[0].AvailableIndex == 0, "Index 0 is not available?");
 
-            Console.WriteLine(objs._pages[0].GetFreeString());
+            Console.WriteLine(objs._pages[0].GetBitString());
+        }
+
+        [TestMethod]
+        public void AllocateIdx127AndCall()
+        {
+            PageList<ObjectSlot> objs = new(128);
+            const int id = 127;
+
+            objs.TryAllocate(id, out ObjectSlot slot);
+
+            Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+            Assert.IsTrue(objs._pageIndexWithAvaliability == 0, "Did not set the first page as available");
+            Assert.IsTrue(objs._pages.Count == 1, "More than 1 page allocated!");
+            Assert.IsTrue(objs._pages[0].AvailableIndex == 0, "Index 0 is not available?");
+
+            Console.WriteLine(objs._pages[0].GetBitString());
+
+            objs.DoOnActive((ObjectSlot a) =>
+            {
+                Console.WriteLine($"Hello {a.ID}!");
+                Assert.IsTrue(a != null, "Wrong slot!");
+                Assert.IsTrue(a.ID == id, "Invalid slot id!");
+            });
         }
 
         [TestMethod]
@@ -52,7 +75,7 @@ namespace EppNet.Tests
             int shouldBeAvailable = (objs.ItemsPerPage / 2);
             Assert.IsTrue(!p1.Empty, "Page should be half full!");
             Assert.IsTrue(p1.AvailableIndex == shouldBeAvailable, $"Available Index should be {shouldBeAvailable}");
-            Console.WriteLine(p1.GetFreeString());
+            Console.WriteLine(p1.GetBitString());
         }
 
         [TestMethod]
@@ -73,7 +96,7 @@ namespace EppNet.Tests
 
             Page<ObjectSlot> p1 = objs._pages[0];
             Console.WriteLine(p1.AvailableIndex);
-            Console.WriteLine(p1.GetFreeString());
+            Console.WriteLine(p1.GetBitString());
             Assert.IsTrue(!p1.Empty, "Page should not be full!");
             Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full, so an index should be available!");
         }
@@ -101,7 +124,7 @@ namespace EppNet.Tests
 
             Page<ObjectSlot> p1 = objs._pages[0];
             Console.WriteLine(p1.AvailableIndex);
-            Console.WriteLine(p1.GetFreeString());
+            Console.WriteLine(p1.GetBitString());
             Assert.IsTrue(!p1.Empty, "Page should be full!");
             Assert.IsTrue(p1.AvailableIndex == -1, "Page should be full! An index is available!");
         }
@@ -131,7 +154,7 @@ namespace EppNet.Tests
 
             Page<ObjectSlot> p1 = objs._pages[0];
             Console.WriteLine(p1.AvailableIndex);
-            Console.WriteLine(p1.GetFreeString());
+            Console.WriteLine(p1.GetBitString());
             Assert.IsTrue(!p1.Empty, "Page should be full!");
             Assert.IsTrue(p1.AvailableIndex == -1, "Page should be full! An index is available!");
 
@@ -150,7 +173,7 @@ namespace EppNet.Tests
             }
 
             Console.WriteLine(p1.AvailableIndex);
-            Console.WriteLine(p1.GetFreeString());
+            Console.WriteLine(p1.GetBitString());
             Assert.IsTrue(!p1.Empty, "Page shouldn't be empty but not full!");
             Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full! An index isn't available!");
         }
