@@ -376,9 +376,6 @@ namespace EppNet.Objects
             // This is wrapped with a try-catch to handle if something else goes wrong
             _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDelete);
 
-            // Call dispose
-            slot.Dispose();
-
             // Let's set our state to deleted.
             slot.State = EnumObjectState.Deleted;
 
