@@ -251,6 +251,10 @@ namespace EppNet.Collections
         public bool Empty { private set; get; }
 
         public readonly int StartIndex;
+
+        /// <summary>
+        /// Available index is relative to [0 -> <see cref="Size"/> - 1]
+        /// </summary>
         public int AvailableIndex;
 
         public bool HasFree => AvailableIndex != -1;
