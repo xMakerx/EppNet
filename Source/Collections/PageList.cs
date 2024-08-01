@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+#define VECTORIZATION_ENABLED
+
 using EppNet.Utilities;
 
 using System;
@@ -11,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
+
 
 namespace EppNet.Collections
 {
@@ -23,7 +26,7 @@ namespace EppNet.Collections
         protected List<Page<T>> _pages;
 
         internal int _pageIndexWithAvaliability;
-        private object _pageLock;
+        private ReaderWriterLockSlim _lock;
 
         public PageList(int itemsPerPage)
         {
@@ -31,30 +34,43 @@ namespace EppNet.Collections
             this._itemIndexToPageIndexMult = 1f / itemsPerPage;
             this._pages = new List<Page<T>>();
             this._pageIndexWithAvaliability = -1;
-            this._pageLock = new object();
+            this._lock = new();
         }
 
         public void DoOnActive(Action<T> action)
         {
-            for (int i = 0; i < _pages.Count; i++)
-                _pages[i].DoOnActive(action);
+            try
+            {
+                _lock.EnterReadLock();
+
+                for (int i = 0; i < _pages.Count; i++)
+                    _pages[i].DoOnActive(action);
+
+            }
+            finally { _lock.ExitReadLock(); }
         }
 
         public void Clear()
         {
-            for (int i = 0; i < _pages.Count; i++)
+            try
             {
-                Page<T> page = _pages[i];
-                page.ClearAll();
-            }
+                _lock.EnterWriteLock();
+                for (int i = 0; i < _pages.Count; i++)
+                {
+                    Page<T> page = _pages[i];
+                    page.ClearAll();
+                }
 
-            _pages.Clear();
+                _pages.Clear();
+            }
+            finally { _lock.ExitWriteLock(); }
         }
 
         public int PurgeEmptyPages()
         {
-            lock (_pageLock)
+            try
             {
+                _lock.EnterWriteLock();
                 Iterator<Page<T>> iterator = _pages.Iterator();
                 int purged = 0;
 
@@ -71,32 +87,47 @@ namespace EppNet.Collections
 
                 return purged;
             }
+            finally { _lock.ExitWriteLock(); }
         }
 
         public bool TryAllocate(in long id, out T allocated)
         {
             int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
 
-            lock (_pageLock)
+            try
             {
+                // We might have to allocate a page
+                _lock.EnterUpgradeableReadLock();
+
                 if (pageIndex >= _pages.Count)
                 {
-                    // We don't have a page for this
-                    int pagesToAllocate = pageIndex - _pages.Count;
 
-                    for (int i = _pages.Count; i < pagesToAllocate; i++)
+                    try
                     {
-                        Page<T> newPage = new(this, i, ItemsPerPage);
-                        _pages.Add(newPage);
+                        // We have to write data
+                        _lock.EnterWriteLock();
+
+                        // We don't have a page for this
+                        int pagesToAllocate = pageIndex - _pages.Count;
+
+                        for (int i = _pages.Count; i < pagesToAllocate; i++)
+                        {
+                            Page<T> newPage = new(this, i);
+                            _pages.Add(newPage);
+                        }
                     }
+                    finally { _lock.ExitWriteLock(); }
+
                 }
 
+                // Fetch the appropriate page
                 Page<T> page = _pages[pageIndex];
 
                 int index = Convert.ToInt32(id - page.StartIndex);
                 allocated = page[index];
                 return allocated.IsFree();
             }
+            finally { _lock.ExitUpgradeableReadLock();  }
 
         }
 
@@ -104,21 +135,33 @@ namespace EppNet.Collections
         {
             Page<T> page;
 
-            lock (_pageLock)
+            try
             {
+                // We might have to allocate a page.
+                _lock.EnterUpgradeableReadLock();
+
                 if (_pageIndexWithAvaliability != -1)
                     // We know that this page has availability
                     page = _pages[_pageIndexWithAvaliability];
                 else
                 {
-                    // We don't have a page with availability
-                    // Allocate one.
-                    page = new Page<T>(this, _pages.Count, ItemsPerPage);
-                    _pages.Add(page);
+                    try
+                    {
+                        _lock.EnterWriteLock();
+
+                        // We don't have a page with availability
+                        // Allocate one.
+                        page = new Page<T>(this, _pages.Count);
+                        _pages.Add(page);
+
+                    }
+                    finally { _lock.ExitWriteLock(); }
+
                 }
 
                 return page.TryAllocate(out allocated);
             }
+            finally {  _lock.ExitUpgradeableReadLock(); }
 
         }
 
@@ -130,22 +173,27 @@ namespace EppNet.Collections
 
         public bool IsAvailable(long id)
         {
-            lock (_pageLock)
+            try
             {
+                // This is a read-only operation
+                _lock.EnterReadLock();
+
                 int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
 
                 if (pageIndex >= _pages.Count)
-                    return false;
+                    return true;
 
                 Page<T> page = _pages[pageIndex];
                 return page[Convert.ToInt32(id - page.StartIndex)].IsFree();
             }
+            finally { _lock.ExitReadLock(); }
         }
 
         public bool TryGetById(long id, out T item)
         {
-            lock (_pageLock)
+            try
             {
+                _lock.EnterReadLock();
                 int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
 
                 if (pageIndex > _pages.Count)
@@ -157,7 +205,9 @@ namespace EppNet.Collections
                 Page<T> page = _pages[pageIndex];
                 item = page[ItemIdToPageIndex(page, id)];
                 return true;
+
             }
+            finally { _lock.ExitReadLock(); }
         }
 
         public T Get(long id)
@@ -195,7 +245,7 @@ namespace EppNet.Collections
         public bool IsFree();
     }
 
-    public class Page<T> : List<T>, IPage where T : IPageable, new()
+    public class Page<T> : IPage where T : IPageable, new()
     {
 
         internal const int _primSize = 64;
@@ -215,76 +265,73 @@ namespace EppNet.Collections
         public Action<T> OnAllocate;
         public Action<T> OnFree;
 
-        private readonly long[] _allocated;
-        private readonly object _allocationLock;
+        private readonly T[] _data;
+        private readonly ulong[] _allocated;
+        private readonly ReaderWriterLockSlim _lock;
+        public T this[int index] => _data[index];
 
-        internal Page([NotNull] PageList<T> list, int index, int size) : base(size)
+        internal Page([NotNull] PageList<T> list, int index)
         {
             Guard.AgainstNull(list);
             this.List = list;
             this.Index = index;
-            this.Size = size;
+            this.Size = list.ItemsPerPage;
             this.StartIndex = Index * List.ItemsPerPage;
             this.AvailableIndex = 0;
 
-            this._allocated = new long[(int)Math.Ceiling(Size * _multiplier)];
-            this._allocationLock = new();
+            if (Size % _primSize != 0)
+                throw new ArgumentOutOfRangeException("Size must be a multiple of 64!");
 
-            int aIndex = 0;
-            for (int i = 0; i < size; i++)
+            this._data = new T[Size];
+
+            for (int i = 0; i < Size; i++)
             {
-                T item = new()
-                {
-                    Page = this,
-                    ID = StartIndex + i
-                };
-
-                Add(item);
-
-                if (i % _primSize == 0)
-                    _allocated[aIndex++] = 0L;
+                T item = _data[i];
+                item.Page = this;
+                item.ID = StartIndex + i;
             }
 
+            this._allocated = new ulong[Size];
+            this._lock = new();
         }
 
         public void DoOnActive(Action<T> action)
         {
-            lock (_allocationLock)
+            Guard.AgainstNull(action);
+            try
             {
+                _lock.EnterReadLock();
 
                 if (Empty)
                     return;
 
                 for (int i = 0; i < _allocated.Length; i++)
                 {
-                    long marker = _allocated[i];
+                    ulong marker = _allocated[i];
 
                     // Nothing to iterate
-                    if (marker == 0L)
+                    if (marker == 0UL)
                         continue;
 
-                    for (int bit = 0; bit < _primSize; bit++)
+                    for (int bit = _primSize - 1; bit > -1; bit--)
                     {
-                        if ((marker & (1 << bit)) != 0)
-                        {
-                            // We found something!
-                            int index = StartIndex + (i * _primSize) + bit;
+                        if ((marker & (1UL << bit)) == 0)
+                            continue;
 
-                            T item = this[index];
-                            action.Invoke(item);
-                        }
+                        // This bit is active
+                        int index = StartIndex + (i * _primSize) + bit;
+                        T item = this[index];
+                        action.Invoke(item);
                     }
                 }
-            }
 
+            } finally { _lock.ExitReadLock(); }
         }
 
         public void ClearAll()
         {
-            for (int i = 0; i < Count; i++)
+            for (int i = 0; i < Size; i++)
                 TryFree(this[i]);
-
-            Clear();
         }
 
         public bool TryAllocate(out T allocated)
@@ -326,11 +373,13 @@ namespace EppNet.Collections
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsEmpty()
         {
-            lock (_allocationLock)
+            try
             {
+                _lock.EnterReadLock();
+
                 for (int i = 0; i < _allocated.Length; i++)
                 {
-                    if (_allocated[i] != 0L)
+                    if (_allocated[i] != 0UL)
                     {
                         Empty = false;
                         break;
@@ -339,45 +388,57 @@ namespace EppNet.Collections
 
                 Empty = true;
                 return Empty;
+
             }
+            finally { _lock.ExitReadLock(); }
         }
 
         public int GetIndex() => Index;
 
         protected void _Internal_CalculateNextFree()
         {
-            AvailableIndex = -1;
-
-            lock (_allocationLock)
+            try
             {
+                _lock.EnterWriteLock();
 
-                bool foundFree = false;
+                AvailableIndex = -1;
+                int firstFree = -1;
 
                 for (int i = 0; i < _allocated.Length; i++)
                 {
-                    long marker = _allocated[i];
+                    ulong marker = _allocated[i];
 
-                    if (marker == long.MaxValue)
+                    if (marker == ulong.MaxValue)
                         continue;
 
-                    for (int bit = 0; bit < _primSize; bit++)
-                    {
-                        if ((marker & (1 << bit)) == 0)
+                    #if VECTORIZATION_ENABLED
+                        int zeros = System.Numerics.BitOperations.LeadingZeroCount(marker);
+
+                        if (zeros != 0)
                         {
-                            Interlocked.Exchange(ref AvailableIndex, StartIndex + (i * _primSize) + bit);
-                            foundFree = true;
+                            firstFree = StartIndex + (i * _primSize) + (_primSize - zeros);
                             break;
                         }
-                    }
-
-                    if (foundFree)
-                    {
-                        if (List._pageIndexWithAvaliability == -1 || List._pageIndexWithAvaliability > Index)
-                            Interlocked.Exchange(ref List._pageIndexWithAvaliability, Index);
-                        break;
-                    }
+                    #else
+                        for (int bit = _primSize - 1; bit > -1; bit--)
+                        {
+                            if (((int) marker & (1UL << bit)) == 0)
+                            {
+                                firstFree = StartIndex + (i * _primSize) + bit;
+                                break;
+                            }
+                        }
+                    #endif
                 }
-            }
+
+                if (firstFree != -1)
+                {
+                    Interlocked.Exchange(ref AvailableIndex, firstFree);
+                    if (List._pageIndexWithAvaliability == -1 || List._pageIndexWithAvaliability > Index)
+                        Interlocked.Exchange(ref List._pageIndexWithAvaliability, Index);
+                }
+
+            } finally { _lock.ExitWriteLock(); }
 
         }
 
@@ -396,18 +457,18 @@ namespace EppNet.Collections
 
         protected void _Internal_UpdateBit(int index, bool on)
         {
-            int longIndex = (int)Math.Floor(index * _multiplier);
-            int bitIndex = index - (longIndex * _primSize);
-
-            long buffer = _allocated[longIndex];
-            
-            lock (_allocationLock)
+            try
             {
+                _lock.EnterWriteLock();
+                int longIndex = (int)Math.Floor(index * _multiplier);
+                int bitIndex = index - (longIndex * _primSize);
+
                 if (on)
-                    _allocated[longIndex] = buffer | (1 << bitIndex);
+                    _allocated[longIndex] |= (1UL << bitIndex);
                 else
-                    _allocated[longIndex] = buffer & ~(1 << bitIndex);
-            }
+                    _allocated[longIndex] &= ~(1UL << bitIndex);
+
+            } finally { _lock.ExitWriteLock(); }
 
         }
 
