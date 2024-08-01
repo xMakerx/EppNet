@@ -9,6 +9,7 @@
 using EppNet.Collections;
 using EppNet.Objects;
 
+using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
@@ -40,7 +41,6 @@ namespace EppNet.Tests
         {
             PageList<ObjectSlot> objs = new(128);
 
-
             for (int i = 0; i < objs.ItemsPerPage / 2; i++)
             {
                 objs.TryAllocate(i, out ObjectSlot slot);
@@ -52,6 +52,29 @@ namespace EppNet.Tests
             Assert.IsTrue(!p1.Empty, "Page should be half full!");
             Assert.IsTrue(p1.AvailableIndex == shouldBeAvailable, $"Available Index should be {shouldBeAvailable}");
             Console.WriteLine(p1.GetFreeString());
+        }
+
+        [TestMethod]
+        public void AllocateRandom()
+        {
+            PageList<ObjectSlot> objs = new(128);
+            int allocations = objs.ItemsPerPage / 4;
+
+            Random rand = new Random();
+
+            for (int i = 0; i < allocations; i++)
+            {
+                int id = rand.Next(objs.ItemsPerPage);
+
+                objs.TryAllocate(id, out ObjectSlot slot);
+                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+            }
+
+            Page<ObjectSlot> p1 = objs._pages[0];
+            Console.WriteLine(p1.AvailableIndex);
+            Console.WriteLine(p1.GetFreeString());
+            Assert.IsTrue(!p1.Empty, "Page should not be full!");
+            Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full, so an index should be available!");
         }
 
     }
