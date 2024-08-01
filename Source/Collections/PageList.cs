@@ -8,10 +8,13 @@
 
 using EppNet.Utilities;
 
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 
 
@@ -23,7 +26,7 @@ namespace EppNet.Collections
         public readonly int ItemsPerPage;
 
         protected readonly float _itemIndexToPageIndexMult;
-        protected List<Page<T>> _pages;
+        protected internal List<Page<T>> _pages;
 
         internal int _pageIndexWithAvaliability;
         private ReaderWriterLockSlim _lock;
@@ -92,14 +95,14 @@ namespace EppNet.Collections
 
         public bool TryAllocate(in long id, out T allocated)
         {
-            int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
+            int pageIndex = ItemIdToPageIndex(id);
 
             try
             {
                 // We might have to allocate a page
                 _lock.EnterUpgradeableReadLock();
 
-                if (pageIndex >= _pages.Count)
+                if ((pageIndex + 1) > _pages.Count)
                 {
 
                     try
@@ -108,11 +111,11 @@ namespace EppNet.Collections
                         _lock.EnterWriteLock();
 
                         // We don't have a page for this
-                        int pagesToAllocate = pageIndex - _pages.Count;
+                        int pagesToAllocate = (pageIndex + 1) - _pages.Count;
 
-                        for (int i = _pages.Count; i < pagesToAllocate; i++)
+                        for (int i = 0; i < pagesToAllocate; i++)
                         {
-                            Page<T> newPage = new(this, i);
+                            Page<T> newPage = new(this, _pages.Count + i);
                             _pages.Add(newPage);
                         }
                     }
@@ -122,10 +125,7 @@ namespace EppNet.Collections
 
                 // Fetch the appropriate page
                 Page<T> page = _pages[pageIndex];
-
-                int index = Convert.ToInt32(id - page.StartIndex);
-                allocated = page[index];
-                return allocated.IsFree();
+                return page.TryAllocate(id, out allocated);
             }
             finally { _lock.ExitUpgradeableReadLock();  }
 
@@ -224,12 +224,7 @@ namespace EppNet.Collections
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ItemIdToPageIndex(long id)
-        {
-            int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
-            long delta = id - (pageIndex * ItemsPerPage);
-            return Convert.ToInt32(delta);
-        }
+        public int ItemIdToPageIndex(long id) => (int)Math.Floor(id * _itemIndexToPageIndexMult);
     }
 
     public interface IPage
@@ -249,7 +244,7 @@ namespace EppNet.Collections
     {
 
         internal const int _primSize = 64;
-        internal const float _multiplier = 1f / ((float)_primSize);
+        internal const float _multiplier = 1f / _primSize;
 
         public readonly PageList<T> List;
         public readonly int Index;
@@ -286,12 +281,13 @@ namespace EppNet.Collections
 
             for (int i = 0; i < Size; i++)
             {
-                T item = _data[i];
+                T item = new();
                 item.Page = this;
                 item.ID = StartIndex + i;
+                _data[i] = item;
             }
 
-            this._allocated = new ulong[Size];
+            this._allocated = new ulong[Size / _primSize];
             this._lock = new();
         }
 
@@ -332,6 +328,22 @@ namespace EppNet.Collections
         {
             for (int i = 0; i < Size; i++)
                 TryFree(this[i]);
+        }
+
+        public bool TryAllocate(long id, out T allocated)
+        {
+            int index = (int) id - StartIndex;
+            allocated = default;
+
+            if (index >= Size || index < 0)
+                return false;
+
+            bool available = this[index].IsFree();
+
+            if (available)
+                _Internal_DoAllocate(index, out allocated);
+
+            return available;
         }
 
         public bool TryAllocate(out T allocated)
@@ -394,6 +406,29 @@ namespace EppNet.Collections
         }
 
         public int GetIndex() => Index;
+
+        public string GetFreeString()
+        {
+            StringBuilder builder = new();
+
+            for (int l = 0; l < _allocated.Length; l++)
+            {
+                ulong marker = _allocated[l];
+
+                for (int i = _primSize - 1; i > -1; i--)
+                {
+                    if ((marker & (1UL << i)) != 0)
+                        builder.Append('1');
+                    else
+                        builder.Append('0');
+                }
+
+                if (l + 1 < _allocated.Length)
+                    builder.AppendLine();
+            }
+
+            return builder.ToString();
+        }
 
         protected void _Internal_CalculateNextFree()
         {

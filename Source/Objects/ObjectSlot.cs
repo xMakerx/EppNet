@@ -11,7 +11,7 @@ using System;
 namespace EppNet.Objects
 {
 
-    public struct ObjectSlot : IPageable, IEquatable<ObjectSlot>
+    public class ObjectSlot : IPageable, IEquatable<ObjectSlot>
     {
 
 
@@ -35,7 +35,10 @@ namespace EppNet.Objects
             if (id < 0)
                 throw new ArgumentOutOfRangeException(nameof(id), "ID must be positive!");
 
-            return new(id);
+            return new()
+            {
+                ID = id
+            };
         }
 
         public static bool operator ==(ObjectSlot left, ObjectSlot right) => left.Equals(right) && left.Agent == right.Agent;
@@ -85,13 +88,15 @@ namespace EppNet.Objects
 
         public ObjectSlot()
         {
+            this.Page = null;
             this.ID = -1L;
             this._state = EnumObjectState.Unknown;
             this.Agent = null;
         }
 
-        public ObjectSlot(long id) : this()
+        public ObjectSlot(IPage page, long id) : this()
         {
+            this.Page = page;
             this.ID = id;
         }
 
@@ -103,7 +108,7 @@ namespace EppNet.Objects
             _state = EnumObjectState.Unknown;
         }
 
-        public readonly bool IsFree() => Agent != null;
+        public bool IsFree() => Agent == null;
 
         /// <summary>
         /// Checks if the specified object is a <see cref="ObjectSlot"/> with the same ID
@@ -112,7 +117,7 @@ namespace EppNet.Objects
         /// <param name="obj"></param>
         /// <returns>The specified object is an ObjectSlot that shares our ID</returns>
 
-        public override readonly bool Equals(object obj)
+        public override bool Equals(object obj)
         {
             if (obj is ObjectSlot otherObjSlot)
                 return Equals(otherObjSlot);
@@ -126,14 +131,14 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="other"></param>
         /// <returns>Whether or not the provided ObjectSlot has an equivalent ID</returns>
-        public readonly bool Equals(ObjectSlot other) => other.ID == ID;
+        public bool Equals(ObjectSlot other) => other.ID == ID;
 
         /// <summary>
         /// Fetches the hash code associated with our ID.
         /// </summary>
         /// <returns>ID#GetHashCode()</returns>
 
-        public override readonly int GetHashCode() => ID.GetHashCode();
+        public override int GetHashCode() => ID.GetHashCode();
     }
 
 }
