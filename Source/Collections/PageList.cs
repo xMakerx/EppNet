@@ -393,7 +393,7 @@ namespace EppNet.Collections
                     if (_allocated[i] != 0UL)
                     {
                         Empty = false;
-                        break;
+                        return Empty;
                     }
                 }
 

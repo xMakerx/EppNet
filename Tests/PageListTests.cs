@@ -86,7 +86,35 @@ namespace EppNet.Tests
 
             Random rand = new Random();
 
-            List<int> used = new();
+            for (int i = 0; i < allocations; i++)
+            {
+                int id;
+                do
+                {
+                    id = rand.Next(objs.ItemsPerPage);
+                } while (!objs.IsAvailable(id));
+
+                objs.TryAllocate(id, out ObjectSlot slot);
+                slot._TESTS_ForceUsed = true;
+                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+            }
+
+            Page<ObjectSlot> p1 = objs._pages[0];
+            Console.WriteLine(p1.AvailableIndex);
+            Console.WriteLine(p1.GetFreeString());
+            Assert.IsTrue(!p1.Empty, "Page should be full!");
+            Assert.IsTrue(p1.AvailableIndex == -1, "Page should be full! An index is available!");
+        }
+
+        [TestMethod]
+        public void RandomFillAndClearPage()
+        {
+            PageList<ObjectSlot> objs = new(128);
+            int allocations = objs.ItemsPerPage;
+
+            Random rand = new Random();
+            int toClear = rand.Next(allocations / 2);
+
 
             for (int i = 0; i < allocations; i++)
             {
@@ -106,6 +134,25 @@ namespace EppNet.Tests
             Console.WriteLine(p1.GetFreeString());
             Assert.IsTrue(!p1.Empty, "Page should be full!");
             Assert.IsTrue(p1.AvailableIndex == -1, "Page should be full! An index is available!");
+
+            for (int i = 0; i < toClear; i++)
+            {
+                int id;
+                do
+                {
+                    id = rand.Next(objs.ItemsPerPage);
+                } while (objs.IsAvailable(id));
+
+                ObjectSlot slot = objs.Get(id);
+                objs.TryFree(slot);
+                slot._TESTS_ForceUsed = false;
+                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+            }
+
+            Console.WriteLine(p1.AvailableIndex);
+            Console.WriteLine(p1.GetFreeString());
+            Assert.IsTrue(!p1.Empty, "Page shouldn't be empty but not full!");
+            Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full! An index isn't available!");
         }
 
     }
