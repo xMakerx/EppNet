@@ -339,15 +339,15 @@ namespace EppNet.Objects
 
         protected bool _Internal_DeleteObject(ObjectSlot slot)
         {
-            if (slot == default)
+            if (slot == null)
             {
                 // This shouldn't happen.
                 Notify.Warning("Tried to delete Object in the default slot??");
                 return false;
             }
 
-            ISimUnit unit = GetSimUnitFor(slot);
-            bool success = _objects.TryFree(slot);
+            // Let's set our state to deleted.
+            slot.State = EnumObjectState.Deleted;
 
             // Let's reset ticks left until deletion (if agent is valid)
             if (slot.Agent != null)
@@ -360,13 +360,12 @@ namespace EppNet.Objects
             // This is wrapped with a try-catch to handle if something else goes wrong
             _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDelete);
 
-            // Let's set our state to deleted.
-            slot.State = EnumObjectState.Deleted;
-
             // Remove from our delete later collection
             // This doesn't dictate the value of success because there will
             // be times when we skip the delete later and do it immediately.
             _deleteLater.Remove(slot);
+
+            bool success = _objects.TryFree(slot);
 
             if (success)
                 Notify.Debug(new TemplatedMessage("Successfully deleted Object ID {id}", slot.ID));
