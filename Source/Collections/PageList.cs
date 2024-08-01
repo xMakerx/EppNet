@@ -4,8 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-#define VECTORIZATION_ENABLED
-
 using EppNet.Utilities;
 
 using System;
@@ -449,7 +447,7 @@ namespace EppNet.Collections
                     if (marker == ulong.MaxValue)
                         continue;
 
-                    #if VECTORIZATION_ENABLED
+                    #if NET7_0_OR_GREATER
                         int zeros = System.Numerics.BitOperations.LeadingZeroCount(marker);
 
                         if (zeros != 0)
