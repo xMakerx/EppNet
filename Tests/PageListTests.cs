@@ -9,11 +9,9 @@
 using EppNet.Collections;
 using EppNet.Objects;
 
-using Microsoft.Diagnostics.Tracing.Parsers.FrameworkEventSource;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using System;
-using System.Collections.Generic;
 
 namespace EppNet.Tests
 {

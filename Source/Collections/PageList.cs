@@ -91,7 +91,7 @@ namespace EppNet.Collections
 
         public bool TryAllocate(in long id, out T allocated)
         {
-            int pageIndex = ItemIdToPageIndex(id);
+            int pageIndex = (int) (id * _itemIndexToPageIndexMult);
 
             try
             {
@@ -174,13 +174,13 @@ namespace EppNet.Collections
                 // This is a read-only operation
                 _lock.EnterReadLock();
 
-                int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
+                int pageIndex = (int) (id * _itemIndexToPageIndexMult);
 
                 if (pageIndex >= _pages.Count)
                     return true;
 
                 Page<T> page = _pages[pageIndex];
-                return page[Convert.ToInt32(id - page.StartIndex)].IsFree();
+                return page[(int) (id - page.StartIndex)].IsFree();
             }
             finally { _lock.ExitReadLock(); }
         }
@@ -190,7 +190,7 @@ namespace EppNet.Collections
             try
             {
                 _lock.EnterReadLock();
-                int pageIndex = (int)Math.Floor(id * _itemIndexToPageIndexMult);
+                int pageIndex = (int) (id * _itemIndexToPageIndexMult);
 
                 if (pageIndex > _pages.Count)
                 {
@@ -199,7 +199,7 @@ namespace EppNet.Collections
                 }
 
                 Page<T> page = _pages[pageIndex];
-                item = page[ItemIdToPageIndex(page, id)];
+                item = page[(int) (id - page.StartIndex)];
                 return true;
 
             }
@@ -212,15 +212,6 @@ namespace EppNet.Collections
             return item;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ItemIdToPageIndex(Page<T> page, long id)
-        {
-            long delta = id - page.StartIndex;
-            return Convert.ToInt32(delta);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ItemIdToPageIndex(long id) => (int)Math.Floor(id * _itemIndexToPageIndexMult);
     }
 
     public interface IPage
@@ -364,7 +355,7 @@ namespace EppNet.Collections
         {
             if (!item.IsFree())
             {
-                int index = Convert.ToInt32(item.ID - StartIndex);
+                int index = (int) (item.ID - StartIndex);
 
                 item.Dispose();
                 _Internal_UpdateBit(index, false);
@@ -491,7 +482,7 @@ namespace EppNet.Collections
             try
             {
                 _lock.EnterWriteLock();
-                int longIndex = (int)Math.Floor(index * _multiplier);
+                int longIndex = (int) (index * _multiplier);
                 int bitIndex = index % _primSize;
 
                 if (on)
