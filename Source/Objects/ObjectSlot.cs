@@ -81,6 +81,8 @@ namespace EppNet.Objects
 
         private EnumObjectState _state;
 
+        internal bool _TESTS_ForceUsed = false;
+
         /// <summary>
         /// Instantiates a new default <see cref="ObjectSlot"/> with ID -1, <see cref="EnumObjectState.Unknown"/>,
         /// and a null <see cref="ObjectAgent"/>.
@@ -108,7 +110,7 @@ namespace EppNet.Objects
             _state = EnumObjectState.Unknown;
         }
 
-        public bool IsFree() => Agent == null;
+        public bool IsFree() => !_TESTS_ForceUsed || (!_TESTS_ForceUsed && Agent == null);
 
         /// <summary>
         /// Checks if the specified object is a <see cref="ObjectSlot"/> with the same ID

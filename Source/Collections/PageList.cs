@@ -8,8 +8,6 @@
 
 using EppNet.Utilities;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -315,7 +313,8 @@ namespace EppNet.Collections
                             continue;
 
                         // This bit is active
-                        int index = StartIndex + (i * _primSize) + bit;
+                        int normalized = _primSize - bit;
+                        int index = StartIndex + (i * _primSize) + normalized;
                         T item = this[index];
                         action.Invoke(item);
                     }
@@ -451,7 +450,7 @@ namespace EppNet.Collections
 
                         if (zeros != 0)
                         {
-                            firstFree = StartIndex + (i * _primSize) + (_primSize - zeros);
+                            firstFree = (i * _primSize) + (_primSize - zeros);
                             break;
                         }
                     #else
@@ -459,7 +458,7 @@ namespace EppNet.Collections
                         {
                             if (((int) marker & (1UL << bit)) == 0)
                             {
-                                firstFree = StartIndex + (i * _primSize) + bit;
+                                firstFree = (i * _primSize) + (_primSize - bit);
                                 break;
                             }
                         }
@@ -496,7 +495,7 @@ namespace EppNet.Collections
             {
                 _lock.EnterWriteLock();
                 int longIndex = (int)Math.Floor(index * _multiplier);
-                int bitIndex = index - (longIndex * _primSize);
+                int bitIndex = index % _primSize;
 
                 if (on)
                     _allocated[longIndex] |= (1UL << bitIndex);

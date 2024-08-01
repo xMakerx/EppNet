@@ -57,6 +57,7 @@ namespace EppNet.Tests
 
             Console.WriteLine();
             int front = System.Numerics.BitOperations.LeadingZeroCount(n);
+            Console.WriteLine(front);
             int firstAvailableIndex = 64 - front;
             Console.WriteLine("First available " + firstAvailableIndex);
 
