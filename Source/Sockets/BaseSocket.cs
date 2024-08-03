@@ -103,7 +103,7 @@ namespace EppNet.Sockets
 
                 if (value > ConnectionService.ENet_MaxClients)
                 {
-                    Node.HandleException(new ArgumentOutOfRangeException("MaxClients must be between 0 and 4095!"));
+                    Node.HandleException(new ArgumentOutOfRangeException($"MaxClients must be between 0 and {ConnectionService.ENet_MaxClients}!"));
                     return;
                 }
 
