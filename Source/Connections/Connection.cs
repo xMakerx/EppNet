@@ -13,6 +13,7 @@ using EppNet.Messaging;
 using EppNet.Node;
 using EppNet.Sockets;
 using EppNet.Time;
+using EppNet.Utilities;
 
 namespace EppNet.Connections
 {
@@ -92,6 +93,7 @@ namespace EppNet.Connections
 
         protected internal void _Internal_Setup(BaseSocket socket, Peer peer)
         {
+            Guard.AgainstNull(socket);
             this.Service = socket.ConnectionService;
             this.Socket = socket;
             this.ENet_Peer = peer;
