@@ -356,7 +356,7 @@ namespace EppNet.Sockets
             // Let's set Node to use this
             Node._Internal_SetSocket(this);
 
-            // Fetches or creates a connection manager (on the server)
+            // Fetches or creates a connection manager
             _connSrv = Node.Services.GetService<ConnectionService>();
 
             if (_connSrv == null)
