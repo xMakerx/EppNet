@@ -100,7 +100,6 @@ namespace EppNet.Sockets
 
                 // If provided a value less than 1, just use the ENet_MaxClients
                 value = (value < 1) ? ConnectionService.ENet_MaxClients : value;
-                    MaxClients = ConnectionService.ENet_MaxClients;
 
                 if (value > ConnectionService.ENet_MaxClients)
                 {
