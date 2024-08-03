@@ -3,13 +3,17 @@
 /// Date: July 9, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
+using EppNet.Attributes;
 using EppNet.Core;
 using EppNet.Data;
 using EppNet.Exceptions;
 using EppNet.Logging;
+using EppNet.Registers;
 using EppNet.Services;
+using EppNet.Sim;
 using EppNet.Sockets;
 using EppNet.Time;
+using EppNet.Utilities;
 
 using Serilog;
 using System;
@@ -109,7 +113,7 @@ namespace EppNet.Node
 
             Serilog.Debugging.SelfLog.Enable(Console.Error);
             Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Verbose().CreateLogger();
-            Notify.SetLogLevel(LogLevelFlags.All);
+            Notify.SetLogLevel(LogLevelFlags.InfoWarnErrorFatal);
 
             // Let's try to register this
             if (!NetworkNodeManager._Internal_TryRegisterNode(this, out _index))
@@ -124,7 +128,6 @@ namespace EppNet.Node
 
         public void Dispose(bool disposing)
         {
-            Notify.Verbose("Disposing: " + disposing);
             NetworkNodeManager._Internal_TryUnregisterNode(this);
             TryStop(!disposing);
 
@@ -143,9 +146,59 @@ namespace EppNet.Node
 
         public bool TryStart()
         {
+
+            // Let's ensure our expression trees are ready.
+            DatagramRegister dgRegister = DatagramRegister.Get();
+            ObjectRegister objRegister = ObjectRegister.Get();
+            Timestamp start = Timestamp.FromMonoNow();
+
+            if (!dgRegister.IsCompiled())
+            {
+                Notify.Verbose("Compiling Datagram expression trees... Please wait.");
+
+                CompilationResult result = dgRegister.Compile();
+
+                if (!result.Successful)
+                {
+                    Notify.Fatal("Compilation of Datagram expression trees failed!");
+                    throw result.Error;
+                }
+
+                Notify.Info(new TemplatedMessage("Successfully compiled Datagram expression trees in {time} ms", (Timestamp.FromMonoNow() - start).Value));
+            }
+
+            start = Timestamp.FromMonoNow();
+            if (!objRegister.IsCompiled())
+            {
+
+                Notify.Verbose("Looking up objects w/NetworkObjectAttribute...");
+                AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
+                {
+                    bool isValid = type.IsClass && typeof(ISimUnit).IsAssignableFrom(type);
+
+                    if (!isValid)
+                        Notify.Error($"[{type.Name}] Invalid use of NetworkObjectAttribute. Provided type does not extend ISimUnit!!");
+
+                    return isValid;
+                });
+
+                Notify.Verbose("Compiling Object expression trees... Please wait.");
+
+                CompilationResult result = objRegister.Compile();
+
+                if (!result.Successful)
+                {
+                    Notify.Fatal("Compilation of Object expression trees failed!");
+                    throw result.Error;
+                }
+
+                Notify.Info(new TemplatedMessage("Successfully compiled Object expression trees in {time} ms", (Timestamp.FromMonoNow() - start).Value));
+            }
+
             // Try to create our socket
             if (Socket.Create())
             {
+
                 try
                 {
                     // Start our services

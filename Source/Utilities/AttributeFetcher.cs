@@ -30,6 +30,8 @@ namespace EppNet.Utilities
         private static Dictionary<Type, Func<Type, bool>> _checkers = new Dictionary<Type, Func<Type, bool>>();
         private static bool _fetched = false;
 
+        public static int Count => _dict.Count;
+
         public static bool AddType<T>(Func<Type, bool> action = null) where T : Attribute
         {
             if (_dict.ContainsKey(typeof(T)))

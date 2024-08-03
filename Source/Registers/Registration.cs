@@ -30,7 +30,7 @@ namespace EppNet.Registers
             this._compiled = false;
         }
 
-        protected void _Internal_CompileConstructors()
+        protected int _Internal_CompileConstructors()
         {
             ConstructorInfo[] ctors = Type.GetConstructors();
 
@@ -62,17 +62,28 @@ namespace EppNet.Registers
                 ObjectGenerator compiled = (ObjectGenerator)lambda.Compile();
                 _ctorsDict.Add(types, compiled);
             }
+
+            return ctors.Length;
         }
 
-        public virtual bool Compile()
+        public virtual CompilationResult Compile()
         {
             if (IsCompiled())
-                return false;
+                return new();
 
-            _Internal_CompileConstructors();
-            _compiled = true;
+            int nCompiled = 0;
 
-            return true;
+            try
+            {
+                nCompiled = _Internal_CompileConstructors();
+                _compiled = true;
+            }
+            catch (Exception ex)
+            {
+                return new(false, nCompiled, ex);
+            }
+
+            return new(_compiled, nCompiled, null);
         }
 
         public bool IsCompiled() => _compiled;

@@ -96,16 +96,30 @@ namespace EppNet.Registers
             return default;
         }
 
-        public virtual bool Compile()
+        public virtual CompilationResult Compile()
         {
+
             if (_compiled)
-                return false;
+                return new();
 
-            foreach (IRegistration registration in _lookupTable.Values)
-                registration.Compile();
+            int compiledCount = 0;
 
-            _compiled = true;
-            return _compiled;
+            try
+            {
+                foreach (IRegistration registration in _lookupTable.Values)
+                {
+                    registration.Compile();
+                    compiledCount++;
+                }
+
+                _compiled = true;
+            }
+            catch (Exception ex)
+            {
+                return new(false, compiledCount, ex);
+            }
+
+            return new(_compiled, compiledCount, null);
         }
 
         public bool IsCompiled() => _compiled;

@@ -5,8 +5,6 @@
 ///////////////////////////////////////////////////////
 using EppNet.Sim;
 
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 using System;
 
 namespace EppNet.Time
@@ -60,7 +58,7 @@ namespace EppNet.Time
             {
                 Type = TimestampType.Milliseconds,
                 Monotonic = true,
-                Value = Simulation.MonotonicTime
+                Value = ENet.Library.Time
             };
         }
 

@@ -71,21 +71,35 @@ namespace EppNet.Objects
         /// <returns></returns>
         public ObjectMemberDefinition GetProperty(int index) => _GetMember(index, ref _props);
 
-        public override bool Compile()
+        public override CompilationResult Compile()
         {
+            CompilationResult result = new();
+
             if (IsCompiled())
-                return false;
+                return result;
 
-            Notify.Verbose($"Compiling {GetRegisteredType().Name}...");
-            _Internal_CompileConstructors();
-            _Internal_CompileMembers();
-            _compiled = true;
+            try
+            {
+                Notify.Verbose(new TemplatedMessage("Compiling {name}...", GetRegisteredType().Name));
 
-            return true;
+                result.NumCompiled += _Internal_CompileConstructors();
+                var result2 = _Internal_CompileMembers();
+                result.NumCompiled += result2.NumCompiled;
+                result.Error = result2.Error;
+                result.Successful = result2.Successful;
+            }
+            catch (Exception e)
+            {
+                result.Error = e;
+            }
+
+            _compiled = result.Successful;
+            return result;
         }
 
-        protected void _Internal_CompileMembers()
+        protected CompilationResult _Internal_CompileMembers()
         {
+            CompilationResult opResult = new();
             Type checkType = Type.BaseType;
             List<MemberInfo> members = new List<MemberInfo>();
 
@@ -209,7 +223,7 @@ namespace EppNet.Objects
                         string memberTypeName = nameof(member.MemberType);
                         MethodInfo getterMthd = (member is PropertyInfo) ? ((PropertyInfo)member).GetMethod : (netAttr as NetworkMethodAttribute).Getter;
 
-                        Notify.Verbose($"Compiling {memberTypeName} {member.Name}...");
+                        Notify.Verbose(new TemplatedMessage("Compiling {typeName} {memberName}...", memberTypeName, member.Name));
 
                         // Properties must have a public setter and getter
                         if (!isMethod)
@@ -248,7 +262,7 @@ namespace EppNet.Objects
                                         $"companion function in the declaring type named \"{methodName}\".";
 
                                     var exp = new ArgumentException(msg);
-                                    Notify.Error(msg, exp);
+                                    opResult.Error = exp;
                                     throw exp;
                                 }
                                 else
@@ -262,7 +276,6 @@ namespace EppNet.Objects
                                             $"type from the return type of the companion getter in the declaring type. Example: void SetPosition(Vector3); Vector3 GetPosition()";
 
                                         var exp = new ArgumentException(msg);
-                                        Notify.Error(msg, exp);
                                         throw exp;
                                     }
 
@@ -304,6 +317,10 @@ namespace EppNet.Objects
                     def.Index = i;
                 }
             }
+
+            opResult.Successful = true;
+            opResult.NumCompiled = _methods.Count + _props.Count;
+            return opResult;
 
         }
 

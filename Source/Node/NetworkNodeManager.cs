@@ -49,7 +49,7 @@ namespace EppNet.Node
                 // Try to initialize ENet with no special callbacks
                 if (EppNet.InitializeENet())
                 {
-                    node.Notify.Debug("Initialized C++ ENet library!");
+                    node.Notify.Info(new TemplatedMessage("Initialized C++ ENet library ver-{version}!", ENet.Library.version));
 
                     // Let's ensure we unregister nodes when the process ends.
                     AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
