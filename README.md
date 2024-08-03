@@ -63,3 +63,11 @@ E++Net will take care of the rest!
 This project has been inspired by:
 - [Online Theme Park System (Panda3D's Distributed Networking System)](https://docs.panda3d.org/1.10/python/programming/networking/distributed/index)
 - [Valve's Game Networking Sockets](https://github.com/ValveSoftware/GameNetworkingSockets)
+
+### Special Thanks
+- [Tanner Gooding](https://github.com/tannergooding) Microsoft .NET Team - Architecture advice
+- [Brian Lach](https://github.com/lachbr) - For listening to my ramblings, rants, and giving advice
+- [Stanislav Denisov](https://github.com/nxrighthere/) - Creator and Maintainer of C# port of ENet
+- [Olivier Coanet](https://github.com/ocoanet) - Creator and Maintainer of C# port of LMAX Group's Disruptor
+- [Lee Salzman](https://github.com/lsalzman) - Creator of ENet (to my knowledge)
+- [LMAX Group](https://lmax.com) - Inventor of the disruptor/ring buffer paradigm used for commands
