@@ -6,9 +6,11 @@
 
 using ENet;
 
+using EppNet.Collections;
 using EppNet.Data.Datagrams;
 using EppNet.Logging;
 using EppNet.Messaging;
+using EppNet.Node;
 using EppNet.Sockets;
 using EppNet.Time;
 
@@ -21,39 +23,88 @@ namespace EppNet.Connections
     /// who organized.
     /// </summary>
 
-    public class Connection : ILoggable
+    public class Connection : IPageable, INodeDescendant, ILoggable
     {
 
         public ILoggable Notify { get => this; }
+        public NetworkNode Node { get => Service?.Node; }
 
         /// <summary>
         /// The socket this connection originates from.
         /// </summary>
-        public readonly BaseSocket Origin;
+        public BaseSocket Socket { internal set; get; }
+        public ConnectionService Service { internal set; get; }
+        public ChannelService ChannelService
+        {
+            get
+            {
+                if (_channelService == null)
+                {
+                    _channelService = Node.Services.GetService<ChannelService>();
+                }
+
+                return _channelService;
+            }
+        }
+
+        public Peer ENet_Peer { internal set; get; }
 
         /// <summary>
         /// The ENet-provided peer ID.
         /// </summary>
-        public uint ID { internal set; get; }
+        public uint ENet_ID { internal set; get; }
 
         /// <summary>
         /// When this connection was established.
         /// </summary>
-        public readonly Timestamp Established;
+        public Timestamp EstablishedMs { internal set; get; }
 
         public bool IsAuthenticated { internal set; get; }
 
-        internal readonly Peer _enet_peer;
-        protected readonly ConnectionManager _manager;
+        /// <summary>
+        /// In scenarios where this connection is part of a PageList, this is the page we're associated
+        /// with.
+        /// </summary>
+        public IPage Page { set; get; }
+        
+        /// <summary>
+        /// In scenarios where this connection is part of a page list this equals the page list's id.
+        /// </summary>
+        public long ID { set; get; }
 
-        public Connection(ConnectionManager manager, Peer peer)
+        private ChannelService _channelService;
+
+        public Connection()
         {
-            this._manager = manager;
-            this._enet_peer = peer;
+            this.Service = null;
+            this.Socket = null;
+            this.ENet_Peer = default;
+            this.ENet_ID = default;
+            this.EstablishedMs = default;
+            this.IsAuthenticated = false;
+            this.Page = null;
+            this.ID = -1;
+            this._channelService = null;
+        }
 
-            this.Origin = manager._socket;
-            this.ID = peer.ID;
-            this.Established = Timestamp.FromMonoNow();
+        public Connection(BaseSocket socket, Peer peer) : this()
+            => _Internal_Setup(socket, peer);
+
+        protected internal void _Internal_Setup(BaseSocket socket, Peer peer)
+        {
+            this.Service = socket.ConnectionService;
+            this.Socket = socket;
+            this.ENet_Peer = peer;
+            this.ENet_ID = peer.ID;
+            this.EstablishedMs = Timestamp.FromMonoNow();
+            this.IsAuthenticated = false;
+        }
+
+        public void Dispose()
+        {
+            this.ENet_Peer = default;
+            this.ENet_ID = default;
+            this.EstablishedMs = default;
             this.IsAuthenticated = false;
         }
 
@@ -75,11 +126,8 @@ namespace EppNet.Connections
             SendInstant(datagram);
         }
 
-        public bool Send(byte[] bytes, byte channelId, PacketFlags flags)
-        {
-            ChannelService channelService = _manager.Node.Services.GetService<ChannelService>();
-            return channelService?.TrySendDataTo(_enet_peer, channelId, bytes, flags) == true;
-        }
+        public bool Send(byte[] bytes, byte channelId, PacketFlags flags) 
+            => ChannelService?.TrySendDataTo(ENet_Peer, channelId, bytes, flags) == true;
 
         /// <summary>
         /// Packages a <see cref="IDatagram"/> (Calls <see cref="IDatagram.Pack"/>) and
@@ -90,17 +138,12 @@ namespace EppNet.Connections
 
         public bool Send(IDatagram datagram, PacketFlags flags)
         {
-            ChannelService channelService = _manager.Node.Services.GetService<ChannelService>();
-
-            if (channelService == null)
-                return false;
-
-            bool sent = channelService.TrySendTo(_enet_peer, datagram, flags);
+            bool sent = ChannelService?.TrySendTo(ENet_Peer, datagram, flags) == true;
 
             if (sent)
-                Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ID}");
+                Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {ENet_ID}");
             else
-                Notify.Debug($"Failed to send Datagram {datagram.GetType().Name} to Peer {ID}");
+                Notify.Debug($"Failed to send Datagram {datagram.GetType().Name} to Peer {ENet_ID}");
 
             return sent;
         }
@@ -117,9 +160,10 @@ namespace EppNet.Connections
         /// </summary>
         /// <returns></returns>
 
-        public bool IsServer() => ID == 0;
+        public bool IsServer() => !IsFree() && ENet_ID == 0;
 
-        public override string ToString() => $"Connection ID {_enet_peer.ID} {_enet_peer.IP}:{_enet_peer.Port}";
+        public override string ToString() => $"Connection ID {ENet_ID} {ENet_Peer.IP}:{ENet_Peer.Port}";
 
+        public bool IsFree() => ENet_Peer.Equals(default(Peer));
     }
 }

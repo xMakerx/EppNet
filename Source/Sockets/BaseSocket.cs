@@ -11,8 +11,6 @@ using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Time;
 
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -33,7 +31,7 @@ namespace EppNet.Sockets
 
         public NetworkNode Node { get => _node; }
         public Clock Clock { get => _clock; }
-        public ConnectionManager ConnectionManager { get => _connMgr; }
+        public ConnectionService ConnectionService { get => _connSrv; }
 
         public SocketType Type { get => _type; }
 
@@ -100,7 +98,11 @@ namespace EppNet.Sockets
             set
             {
 
-                if (value < 0 || value > 4095)
+                // If provided a value less than 1, just use the ENet_MaxClients
+                value = (value < 1) ? ConnectionService.ENet_MaxClients : value;
+                    MaxClients = ConnectionService.ENet_MaxClients;
+
+                if (value > ConnectionService.ENet_MaxClients)
                 {
                     Node.HandleException(new ArgumentOutOfRangeException("MaxClients must be between 0 and 4095!"));
                     return;
@@ -115,8 +117,14 @@ namespace EppNet.Sockets
         public Timestamp CreateTimeMono;
         public Timestamp LastPollMono;
 
+        /// <summary>
+        /// Used on client connections as a quick way to get the server, AND<br/>
+        /// used on the server if the max clients is 1.
+        /// </summary>
+        public Connection Peer { get => _connSrv?.Peer; }
+
         internal NetworkNode _node;
-        protected ConnectionManager _connMgr;
+        protected ConnectionService _connSrv;
 
         protected Host _enet_host;
         protected Peer? _enet_peer;
@@ -143,7 +151,7 @@ namespace EppNet.Sockets
 
             // Backing fields for props
             this._node = null;
-            this._connMgr = null;
+            this._connSrv = null;
             this._type = type;
             this._clock = new();
             this._ip = _hostName = string.Empty;
@@ -158,12 +166,12 @@ namespace EppNet.Sockets
 
         public virtual void OnPeerConnected(Peer peer)
         {
-            ConnectionManager.HandleConnectionEstablished(peer);
+            ConnectionService.HandleConnectionEstablished(peer);
         }
 
         public virtual void OnPeerDisconnected(Peer peer, uint disconnectReasonIdx)
         {
-            ConnectionManager.HandleConnectionLost(peer, DisconnectReason.GetFromID(disconnectReasonIdx));
+            ConnectionService.HandleConnectionLost(peer, DisconnectReason.GetFromID(disconnectReasonIdx));
         }
 
         public abstract void OnPacketReceived(Peer peer, Packet packet);
@@ -197,7 +205,9 @@ namespace EppNet.Sockets
 
                     case EventType.Connect:
                         // A new peer has connected!
-                        OnPeerConnected(_enet_event.Peer);
+
+                        if (CanConnect(_enet_event.Peer))
+                            OnPeerConnected(_enet_event.Peer);
                         break;
 
                     case EventType.Disconnect:
@@ -216,9 +226,9 @@ namespace EppNet.Sockets
 
         public virtual bool Create()
         {
-            if (_node == null || _connMgr == null)
+            if (_node == null || _connSrv == null)
             {
-                Notify.Warn("Cannot create the socket without a valid NetworkNode and ConnectionManager service");
+                Notify.Warn("Cannot create the socket without a valid NetworkNode and valid Connection Service!");
                 return false;
             }
 
@@ -297,6 +307,8 @@ namespace EppNet.Sockets
         public bool IsServer() => _type == SocketType.Server;
         public bool IsOpen() => _enet_host != null;
 
+        public bool CanConnect(Peer peer) => IsOpen() && (_connSrv == null || _connSrv.CanConnect(peer));
+
         /// <summary>
         /// Tries to update the <see cref="ClockStrategy"/> of the internal <see cref="Clock"/> if <see cref="IsOpen"/> == false
         /// </summary>
@@ -344,12 +356,11 @@ namespace EppNet.Sockets
             // Let's set Node to use this
             Node._Internal_SetSocket(this);
 
-            // Fetches or creates a connection manager
-            _connMgr = Node.Services.GetService<ConnectionManager>();
+            // Fetches or creates a connection manager (on the server)
+            _connSrv = Node.Services.GetService<ConnectionService>();
 
-            if (_connMgr == null)
-                _connMgr = new ConnectionManager(Node.Services);
-            
+            if (_connSrv == null)
+                _connSrv = new ConnectionService(Node.Services);
         }
 
     }

@@ -18,9 +18,11 @@ namespace EppNet.Sockets
     public class ServerSocket : BaseSocket
     {
 
-        public ServerSocket(NetworkNode node) : base(node, SocketType.Server)
+        public ServerSocket(NetworkNode node) : this(node, ConnectionService.ENet_MaxClients) { }
+
+        public ServerSocket(NetworkNode node, int maxClients) : base(node, SocketType.Server)
         {
-            this.MaxClients = 4095;
+            this.MaxClients = maxClients;
         }
 
         public override void OnPacketReceived(Peer peer, Packet packet)

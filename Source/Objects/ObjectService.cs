@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: ObjectManagerService.cs
+/// Filename: ObjectService.cs
 /// Date: July 16, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
@@ -192,7 +192,7 @@ namespace EppNet.Objects
 
             ISimUnit unit = null;
             ObjectAgent agent = null;
-            string distroName = nameof(_serviceMgr.Node.Distro);
+            const string distroName = nameof(_serviceMgr.Node.Distro);
 
             if (registration == null)
             {

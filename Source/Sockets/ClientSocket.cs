@@ -35,16 +35,6 @@ namespace EppNet.Sockets
             
         }
 
-        public override void OnPeerConnected(Peer peer)
-        {
-            ConnectionManager.HandleConnectionEstablished(peer);
-        }
-
-        public override void OnPeerDisconnected(Peer peer, uint disconnectReasonIdx)
-        {
-            ConnectionManager.HandleConnectionLost(peer, DisconnectReason.GetFromID(disconnectReasonIdx));
-        }
-
     }
 
 }
