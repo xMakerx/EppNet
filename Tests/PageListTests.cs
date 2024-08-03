@@ -26,6 +26,7 @@ namespace EppNet.Tests
             PageList<ObjectSlot> objs = new(128);
 
             objs.TryAllocate(125L, out ObjectSlot slot);
+            slot._TESTS_ForceUsed = true;
 
             Assert.IsTrue(slot.ID == 125, $"Did not allocate the proper slot! Slot: {slot.ID}");
             Assert.IsTrue(objs._pageIndexWithAvaliability == 0, "Did not set the first page as available");
@@ -42,6 +43,7 @@ namespace EppNet.Tests
             const int id = 127;
 
             objs.TryAllocate(id, out ObjectSlot slot);
+            slot._TESTS_ForceUsed = true;
 
             Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
             Assert.IsTrue(objs._pageIndexWithAvaliability == 0, "Did not set the first page as available");
@@ -66,6 +68,7 @@ namespace EppNet.Tests
             for (int i = 0; i < objs.ItemsPerPage / 2; i++)
             {
                 objs.TryAllocate(i, out ObjectSlot slot);
+                slot._TESTS_ForceUsed = true;
                 Assert.IsTrue(slot.ID == i, $"Did not allocate the proper slot! Slot: {slot.ID}");
             }
 
@@ -86,9 +89,14 @@ namespace EppNet.Tests
 
             for (int i = 0; i < allocations; i++)
             {
-                int id = rand.Next(objs.ItemsPerPage);
+                int id;
+                do
+                {
+                    id = rand.Next(objs.ItemsPerPage);
+                } while (!objs.IsAvailable(id));
 
                 objs.TryAllocate(id, out ObjectSlot slot);
+                slot._TESTS_ForceUsed = true;
                 Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
             }
 
