@@ -5,6 +5,7 @@
 //////////////////////////////////////////////
 
 using EppNet.Collections;
+using EppNet.Commands;
 using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Sim;
@@ -61,7 +62,7 @@ namespace EppNet.Objects
                     if (_parent != null)
                         _parent.OnStateChanged += _Internal_OnParentStateChanged;
 
-                    OnParentChanged?.Invoke(new(value, oldParent));
+                    OnParentChanged?.GlobalInvoke(new(value, oldParent));
                 }
 
             }
@@ -78,7 +79,7 @@ namespace EppNet.Objects
                 {
                     var oldState = _state;
                     _state = value;
-                    OnStateChanged?.Invoke(new StateChangedEvent(this, value, oldState));
+                    OnStateChanged?.GlobalInvoke(new StateChangedEvent(this, value, oldState));
                 }
             }
 
@@ -113,25 +114,74 @@ namespace EppNet.Objects
             this.OutgoingSnapshotUpdates = new UpdateQueue(isSnapshotQueue: true);
         }
 
-        public bool ReparentTo(ObjectAgent newParent)
+        public CommandResult ReparentTo(long id)
         {
+
+            if (ID == id)
+            {
+                // Trying to reparent to ourself?
+                return new()
+                {
+                    Message = new TemplatedMessage("Cannot reparent to self!")
+                };
+            }
+
+            if (id == -1)
+                return ReparentTo(null);
+
+            else if (Service.TryGetById(id, out ObjectSlot parentSlot))
+                return ReparentTo(parentSlot.Agent);
+            
+            return new()
+            {
+                Message = new("Object ID {id}: Could not locate Object ID {parentID}!", ID, id)
+            };
+        }
+
+        public CommandResult ReparentTo(ObjectAgent newParent)
+        {
+
+            CommandResult result = new();
+
+            // Ensure we aren't trying to reparent to ourself
             if (_parent == newParent)
-                return false;
+            {
+                result.Message = new("Object ID {id}: Cannot reparent to self!", ID);
+                return result;
+            }
+
+            // Ensure we can update our parent
+            if (State > EnumObjectState.Generated)
+            {
+                result.Message = new("Object ID {id}: Cannot reparent a disabled or deleted object!", ID);
+                return result;
+            }
+
+            // Ensure the new parent is capable of receiving a new child
+            if (newParent != null && newParent.State > EnumObjectState.Generated)
+            {
+                result.Message = new("Object ID {id}: Tried to reparent to Object ID {parentId} which is disabled!", ID, newParent.ID);
+                return result;
+            }
 
             ObjectAgent existingParent = _parent;
 
             // Let's let the existing parent know we're moving
             if (existingParent?._Internal_RemoveChild(this) == true)
-                existingParent.OnChildRemoved?.Invoke(new(this));
+                existingParent.OnChildRemoved?.GlobalInvoke(new(this));
 
             // Parent cannot be set to call add child
             _parent = null;
             if (newParent?._Internal_AddChild(this) == true)
-                newParent.OnChildAdded?.Invoke(new(this));
+            {
+                newParent.OnChildAdded?.GlobalInvoke(new(this));
 
-            // Update the parent (internally sends out the event)
-            Parent = newParent;
-            return true;
+                // Update the parent (internally sends out the event)
+                Parent = newParent;
+                result.Success = true;
+            }
+
+            return result;
         }
 
         public bool AddChild([NotNull] ObjectAgent child)
@@ -140,7 +190,7 @@ namespace EppNet.Objects
 
             if (added)
             {
-                OnChildAdded?.Invoke(new(child));
+                OnChildAdded?.GlobalInvoke(new(child));
                 child.Parent = this;
             }
 
@@ -153,7 +203,7 @@ namespace EppNet.Objects
 
             if (removed)
             {
-                OnChildRemoved?.Invoke(new(child));
+                OnChildRemoved?.GlobalInvoke(new(child));
                 child.Parent = null;
             }
 
@@ -228,6 +278,14 @@ namespace EppNet.Objects
         protected bool _Internal_AddChild([NotNull] ObjectAgent child)
         {
             if (!this.IsNotNull(child, message: "Cannot add a null child!"))
+                return false;
+
+            if (State > EnumObjectState.Generated)
+                // We have an invalid state
+                return false;
+
+            if (child.State > EnumObjectState.Generated)
+                // Child has an invalid state
                 return false;
 
             if (child._parent != null)

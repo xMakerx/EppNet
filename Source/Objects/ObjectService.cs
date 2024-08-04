@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Collections;
+using EppNet.Commands;
 using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Services;
@@ -52,6 +53,8 @@ namespace EppNet.Objects
             this._objects = new(256);
             this._deleteLater = new();
         }
+
+        public bool TryGetById(long id, out ObjectSlot slot) => _objects.TryGetById(id, out slot);
 
         public ISimUnit GetSimUnitFor(ObjectSlot slot)
         {
@@ -102,10 +105,42 @@ namespace EppNet.Objects
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
 
-        public ObjectAgent TryCreateObject<T>() where T : ISimUnit
+        public ObjectSlot TryCreateObject<T>() where T : ISimUnit
         {
             ObjectRegistration registration = ObjectRegister.Get().Get(typeof(T)) as ObjectRegistration;
             return _Internal_CreateObject(registration);
+        }
+
+        public CommandResult TryCreateObject(Type type, long id = -1)
+        {
+            CommandResult result = new();
+
+            if (ObjectRegister.Get().Get(type) is ObjectRegistration registration)
+            {
+
+                ObjectSlot slot = _Internal_CreateObject(registration, id);
+
+                result.Target = slot;
+                result.Success = slot != null;
+            }
+
+            return result;
+        }
+
+        public CommandResult TryCreateObject(int typeId, long id = -1)
+        {
+            CommandResult result = new();
+
+            if (ObjectRegister.Get().Get(typeId) is ObjectRegistration registration)
+            {
+
+                ObjectSlot slot = _Internal_CreateObject(registration, id);
+
+                result.Target = slot;
+                result.Success = slot != null;
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -113,8 +148,10 @@ namespace EppNet.Objects
         /// </summary>
         /// <returns>Whether or not the request was fulfilled</returns>
 
-        public bool TryRequestDelete(long id, uint ticksUntilDeletion = 10)
+        public CommandResult TryRequestDelete(long id, uint ticksUntilDeletion = 10)
         {
+
+            CommandResult result = new();
 
             if (id != -1 && _objects.TryGetById(id, out ObjectSlot slot))
             {
@@ -130,16 +167,18 @@ namespace EppNet.Objects
                     // Running OnDeleteRequested user-code shouldn't brick the object manager.
                     // Call it wrapped in a try-catch to manage issues.
                     _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDeleteRequested);
-                    return true;
+                    result.Success = true;
+                    result.Target = slot;
+                    return result;
                 }
 
                 Notify.Warning(new TemplatedMessage("Cannot request deletion of Object ID {id} because it hasn't been generated yet.", id));
-                return false;
+                return result;
             }
 
             // We have no idea what this object is
             Notify.Error(new TemplatedMessage("Tried to request deletion of unknown Object ID {id}. Maybe it's already deleted?", id));
-            return false;
+            return result;
         }
 
         public bool IsIdAvailable(long id) => _objects.IsAvailable(id);
@@ -180,7 +219,7 @@ namespace EppNet.Objects
             base.Update();
         }
 
-        protected ObjectAgent _Internal_CreateObject(ObjectRegistration registration, long id = -1)
+        protected ObjectSlot _Internal_CreateObject(ObjectRegistration registration, long id = -1)
         {
 
             if (Status != ServiceState.Online)
@@ -226,6 +265,7 @@ namespace EppNet.Objects
             }
 
             bool customGenerator = registration.ObjectAttribute.Creator != null;
+            ObjectSlot slot = null;
 
             try
             {
@@ -244,12 +284,15 @@ namespace EppNet.Objects
                     return null;
                 }
 
-                ObjectSlot slot;
+                bool allocated;
 
                 if (id == -1)
-                    _objects.TryAllocate(out slot);
+                    allocated = _objects.TryAllocate(out slot);
                 else
-                    _objects.TryAllocate(id, out slot);
+                    allocated = _objects.TryAllocate(id, out slot);
+
+                if (!allocated)
+                    return null;
 
                 id = slot.ID;
                 agent = new(this, registration, unit, id);
@@ -258,7 +301,7 @@ namespace EppNet.Objects
                 slot.State = EnumObjectState.WaitingForState;
 
                 // Raise our event that a new object was created
-                OnObjectCreated?.Invoke(new(this, slot));
+                OnObjectCreated?.GlobalInvoke(new(this, slot));
 
                 // Running OnCreate user-code shouldn't brick the object manager.
                 // Call it wrapped in a try-catch to manage issues.
@@ -274,7 +317,7 @@ namespace EppNet.Objects
                         typeName, id, customGenerator), e);
             }
 
-            return agent;
+            return slot;
         }
 
         /// <summary>

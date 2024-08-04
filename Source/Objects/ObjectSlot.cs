@@ -5,13 +5,14 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Collections;
+using EppNet.Commands;
 
 using System;
 
 namespace EppNet.Objects
 {
 
-    public class ObjectSlot : IPageable, IEquatable<ObjectSlot>
+    public class ObjectSlot : IPageable, IEquatable<ObjectSlot>, ICommandTarget
     {
 
 

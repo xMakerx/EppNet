@@ -4,7 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 using EppNet.Attributes;
-using EppNet.Core;
 using EppNet.Data;
 using EppNet.Exceptions;
 using EppNet.Logging;
@@ -16,6 +15,7 @@ using EppNet.Time;
 using EppNet.Utilities;
 
 using Serilog;
+
 using System;
 using System.Runtime.CompilerServices;
 

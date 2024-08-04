@@ -210,7 +210,7 @@ namespace EppNet.Collections
                 _lock.EnterReadLock();
                 int pageIndex = (int) (id * _itemIndexToPageIndexMult);
 
-                if (pageIndex > _pages.Count)
+                if (pageIndex >= _pages.Count)
                 {
                     item = default;
                     return false;
