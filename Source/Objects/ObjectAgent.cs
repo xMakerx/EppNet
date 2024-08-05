@@ -114,79 +114,53 @@ namespace EppNet.Objects
             this.OutgoingSnapshotUpdates = new UpdateQueue(isSnapshotQueue: true);
         }
 
-        public CommandResult ReparentTo(long id)
+        public EnumCommandResult ReparentTo(long id)
         {
-
             if (ID == id)
-            {
-                // Trying to reparent to ourself?
-                return new()
-                {
-                    Message = new TemplatedMessage("Cannot reparent to self!")
-                };
-            }
+                return EnumCommandResult.BadArgument;
 
             if (id == -1)
                 return ReparentTo(null);
 
             else if (Service.TryGetById(id, out ObjectSlot parentSlot))
                 return ReparentTo(parentSlot.Agent);
-            
-            return new()
-            {
-                Message = new("Object ID {id}: Could not locate Object ID {parentID}!", ID, id)
-            };
+
+            return EnumCommandResult.NotFound;
         }
 
-        public CommandResult ReparentTo(ObjectAgent newParent)
+        public EnumCommandResult ReparentTo(ObjectAgent newParent)
         {
-
-            CommandResult result = new();
 
             // Ensure we aren't trying to reparent to ourself
             if (_parent == newParent)
-            {
-                result.Message = new("Object ID {id}: Cannot reparent to self!", ID);
-                return result;
-            }
+                return EnumCommandResult.BadArgument;
 
             // Ensure we can update our parent
             if (State > EnumObjectState.Generated)
-            {
-                result.Message = new("Object ID {id}: Cannot reparent a disabled or deleted object!", ID);
-                return result;
-            }
+                return EnumCommandResult.InvalidState;
 
             // Ensure the new parent is capable of receiving a new child
             if (newParent != null && newParent.State > EnumObjectState.Generated)
-            {
-                result.Message = new("Object ID {id}: Tried to reparent to Object ID {parentId} which is disabled!", ID, newParent.ID);
-                return result;
-            }
+                return EnumCommandResult.InvalidState;
 
             ObjectAgent existingParent = _parent;
 
             // Let's let the existing parent know we're moving
-            if (existingParent?._Internal_RemoveChild(this) == true)
+            if (EnumCommandResultExtensions.IsOk(existingParent?._Internal_RemoveChild(this)))
                 existingParent.OnChildRemoved?.GlobalInvoke(new(this));
 
             // Parent cannot be set to call add child
             _parent = null;
-            if (newParent?._Internal_AddChild(this) == true)
-            {
+            if (EnumCommandResultExtensions.IsOk(newParent?._Internal_AddChild(this)))
                 newParent.OnChildAdded?.GlobalInvoke(new(this));
 
-                // Update the parent (internally sends out the event)
-                Parent = newParent;
-                result.Success = true;
-            }
-
-            return result;
+            Parent = newParent;
+            return EnumCommandResult.Ok;
         }
 
         public bool AddChild([NotNull] ObjectAgent child)
         {
-            bool added = _Internal_AddChild(child);
+            bool added = _Internal_AddChild(child).IsOk();
 
             if (added)
             {
@@ -199,7 +173,7 @@ namespace EppNet.Objects
 
         public bool RemoveChild([NotNull] ObjectAgent child)
         {
-            bool removed = _Internal_RemoveChild(child);
+            bool removed = _Internal_RemoveChild(child).IsOk();
 
             if (removed)
             {
@@ -275,50 +249,48 @@ namespace EppNet.Objects
             this.State = @event.NewState;
         }
 
-        protected bool _Internal_AddChild([NotNull] ObjectAgent child)
+        protected EnumCommandResult _Internal_AddChild([NotNull] ObjectAgent child)
         {
             if (!this.IsNotNull(child, message: "Cannot add a null child!"))
-                return false;
+                return EnumCommandResult.BadArgument;
+
+            const EnumCommandResult result = EnumCommandResult.InvalidState;
 
             if (State > EnumObjectState.Generated)
-                // We have an invalid state
-                return false;
+                return result;
 
             if (child.State > EnumObjectState.Generated)
-                // Child has an invalid state
-                return false;
+                return result;
 
             if (child._parent != null)
-                // Child already has a parent
-                return false;
+                return result;
 
             if (_children != null && _children.Contains(child))
-                // Already have this child
-                return false;
+                return result;
 
             if (_children == null)
                 _children = new();
 
             _children.Add(child);
             Notify.Debug(new TemplatedMessage("Added child Object ID {id}", child.ID));
-            return true;
+            return EnumCommandResult.Ok;
         }
 
-        protected bool _Internal_RemoveChild([NotNull] ObjectAgent child)
+        protected EnumCommandResult _Internal_RemoveChild([NotNull] ObjectAgent child)
         {
             if (!this.IsNotNull(child, message: "Cannot remove a null child!"))
-                return false;
+                return EnumCommandResult.BadArgument;
 
             if (_children == null)
                 // I don't have any kids. Not paying child support.
-                return false;
+                return EnumCommandResult.InvalidState;
 
             bool removed = _children.Remove(child);
 
             if (removed)
                 Notify.Debug(new TemplatedMessage("Removed child Object ID {id}", child.ID));
 
-            return removed;
+            return removed ? EnumCommandResult.Ok : EnumCommandResult.NotFound;
         }
     }
 

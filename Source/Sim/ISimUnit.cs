@@ -6,6 +6,7 @@
 /// Simulation units are components that propagate updates
 /// on the network
 
+using EppNet.Commands;
 using EppNet.Data;
 using EppNet.Node;
 using EppNet.Objects;
@@ -60,7 +61,7 @@ namespace EppNet.Sim
             if (agent == null)
                 return false;
 
-            return agent.Service.TryRequestDelete(agent.ID);
+            return agent.Service.TryRequestDelete(agent.ID).IsOk();
         }
 
         /// <summary>

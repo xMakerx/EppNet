@@ -56,29 +56,20 @@ namespace EppNet.Commands
             this.ParentID = parentID;
         }
 
-        public override CommandResult Execute()
+        public override EnumCommandResult Execute()
         {
-
-            CommandResult result;
 
             if (_slot == null)
             {
+                EnumCommandResult lookMeUp = _Internal_LookupObject(ID, out _slot);
 
-                CommandResult lookMeUp = _Internal_LookupObject(ID);
-
-                if (!lookMeUp.Success)
+                if (!lookMeUp.IsOk())
                     return lookMeUp;
 
-                _slot = lookMeUp.Target as ObjectSlot;
                 _agent = _slot.Agent;
             }
 
-            result = _agent.ReparentTo(ParentID);
-
-            if (!result.Message.Empty())
-                _agent.Notify.Debug(result.Message);
-
-            return result;
+            return _agent.ReparentTo(ParentID);
         }
 
     }
@@ -97,17 +88,14 @@ namespace EppNet.Commands
             this.ObjectTypeId = objectTypeId;
         }
 
-        public override CommandResult Execute()
+        public override EnumCommandResult Execute()
         {
-            CommandResult result = new();
+            EnumCommandResult result = new();
 
             ObjectService service = Node.Services.GetService<ObjectService>();
-            TemplatedMessage msg = new("Object Service could not be found!");
 
-            if (this.IsNotNull(arg: service, tmpMsg: msg, fatal: true))
-                result = service.TryCreateObject(ObjectTypeId, ID);
-            else
-                result.Message = msg;
+            if (this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
+                result = service.TryCreateObject(ObjectTypeId, out _, ID);
 
             return result;
         }
@@ -126,7 +114,7 @@ namespace EppNet.Commands
             this.TicksUntilDeletion = ticksUntilDeletion;
         }
 
-        public override CommandResult Execute()
+        public override EnumCommandResult Execute()
         {
             ObjectService service = Node.Services.GetService<ObjectService>();
             this.IsNotNull(arg: service, tmpMsg: new TemplatedMessage("Object Service could not be found!"), fatal: true);
@@ -157,22 +145,18 @@ namespace EppNet.Commands
             this._agent = slot.Agent;
         }
 
-        protected CommandResult _Internal_LookupObject(long id)
+        protected EnumCommandResult _Internal_LookupObject(long id, out ObjectSlot slot)
         {
-            CommandResult result = new();
             ObjectService service = Node.Services.GetService<ObjectService>();
-            TemplatedMessage msg = new("Object Service could not be found!");
+            slot = null;
 
-            bool hasService = this.IsNotNull(arg: service, tmpMsg: msg, fatal: true);
+            if (!this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
+                return EnumCommandResult.NoService;
 
-            if (hasService && service.TryGetById(id, out ObjectSlot slot))
-            {
-                result.Target = slot;
-                result.Success = true;
-            }
+            if (service.TryGetById(id, out slot))
+                return EnumCommandResult.Ok;
 
-            result.Message = (hasService && result.Target == null) ? new("Object could not be found!") : msg;
-            return result;
+            return EnumCommandResult.NotFound;
         }
 
     }

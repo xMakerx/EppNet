@@ -26,30 +26,6 @@ namespace EppNet.Commands
         public static readonly SlottableEnum None = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "None", 1);
     }
 
-    public struct CommandResult
-    {
-
-        public ICommandTarget Target;
-        public bool Success;
-        public Exception Error;
-        public TemplatedMessage Message;
-
-        public CommandResult()
-        {
-            this.Target = null;
-            this.Success = false;
-            this.Error = null;
-            this.Message = default;
-        }
-
-        public CommandResult(Exception error) : this()
-        {
-            this.Error = error;
-        }
-
-        public bool Successful() => Success && Error == null;
-    }
-
     public interface ICommandTarget { }
 
     public abstract class Command : INodeDescendant
@@ -97,7 +73,7 @@ namespace EppNet.Commands
             this.Timestamp = timestamp;
         }
 
-        public abstract CommandResult Execute();
+        public abstract EnumCommandResult Execute();
 
     }
 

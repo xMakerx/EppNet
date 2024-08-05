@@ -105,40 +105,26 @@ namespace EppNet.Objects
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
 
-        public ObjectSlot TryCreateObject<T>() where T : ISimUnit
-        {
-            ObjectRegistration registration = ObjectRegister.Get().Get(typeof(T)) as ObjectRegistration;
-            return _Internal_CreateObject(registration);
-        }
+        public EnumCommandResult TryCreateObject<T>(out ObjectSlot slot, long id = -1) where T : ISimUnit => TryCreateObject(typeof(T), out slot, id);
 
-        public CommandResult TryCreateObject(Type type, long id = -1)
+        public EnumCommandResult TryCreateObject(Type type, out ObjectSlot slot, long id = -1)
         {
-            CommandResult result = new();
+            slot = null;
+            EnumCommandResult result = EnumCommandResult.BadArgument;
 
             if (ObjectRegister.Get().Get(type) is ObjectRegistration registration)
-            {
-
-                ObjectSlot slot = _Internal_CreateObject(registration, id);
-
-                result.Target = slot;
-                result.Success = slot != null;
-            }
+                result = _Internal_CreateObject(registration, out slot, id);
 
             return result;
         }
 
-        public CommandResult TryCreateObject(int typeId, long id = -1)
+        public EnumCommandResult TryCreateObject(int typeId, out ObjectSlot slot, long id = -1)
         {
-            CommandResult result = new();
+            slot = null;
+            EnumCommandResult result = EnumCommandResult.BadArgument;
 
             if (ObjectRegister.Get().Get(typeId) is ObjectRegistration registration)
-            {
-
-                ObjectSlot slot = _Internal_CreateObject(registration, id);
-
-                result.Target = slot;
-                result.Success = slot != null;
-            }
+                result = _Internal_CreateObject(registration, out slot, id);
 
             return result;
         }
@@ -148,10 +134,8 @@ namespace EppNet.Objects
         /// </summary>
         /// <returns>Whether or not the request was fulfilled</returns>
 
-        public CommandResult TryRequestDelete(long id, uint ticksUntilDeletion = 10)
+        public EnumCommandResult TryRequestDelete(long id, uint ticksUntilDeletion = 10)
         {
-
-            CommandResult result = new();
 
             if (id != -1 && _objects.TryGetById(id, out ObjectSlot slot))
             {
@@ -167,18 +151,16 @@ namespace EppNet.Objects
                     // Running OnDeleteRequested user-code shouldn't brick the object manager.
                     // Call it wrapped in a try-catch to manage issues.
                     _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDeleteRequested);
-                    result.Success = true;
-                    result.Target = slot;
-                    return result;
+                    return EnumCommandResult.Ok;
                 }
 
                 Notify.Warning(new TemplatedMessage("Cannot request deletion of Object ID {id} because it hasn't been generated yet.", id));
-                return result;
+                return EnumCommandResult.InvalidState;
             }
 
             // We have no idea what this object is
             Notify.Error(new TemplatedMessage("Tried to request deletion of unknown Object ID {id}. Maybe it's already deleted?", id));
-            return result;
+            return EnumCommandResult.NotFound;
         }
 
         public bool IsIdAvailable(long id) => _objects.IsAvailable(id);
@@ -219,14 +201,15 @@ namespace EppNet.Objects
             base.Update();
         }
 
-        protected ObjectSlot _Internal_CreateObject(ObjectRegistration registration, long id = -1)
+        protected EnumCommandResult _Internal_CreateObject(ObjectRegistration registration, out ObjectSlot slot, long id = -1)
         {
+            slot = null;
 
             if (Status != ServiceState.Online)
             {
                 var msg = new TemplatedMessage("Cannot create an Object while the ObjectManager Service is offline!");
                 Notify.Fatal(msg);
-                return null;
+                return EnumCommandResult.NoService;
             }
 
             ISimUnit unit = null;
@@ -250,7 +233,7 @@ namespace EppNet.Objects
                     Notify.Fatal(msg);
                 }
 
-                return null;
+                return EnumCommandResult.BadArgument;
             }
 
             Type type = registration.GetRegisteredType();
@@ -261,11 +244,10 @@ namespace EppNet.Objects
                 TemplatedMessage msg = new("Unable to create Object of Type {typeName} with ID {id} as the ID is unavailable!",
                     typeName, id);
                 Notify.Fatal(msg);
-                return null;
+                return EnumCommandResult.Unavailable;
             }
 
             bool customGenerator = registration.ObjectAttribute.Creator != null;
-            ObjectSlot slot = null;
 
             try
             {
@@ -281,7 +263,7 @@ namespace EppNet.Objects
                     // Something went wrong and we were unable to generate an instance of the object.
                     Notify.Fatal(new TemplatedMessage("Unable to create Object of Type {typeName} with ID {id}! Dynamic object generation failed! Custom Constructor={custom}",
                         typeName, id, customGenerator));
-                    return null;
+                    return EnumCommandResult.InvalidState;
                 }
 
                 bool allocated;
@@ -292,7 +274,7 @@ namespace EppNet.Objects
                     allocated = _objects.TryAllocate(id, out slot);
 
                 if (!allocated)
-                    return null;
+                    return EnumCommandResult.Unavailable;
 
                 id = slot.ID;
                 agent = new(this, registration, unit, id);
@@ -309,6 +291,8 @@ namespace EppNet.Objects
 
                 Notify.Debug(new TemplatedMessage("Created new Object of Type {typeName} with ID {id}! Custom Constructor={custom}",
                     typeName, id, customGenerator));
+
+                return EnumCommandResult.Ok;
             }
             catch (Exception e)
             {
@@ -317,7 +301,7 @@ namespace EppNet.Objects
                         typeName, id, customGenerator), e);
             }
 
-            return slot;
+            return EnumCommandResult.InvalidState;
         }
 
         /// <summary>
