@@ -91,7 +91,6 @@ namespace EppNet.Commands
             }
 
             return EnumCommandResult.BadArgument;
-
         }
     }
 

@@ -21,17 +21,20 @@ namespace EppNet.Services
         internal NetworkNode _node;
 
         /// <summary>
-        /// Generic List storage because services aren't going to be
+        /// Generic set storage because services aren't going to be
         /// added and removed during the lifetime of any delegate app. <br/>Services
         /// are expected to be added when the NetworkNode is instantiated and
         /// when the application is about to close. No need for threading.
         /// </summary>
-        protected List<Service> _services;
+        protected SortedSet<Service> _services;
+
+        public bool Started { private set; get; }
 
         internal ServiceManager()
         {
             this._node = null;
             this._services = new();
+            this.Started = false;
         }
 
         public ServiceManager([NotNull] NetworkNode node) : this()
@@ -40,13 +43,20 @@ namespace EppNet.Services
         }
 
         /// <summary>
-        /// Calls <see cref="Service.Start"/> on every service
+        /// Sets <see cref="Started"/> to true and
+        /// calls <see cref="Service.Start"/> on every service.<br></br>
+        /// Does nothing if already started
         /// </summary>
 
         public void Start()
         {
+            if (Started)
+                return;
+
             foreach (Service service in _services)
                 service.Start();
+
+            this.Started = true;
         }
         
         /// <summary>
@@ -60,18 +70,29 @@ namespace EppNet.Services
         }
 
         /// <summary>
-        /// Calls <see cref="Service.Stop"/> on every service
+        /// Sets <see cref="Started"/> to false and
+        /// calls <see cref="Service.Stop"/> on every service.<br></br>
+        /// Does nothing if not already started
         /// </summary>
 
         public void Stop()
         {
+            if (!Started)
+                return;
+
             foreach (Service service in _services)
                 service.Stop();
+
+            this.Started = false;
         }
 
         public bool TryAddService<T>(out T created) where T : Service
         {
             created = null;
+
+            if (Started)
+                throw new InvalidOperationException("Cannot add a service while the ServiceManager is running!");
+
             T existing = GetService<T>();
 
             if (existing != null)
@@ -102,6 +123,9 @@ namespace EppNet.Services
         {
             if (service == null)
                 return false;
+
+            if (Started)
+                throw new InvalidOperationException("Cannot add a service while the ServiceManager is running!");
 
             if (service.Node != null)
                 throw new InvalidOperationException("Service is already associated with a different NetworkNode!");

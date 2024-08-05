@@ -20,7 +20,7 @@ namespace EppNet.Services
         ShuttingDown    = 3
     }
 
-    public abstract class Service : IService, INodeDescendant, ILoggable
+    public abstract class Service : IService, INodeDescendant, ILoggable, IComparable, IComparable<Service>
     {
         public ILoggable Notify { get => this; }
         public NetworkNode Node { get => _serviceMgr.Node; }
@@ -28,6 +28,8 @@ namespace EppNet.Services
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 
         public event Action OnUpdate;
+
+        public int SortOrder;
 
         public ServiceState Status
         {
@@ -52,7 +54,7 @@ namespace EppNet.Services
         /// </summary>
         protected bool _isDirty;
 
-        protected Service(ServiceManager svcMgr)
+        protected Service(ServiceManager svcMgr, int sortOrder = 0)
         {
             this._status = ServiceState.Offline;
             this._serviceMgr = svcMgr;
@@ -62,6 +64,7 @@ namespace EppNet.Services
 
             // Let's add our debug state change notification
             OnStateChanged += (ServiceStateChangedEvent evt) => Notify.Debug(new TemplatedMessage("Service State changed to {NewState} from {OldState}", evt.State, evt.OldState));
+            this.SortOrder = sortOrder;
         }
 
         /// <summary>
@@ -102,6 +105,24 @@ namespace EppNet.Services
 
         public ServiceState GetStatus() => _status;
 
+        public int CompareTo(object obj)
+        {
+            if (obj == null)
+                return 1;
+
+            if (obj is Service service)
+                return SortOrder.CompareTo(service.SortOrder);
+
+            return 0;
+        }
+
+        public int CompareTo(Service other)
+        {
+            if (other == null)
+                return 1;
+
+            return SortOrder.CompareTo(other.SortOrder);
+        }
     }
 
 }
