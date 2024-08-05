@@ -6,13 +6,10 @@
 
 using EppNet.Data;
 using EppNet.Logging;
-using EppNet.Node;
 using EppNet.Objects;
 using EppNet.Utilities;
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 
 namespace EppNet.Commands
@@ -41,58 +38,45 @@ namespace EppNet.Commands
 
     public class ObjectSetParentCommand : ObjectCommand
     {
-
         public long ParentID { get; }
 
-        public ObjectSetParentCommand([NotNull] NetworkNode node, long id, long parentID) : base(node, id, ObjectCommands.Object_SetParent)
+        public ObjectSetParentCommand(long id, long parentID) : base(id, ObjectCommands.Object_SetParent)
         {
-            if (parentID == id)
-            {
-                ArgumentException exp = new($"Tried to set Object ID {id}'s parent to itself!");
-                node.Fatal(new TemplatedMessage("Tried to set Object ID {id}'s parent to itself!", ID), exp);
-                return;
-            }
-
             this.ParentID = parentID;
         }
 
-        public override EnumCommandResult Execute()
+        public override EnumCommandResult Execute(in CommandContext context)
         {
+            if (ParentID == ID)
+                return EnumCommandResult.BadArgument;
 
-            if (_slot == null)
-            {
-                EnumCommandResult lookMeUp = _Internal_LookupObject(ID, out _slot);
+            EnumCommandResult lookMeUp = _Internal_LookupObject(in context, ID, out ObjectSlot slot);
 
-                if (!lookMeUp.IsOk())
-                    return lookMeUp;
+            if (!lookMeUp.IsOk())
+                return lookMeUp;
 
-                _agent = _slot.Agent;
-            }
-
-            return _agent.ReparentTo(ParentID);
+            return slot.Agent.ReparentTo(ParentID);
         }
 
     }
 
-    public class CreateObjectCommand : Command
+    public class CreateObjectCommand : ObjectCommand
     {
 
         public int ObjectTypeId { get; }
-        public long ID { get; }
 
-        public CreateObjectCommand([NotNull] NetworkNode node, int objectTypeId) : this(node, objectTypeId, -1) { }
+        public CreateObjectCommand(int objectTypeId) : this(objectTypeId, -1) { }
 
-        public CreateObjectCommand([NotNull] NetworkNode node, int objectTypeId, long id) : base(node, ObjectCommands.Create)
+        public CreateObjectCommand(int objectTypeId, long id) : base(id, ObjectCommands.Create)
         {
-            this.ID = id;
             this.ObjectTypeId = objectTypeId;
         }
 
-        public override EnumCommandResult Execute()
+        public override EnumCommandResult Execute(in CommandContext context)
         {
             EnumCommandResult result = new();
 
-            ObjectService service = Node.Services.GetService<ObjectService>();
+            ObjectService service = context.Node.Services.GetService<ObjectService>();
 
             if (this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
                 result = service.TryCreateObject(ObjectTypeId, out _, ID);
@@ -102,61 +86,32 @@ namespace EppNet.Commands
 
     }
 
-    public class DeleteObjectCommand : Command
+    public class DeleteObjectCommand : ObjectCommand
     {
-
-        public long ID { get; }
         public uint TicksUntilDeletion { get; }
 
-        public DeleteObjectCommand([NotNull] NetworkNode node, long id, uint ticksUntilDeletion) : base(node, ObjectCommands.Delete)
+        public DeleteObjectCommand(long id, uint ticksUntilDeletion) : base(id, ObjectCommands.Delete)
         {
-            this.ID = id;
             this.TicksUntilDeletion = ticksUntilDeletion;
         }
 
-        public override EnumCommandResult Execute()
+        public override EnumCommandResult Execute(in CommandContext context)
         {
-            ObjectService service = Node.Services.GetService<ObjectService>();
+            ObjectService service = context.Node.Services.GetService<ObjectService>();
             this.IsNotNull(arg: service, tmpMsg: new TemplatedMessage("Object Service could not be found!"), fatal: true);
             return service.TryRequestDelete(ID, TicksUntilDeletion);
         }
 
     }
 
-    public abstract class ObjectCommand : Command
+    public abstract class ObjectCommand : SlimCommand
     {
 
-        public ObjectSlot Slot { get => _slot; }
-        public ObjectAgent Agent { get => _agent; }
-        public long ID { protected set; get; }
+        public long ID { get; }
 
-        protected ObjectSlot _slot;
-        protected ObjectAgent _agent;
-
-        protected ObjectCommand([NotNull] NetworkNode node, long id, SlottableEnum cmdType) : base(node, cmdType)
+        protected ObjectCommand(long id, SlottableEnum enumType) : base(enumType)
         {
             this.ID = id;
-        }
-
-        protected ObjectCommand([NotNull] ObjectSlot slot, SlottableEnum cmdType) : base(slot?.Agent, cmdType)
-        {
-            Guard.AgainstNull(slot);
-            this._slot = slot;
-            this._agent = slot.Agent;
-        }
-
-        protected EnumCommandResult _Internal_LookupObject(long id, out ObjectSlot slot)
-        {
-            ObjectService service = Node.Services.GetService<ObjectService>();
-            slot = null;
-
-            if (!this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
-                return EnumCommandResult.NoService;
-
-            if (service.TryGetById(id, out slot))
-                return EnumCommandResult.Ok;
-
-            return EnumCommandResult.NotFound;
         }
 
     }
