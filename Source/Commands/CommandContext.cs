@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 using EppNet.Node;
+using EppNet.Objects;
 using EppNet.Time;
 using EppNet.Utilities;
 
@@ -65,6 +66,20 @@ namespace EppNet.Commands
             this.Target = target;
             this._node = node;
             this.Timestamp = time ?? _node.Time;
+        }
+
+        protected EnumCommandResult _Internal_LookupObject(long id, out ObjectSlot slot)
+        {
+            ObjectService service = Node.Services.GetService<ObjectService>();
+            slot = null;
+
+            if (!this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
+                return EnumCommandResult.NoService;
+
+            if (service.TryGetById(id, out slot))
+                return EnumCommandResult.Ok;
+
+            return EnumCommandResult.NotFound;
         }
 
     }

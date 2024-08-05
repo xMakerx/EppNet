@@ -11,6 +11,7 @@ using EppNet.Objects;
 using EppNet.Time;
 using EppNet.Utilities;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -39,31 +40,81 @@ namespace EppNet.Commands
 
     }
 
-    public class ObjectSetPropertyCommand : ObjectCommand
+    public class ObjectCallMethodCommand : ObjectUpdateFieldCommand
+    {
+        public ObjectCallMethodCommand(int index, params object[] args) : base(false, index, ObjectCommands.Object_CallMethod, args) { }
+    }
+
+    public class ObjectSetPropertyCommand : ObjectUpdateFieldCommand
     {
 
+        public ObjectSetPropertyCommand(int index, params object[] args) : base(true, index, ObjectCommands.Object_SetProperty, args) { }
+
+    }
+
+    public abstract class ObjectUpdateFieldCommand : ObjectCommand
+    {
+
+        public bool IsProperty { get; }
+        public object[] Arguments { get; }
+        public int Index { get; }
+
+        protected ObjectUpdateFieldCommand(bool isProperty, int index, SlottableEnum enumType, params object[] args) : base(enumType)
+        {
+            this.IsProperty = isProperty;
+            this.Arguments = args;
+            this.Index = index;
+        }
+
+        public override EnumCommandResult Execute(in ObjectCommandContext context)
+        {
+            Guard.AgainstNull(context);
+
+            if (!context.FetchObjectResult.IsOk())
+                return context.FetchObjectResult;
+
+            ObjectRegistration registration = context.Slot.Agent.Metadata;
+            ObjectMemberDefinition mDef = IsProperty ? registration.GetProperty(Index) : registration.GetMethod(Index);
+
+            if (mDef != null)
+            {
+                try
+                {
+                    mDef.Invoke(context.Slot.Agent.UserObject, Arguments);
+                    return EnumCommandResult.Ok;
+                }
+                catch (Exception e)
+                {
+                    context.Node.HandleException(e);
+                    return EnumCommandResult.InvalidState;
+                }
+            }
+
+            return EnumCommandResult.BadArgument;
+
+        }
     }
 
     public class ObjectSetParentCommand : ObjectCommand
     {
         public long ParentID { get; }
 
-        public ObjectSetParentCommand(long id, long parentID) : base(id, ObjectCommands.Object_SetParent)
+        public ObjectSetParentCommand(long parentID) : base(ObjectCommands.Object_SetParent)
         {
             this.ParentID = parentID;
         }
 
         public override EnumCommandResult Execute(in ObjectCommandContext context)
         {
-            if (ParentID == ID)
+            Guard.AgainstNull(context);
+
+            if (ParentID == context.ID)
                 return EnumCommandResult.BadArgument;
 
-            EnumCommandResult lookMeUp = _Internal_LookupObject(in context, ID, out ObjectSlot slot);
+            if (!context.FetchObjectResult.IsOk())
+                return context.FetchObjectResult;
 
-            if (!lookMeUp.IsOk())
-                return lookMeUp;
-
-            return slot.Agent.ReparentTo(ParentID);
+            return context.Slot.Agent.ReparentTo(ParentID);
         }
 
     }
@@ -73,21 +124,20 @@ namespace EppNet.Commands
 
         public int ObjectTypeId { get; }
 
-        public CreateObjectCommand(int objectTypeId) : this(objectTypeId, -1) { }
-
-        public CreateObjectCommand(int objectTypeId, long id) : base(id, ObjectCommands.Create)
+        public CreateObjectCommand(int objectTypeId) : base(ObjectCommands.Create)
         {
             this.ObjectTypeId = objectTypeId;
         }
 
         public override EnumCommandResult Execute(in ObjectCommandContext context)
         {
-            EnumCommandResult result = new();
+            Guard.AgainstNull(context);
+            EnumCommandResult result = EnumCommandResult.NoService;
 
             ObjectService service = context.Node.Services.GetService<ObjectService>();
 
             if (this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
-                result = service.TryCreateObject(ObjectTypeId, out _, ID);
+                result = service.TryCreateObject(ObjectTypeId, out _, context.ID);
 
             return result;
         }
@@ -98,44 +148,65 @@ namespace EppNet.Commands
     {
         public uint TicksUntilDeletion { get; }
 
-        public DeleteObjectCommand(long id, uint ticksUntilDeletion) : base(id, ObjectCommands.Delete)
+        public DeleteObjectCommand(uint ticksUntilDeletion) : base(ObjectCommands.Delete)
         {
             this.TicksUntilDeletion = ticksUntilDeletion;
         }
 
         public override EnumCommandResult Execute(in ObjectCommandContext context)
         {
+            Guard.AgainstNull(context);
+
             ObjectService service = context.Node.Services.GetService<ObjectService>();
             this.IsNotNull(arg: service, tmpMsg: new TemplatedMessage("Object Service could not be found!"), fatal: true);
-            return service.TryRequestDelete(ID, TicksUntilDeletion);
+            return service.TryRequestDelete(context.ID, TicksUntilDeletion);
         }
 
     }
 
     public abstract class ObjectCommand : SlimCommand<ObjectCommandContext>
     {
-
-        public long ID { get; }
-
-        protected ObjectCommand(long id, SlottableEnum enumType) : base(enumType)
-        {
-            this.ID = id;
-        }
+        protected ObjectCommand(SlottableEnum enumType) : base(enumType) { }
 
     }
 
     public class ObjectCommandContext : CommandContext
     {
+        public ObjectSlot Slot { get; }
         public long ID { get; }
+
+        public EnumCommandResult FetchObjectResult { get; }
 
         public ObjectCommandContext([NotNull] ICommandTarget target, Timestamp? time, long id) : base(target, time)
         {
-            this.ID = id;
+            if (target is ObjectSlot targetSlot)
+            {
+                this.ID = id;
+                this.Slot = targetSlot;
+                this.FetchObjectResult = EnumCommandResult.Ok;
+            }
+            else
+            {
+                this.ID = id;
+                this.FetchObjectResult = this._Internal_LookupObject(id, out ObjectSlot slot);
+                this.Slot = slot;
+            }
         }
 
         public ObjectCommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, Timestamp? time, long id) : base(target, node, time)
         {
-            this.ID = id;
+            if (target is ObjectSlot targetSlot)
+            {
+                this.ID = id;
+                this.Slot = targetSlot;
+                this.FetchObjectResult = EnumCommandResult.Ok;
+            }
+            else
+            {
+                this.ID = id;
+                this.FetchObjectResult = this._Internal_LookupObject(id, out ObjectSlot slot);
+                this.Slot = slot;
+            }
         }
     }
 

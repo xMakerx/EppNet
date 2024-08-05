@@ -39,20 +39,6 @@ namespace EppNet.Commands
         /// <returns></returns>
         public abstract EnumCommandResult Execute(in T context);
 
-        protected EnumCommandResult _Internal_LookupObject(in T context, long id, out ObjectSlot slot)
-        {
-            ObjectService service = context.Node.Services.GetService<ObjectService>();
-            slot = null;
-
-            if (!this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
-                return EnumCommandResult.NoService;
-
-            if (service.TryGetById(id, out slot))
-                return EnumCommandResult.Ok;
-
-            return EnumCommandResult.NotFound;
-        }
-
     }
 
 }
