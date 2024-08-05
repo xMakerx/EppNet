@@ -175,6 +175,11 @@ namespace EppNet.Sockets
 
         public abstract void OnPacketReceived(Peer peer, Packet packet);
 
+        public virtual void Tick(float delta)
+        {
+            Clock.Tick(delta);
+        }
+
         public virtual void Poll(int timeoutMs = 0)
         {
             if (!IsOpen())

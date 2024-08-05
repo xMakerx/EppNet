@@ -27,7 +27,7 @@ namespace EppNet.Services
 
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 
-        public event Action OnUpdate;
+        public event Action<float> OnUpdate;
 
         public int SortOrder;
 
@@ -71,9 +71,9 @@ namespace EppNet.Services
         /// Called every tick
         /// </summary>
 
-        internal virtual void Update()
+        internal virtual void Update(float dt)
         {
-            OnUpdate?.Invoke();
+            OnUpdate?.Invoke(dt);
         }
 
         public virtual bool Start()

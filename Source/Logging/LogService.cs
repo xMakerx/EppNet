@@ -25,7 +25,7 @@ namespace EppNet.Logging
             this._loggerConfig = new();
         }
 
-        internal override void Update()
+        internal override void Update(float dt)
         {
             if (Status == ServiceState.Starting)
             {

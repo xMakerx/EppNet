@@ -25,7 +25,7 @@ namespace EppNet.Services
         /// <summary>
         /// Fired when Update is called
         /// </summary>
-        public event Action OnUpdate;
+        public event Action<float> OnUpdate;
 
         /// <summary>
         /// Marks the service as dirty and needing cleaned up

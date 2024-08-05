@@ -219,6 +219,43 @@ namespace EppNet.Node
             return false;
         }
 
+        /// <summary>
+        /// Polls our socket
+        /// </summary>
+        /// <param name="timeoutMs"></param>
+        /// <returns></returns>
+
+        public bool Poll(int timeoutMs = 0)
+        {
+            if (!_started)
+            {
+                Notify.Error("Tried to tick without calling #TryStart()!");
+                return false;
+            }
+
+            Socket.Poll(timeoutMs);
+            return true;
+        }
+
+        /// <summary>
+        /// Ticks our clock and all our services
+        /// </summary>
+        /// <param name="delta"></param>
+        /// <returns></returns>
+
+        public bool Tick(float delta)
+        {
+            if (!_started)
+            {
+                Notify.Error("Tried to tick without calling #TryStart()!");
+                return false;
+            }
+
+            Socket.Tick(delta);
+            Services.Tick(delta);
+            return true;
+        }
+
         public bool TryStop() => TryStop(false);
 
         /// <summary>

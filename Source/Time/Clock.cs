@@ -61,6 +61,18 @@ namespace EppNet.Time
             return true;
         }
 
+        public bool Tick(float delta)
+        {
+            if (!_started)
+            {
+                // Cannot tick the clock when it hasn't been started yet!
+                return false;
+            }
+
+            Strategy.Tick(delta);
+            return true;
+        }
+
         public bool Stop()
         {
             if (!_started)
@@ -92,18 +104,6 @@ namespace EppNet.Time
             this.LatencyDelta = 1f;
             this.Time = this.RoundTripTime = 0L;
             _strat.Reset();
-        }
-
-        internal bool _Internal_Tick(float delta)
-        {
-            if (!_started)
-            {
-                // Cannot tick the clock when it hasn't been started yet!
-                return false;
-            }
-
-            Strategy.Tick(delta);
-            return true;
         }
 
     }

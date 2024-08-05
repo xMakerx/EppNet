@@ -63,10 +63,10 @@ namespace EppNet.Services
         /// Calls <see cref="Service.Update"/> on every service
         /// </summary>
 
-        public void Tick()
+        public void Tick(float dt)
         {
             foreach (Service service in _services)
-                service.Update();
+                service.Update(dt);
         }
 
         /// <summary>
