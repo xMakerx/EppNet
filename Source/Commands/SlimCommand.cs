@@ -21,7 +21,7 @@ namespace EppNet.Commands
     /// executing context is most likely the same as all the other commands.
     /// </summary>
 
-    public abstract class SlimCommand
+    public abstract class SlimCommand<T> where T : CommandContext
     {
 
         public readonly SlottableEnum EnumType;
@@ -37,9 +37,9 @@ namespace EppNet.Commands
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public abstract EnumCommandResult Execute(in CommandContext context);
+        public abstract EnumCommandResult Execute(in T context);
 
-        protected EnumCommandResult _Internal_LookupObject(in CommandContext context, long id, out ObjectSlot slot)
+        protected EnumCommandResult _Internal_LookupObject(in T context, long id, out ObjectSlot slot)
         {
             ObjectService service = context.Node.Services.GetService<ObjectService>();
             slot = null;

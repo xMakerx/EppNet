@@ -6,10 +6,13 @@
 
 using EppNet.Data;
 using EppNet.Logging;
+using EppNet.Node;
 using EppNet.Objects;
+using EppNet.Time;
 using EppNet.Utilities;
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 
 namespace EppNet.Commands
@@ -36,6 +39,11 @@ namespace EppNet.Commands
 
     }
 
+    public class ObjectSetPropertyCommand : ObjectCommand
+    {
+
+    }
+
     public class ObjectSetParentCommand : ObjectCommand
     {
         public long ParentID { get; }
@@ -45,7 +53,7 @@ namespace EppNet.Commands
             this.ParentID = parentID;
         }
 
-        public override EnumCommandResult Execute(in CommandContext context)
+        public override EnumCommandResult Execute(in ObjectCommandContext context)
         {
             if (ParentID == ID)
                 return EnumCommandResult.BadArgument;
@@ -72,7 +80,7 @@ namespace EppNet.Commands
             this.ObjectTypeId = objectTypeId;
         }
 
-        public override EnumCommandResult Execute(in CommandContext context)
+        public override EnumCommandResult Execute(in ObjectCommandContext context)
         {
             EnumCommandResult result = new();
 
@@ -95,7 +103,7 @@ namespace EppNet.Commands
             this.TicksUntilDeletion = ticksUntilDeletion;
         }
 
-        public override EnumCommandResult Execute(in CommandContext context)
+        public override EnumCommandResult Execute(in ObjectCommandContext context)
         {
             ObjectService service = context.Node.Services.GetService<ObjectService>();
             this.IsNotNull(arg: service, tmpMsg: new TemplatedMessage("Object Service could not be found!"), fatal: true);
@@ -104,7 +112,7 @@ namespace EppNet.Commands
 
     }
 
-    public abstract class ObjectCommand : SlimCommand
+    public abstract class ObjectCommand : SlimCommand<ObjectCommandContext>
     {
 
         public long ID { get; }
@@ -114,6 +122,21 @@ namespace EppNet.Commands
             this.ID = id;
         }
 
+    }
+
+    public class ObjectCommandContext : CommandContext
+    {
+        public long ID { get; }
+
+        public ObjectCommandContext([NotNull] ICommandTarget target, Timestamp? time, long id) : base(target, time)
+        {
+            this.ID = id;
+        }
+
+        public ObjectCommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, Timestamp? time, long id) : base(target, node, time)
+        {
+            this.ID = id;
+        }
     }
 
 }
