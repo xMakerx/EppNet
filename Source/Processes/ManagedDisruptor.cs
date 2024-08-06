@@ -13,6 +13,7 @@ using EppNet.Node;
 
 using System;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EppNet.Processes
 {
@@ -22,7 +23,6 @@ namespace EppNet.Processes
 
         public ILoggable Notify { get => this; }
         public NetworkNode Node { get; }
-
         public RingBuffer Buffer { get => this.RingBuffer; }
 
         /// <summary>
@@ -67,66 +67,45 @@ namespace EppNet.Processes
         /// <param name="event">A valid <see cref="RingBufferEvent"/> instance or NULL</param>
         /// <returns>Whether or not an event was obtained</returns>
 
-        public bool TryGetEvent(out T @event)
+        public bool TryGetAndPublishEvent(Action<T> setupAction, long timeoutMs = 0)
         {
-            bool retrieved = Buffer.TryNext(out long sequenceId);
-            @event = null;
+            SpinWait waiter = new();
+            long expiration = ENet.Library.Time + timeoutMs;
+            long sequenceId;
+
+            bool retrieved;
+            bool canRetry;
+
+            do
+            {
+                retrieved = Buffer.TryNext(out sequenceId);
+                canRetry = ENet.Library.Time < expiration;
+
+                if (canRetry)
+                {
+                    Notify.Verbose("Failed to prepare event for ring buffer. Retrying...");
+                    waiter.SpinOnce();
+                }
+
+            } while (canRetry);
 
             if (!retrieved)
             {
-                Notify.Error($"Failed to prepare event for ring buffer. Buff full! Increase limit from {Buffer.BufferSize}!");
+                Notify.Error($"Failed to prepare event for ring buffer. Buffer full! Increase limit from {Buffer.BufferSize} or set a timeout!");
                 return false;
             }
 
-            try
-            {
-                // Great! We fetched an event!
-                @event = this[sequenceId];
+            // Great! We fetched an event!
+            T @event = this[sequenceId];
 
-                // Provide the event with the fetched sequence id.
-                @event._Internal_Preinitialize(sequenceId);
-            }
-            catch (Exception e)
-            {
-                Notify.Error($"Failed to prepare event for ring buffer. Error: {e.Message}\nStack Trace: {e.StackTrace}", e);
-                return false;
-            }
+            // Provide the event with the fetched sequence id.
+            @event._Internal_Preinitialize(sequenceId);
+            setupAction?.Invoke(@event);
+
+            Buffer.Publish(sequenceId);
+            Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
 
             return retrieved;
-        }
-
-        /// <summary>
-        /// Tries to publish a <see cref="RingBufferEvent"/> to the Disruptor.
-        /// </summary>
-        /// <returns>Whether or not the <see cref="RingBufferEvent"/> was successfully published</returns>
-
-        public bool TryPublishEvent(T @event)
-        {
-            if (@event == null)
-            {
-                Notify.Error("Tried to publish a NULL event. Did you forget to obtain one?");
-                return false;
-            }
-
-            if (@event.Disposed)
-            {
-                Notify.Error("Tried to publish a disposed event. Did you forget to initialize it?");
-                return false;
-            }
-
-            try
-            {
-                // Let's try to publish this event.
-                Buffer.Publish(@event.SequenceID);
-                Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
-                return true;
-            }
-            catch (Exception e)
-            {
-                // Something went wrong somewhere
-                Notify.Error($"Failed to publish event. Error: {e.Message}\nStack Trace: {e.StackTrace}", e);
-                return false;
-            }
         }
 
     }
