@@ -62,36 +62,15 @@ namespace EppNet.Processes
         }
 
         /// <summary>
-        /// Tries to fetch a <see cref="RingBufferEvent"/> from the Disruptor.
+        /// Tries to fetch and publish a <see cref="RingBufferEvent"/>.
         /// </summary>
-        /// <param name="event">A valid <see cref="RingBufferEvent"/> instance or NULL</param>
         /// <returns>Whether or not an event was obtained</returns>
 
-        public bool TryGetAndPublishEvent(Action<T> setupAction, long timeoutMs = 0)
+        public bool TryGetAndPublishEvent(Action<T> setupAction)
         {
-            SpinWait waiter = new();
-            long expiration = ENet.Library.Time + timeoutMs;
-            long sequenceId;
-
-            bool retrieved;
-            bool canRetry;
-
-            do
+            if (!Buffer.TryNext(out long sequenceId))
             {
-                retrieved = Buffer.TryNext(out sequenceId);
-                canRetry = ENet.Library.Time < expiration;
-
-                if (canRetry)
-                {
-                    Notify.Verbose("Failed to prepare event for ring buffer. Retrying...");
-                    waiter.SpinOnce();
-                }
-
-            } while (canRetry);
-
-            if (!retrieved)
-            {
-                Notify.Error($"Failed to prepare event for ring buffer. Buffer full! Increase limit from {Buffer.BufferSize} or set a timeout!");
+                Notify.Error($"Failed to prepare event for ring buffer. Buffer full! Increase limit from {Buffer.BufferSize}!");
                 return false;
             }
 
@@ -104,8 +83,59 @@ namespace EppNet.Processes
 
             Buffer.Publish(sequenceId);
             Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
+            return true;
+        }
 
-            return retrieved;
+        public async Task<bool> TryGetAndPublishEventAsync(Action<T> setupAction, long timeoutMs)
+        {
+            if (timeoutMs == 0)
+                Notify.Warning("It's very wasteful to call the async version with no timeout!");
+
+            Task<T> fetchTask = _Internal_TryFetchEventAsync(timeoutMs);
+            await fetchTask;
+            
+            T @event = fetchTask.Result;
+
+            if (@event != null)
+            {
+                setupAction?.Invoke(@event);
+
+                Buffer.Publish(@event.SequenceID);
+                Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
+            }
+
+            return @event != null;
+        }
+
+        protected Task<T> _Internal_TryFetchEventAsync(long timeoutMs)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                SpinWait waiter = new();
+                long expiration = ENet.Library.Time + timeoutMs;
+                T @event = null;
+
+                do
+                {
+
+                    if (Buffer.TryNext(out long sequenceId))
+                    {
+                        // We retrieved an event. Let's set it up
+                        @event = this[sequenceId];
+                        @event._Internal_Preinitialize(sequenceId);
+                        break;
+                    }
+
+                    waiter.SpinOnce();
+                    Notify.Verbose("Failed to prepare event for ring buffer. Retrying...");
+
+                } while (ENet.Library.Time < expiration);
+
+                if (@event == null)
+                    Notify.Error($"Failed to fetch event after {timeoutMs} ms. Buffer full! Increase limit from {Buffer.BufferSize} or set a longer timeout!");
+
+                return @event;
+            });
         }
 
     }
