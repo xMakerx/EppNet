@@ -25,10 +25,6 @@ namespace EppNet.Sockets
             this.MaxClients = maxClients;
         }
 
-        public override void OnPacketReceived(Peer peer, Packet packet)
-        {
-            throw new System.NotImplementedException();
-        }
 
     }
 

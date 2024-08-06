@@ -171,10 +171,17 @@ namespace EppNet.Objects
             if (stopped)
             {
                 // Let's delete our objects
-                _objects.Clear();
+                _objects.DoOnActive((ObjectSlot slot) => _Internal_DeleteObject(slot));
             }
 
             return stopped;
+        }
+
+        public override void Dispose(bool disposing)
+        {
+            OnObjectCreated = null;
+            OnObjectDeleted = null;
+            _objects.Dispose();
         }
 
         internal override void Update(float dt)

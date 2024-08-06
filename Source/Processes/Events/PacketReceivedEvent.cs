@@ -9,6 +9,7 @@
 using ENet;
 
 using EppNet.Connections;
+using EppNet.Data.Datagrams;
 using EppNet.Sockets;
 using EppNet.Time;
 
@@ -21,7 +22,7 @@ namespace EppNet.Processes.Events
 
         public BaseSocket Socket { internal set; get; }
         public Connection Sender { internal set; get; }
-        public Packet Packet { internal set; get; }
+        public byte[] Data { internal set; get; }
         public byte ChannelID { internal set; get; }
 
         /// <summary>
@@ -29,26 +30,30 @@ namespace EppNet.Processes.Events
         /// </summary>
         public Timestamp MonoTimestamp { internal set; get; }
 
+        public IDatagram Datagram { internal set; get; }
+
         public PacketReceivedEvent()
         {
-            this.Packet = default;
             this.Sender = null;
             this.ChannelID = 0;
             this.MonoTimestamp = default;
         }
 
-        public PacketReceivedEvent(Connection conn, Packet packet, byte channelID)
+        public void Initialize(Connection conn, byte[] data, byte channelID)
         {
-            this.Packet = packet;
             this.Sender = conn;
+            this.Data = data;
             this.ChannelID = channelID;
             this.MonoTimestamp = Timestamp.FromMonoNow();
         }
 
-
         public override void Dispose()
         {
-            Packet.Dispose();
+            this.Datagram = null;
+            this.Sender = null;
+            this.Data = null;
+            this.ChannelID = 0;
+            this.MonoTimestamp = default;
         }
 
     }

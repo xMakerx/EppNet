@@ -13,7 +13,7 @@ using System.Collections.Generic;
 namespace EppNet.Services
 {
 
-    public class ServiceManager : INodeDescendant
+    public class ServiceManager : INodeDescendant, IDisposable
     {
 
         public NetworkNode Node { get => _node; }
@@ -84,6 +84,13 @@ namespace EppNet.Services
                 service.Stop();
 
             this.Started = false;
+        }
+        public void Dispose() { Dispose(true); }
+
+        public void Dispose(bool disposing)
+        {
+            foreach (Service service in _services)
+                service.Dispose(disposing);
         }
 
         public bool TryAddService<T>(out T created) where T : Service

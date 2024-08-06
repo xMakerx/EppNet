@@ -8,7 +8,9 @@ using ENet;
 
 using EppNet.Connections;
 using EppNet.Logging;
+using EppNet.Messaging;
 using EppNet.Node;
+using EppNet.Processes;
 using EppNet.Time;
 
 using System;
@@ -32,6 +34,7 @@ namespace EppNet.Sockets
         public NetworkNode Node { get => _node; }
         public Clock Clock { get => _clock; }
         public ConnectionService ConnectionService { get => _connSrv; }
+        public ChannelService ChannelService { protected set; get; }
 
         public SocketType Type { get => _type; }
 
@@ -138,6 +141,8 @@ namespace EppNet.Sockets
         protected readonly SocketType _type;
         internal Clock _clock;
 
+        protected PacketDeserializer _packetDeserializer;
+
         protected BaseSocket(SocketType type)
         {
             this.LastPollMono = new Timestamp(TimestampType.Milliseconds, true, 0L);
@@ -155,13 +160,12 @@ namespace EppNet.Sockets
             this._clock = new();
             this._ip = _hostName = string.Empty;
             this._port = 0;
+            this._packetDeserializer = null;
         }
 
         protected BaseSocket(NetworkNode node, SocketType type) : this(type) => _Internal_SetupFor(node);
 
         ~BaseSocket() => Dispose(false);
-
-        
 
         public virtual void OnPeerConnected(Peer peer)
         {
@@ -173,7 +177,10 @@ namespace EppNet.Sockets
             ConnectionService.HandleConnectionLost(peer, DisconnectReason.GetFromID(disconnectReasonIdx));
         }
 
-        public abstract void OnPacketReceived(Peer peer, Packet packet);
+        public virtual void OnPacketReceived(Peer peer, Packet packet, byte channelId)
+        {
+            _packetDeserializer.HandlePacket(peer, packet, channelId);
+        }
 
         public virtual void Tick(float delta)
         {
@@ -221,7 +228,7 @@ namespace EppNet.Sockets
 
                     case EventType.Receive:
                         using (_enet_event.Packet)
-                            OnPacketReceived(_enet_event.Peer, _enet_event.Packet);
+                            OnPacketReceived(_enet_event.Peer, _enet_event.Packet, _enet_event.ChannelID);
                         break;
 
                 }
@@ -271,6 +278,12 @@ namespace EppNet.Sockets
                         break;
                 }
 
+                // TODO: BaseSocket: Add a way to customize ring buffer size
+                this._packetDeserializer = new(this, 256);
+
+                // Let's start our deserializer
+                _packetDeserializer.Start();
+
                 // Let's begin our clock!
                 Clock.Start();
 
@@ -288,6 +301,7 @@ namespace EppNet.Sockets
 
         public void Dispose(bool disposing)
         {
+            _packetDeserializer.Halt();
             Clock?.Stop();
 
             if (!IsServer())
@@ -365,6 +379,12 @@ namespace EppNet.Sockets
 
             if (_connSrv == null)
                 _connSrv = new ConnectionService(Node.Services);
+
+            // Fetches or creates a channel service
+            ChannelService = Node.Services.GetService<ChannelService>();
+
+            if (ChannelService == null)
+                ChannelService = new ChannelService(Node.Services);
         }
 
     }

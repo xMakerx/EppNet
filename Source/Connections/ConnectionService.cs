@@ -82,6 +82,12 @@ namespace EppNet.Connections
             return stopped;
         }
 
+        public override void Dispose(bool disposing)
+        {
+            if (_connections is PageList<Connection> pageList)
+                pageList.Dispose();
+        }
+
         public void EjectAll() => EjectAll(DisconnectReason.Unknown);
 
         public void EjectAll(DisconnectReason reason)
@@ -221,6 +227,9 @@ namespace EppNet.Connections
                 else
                     conn = Peer;
             }
+
+            if (conn == null)
+                Notify.Error(new TemplatedMessage("Peer ID {id} does not represent a valid Connection!", id));
 
             return conn;
         }

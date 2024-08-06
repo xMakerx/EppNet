@@ -131,6 +131,9 @@ namespace EppNet.Node
             NetworkNodeManager._Internal_TryUnregisterNode(this);
             TryStop(!disposing);
 
+            // Disposes all services
+            Services.Dispose(disposing);
+
             // Ensure our custom data is cleaned up
             IDataHolder.DeleteAllData(this);
         }

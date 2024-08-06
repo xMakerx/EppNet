@@ -86,7 +86,7 @@ namespace EppNet.Processes
             return true;
         }
 
-        public async Task<bool> TryGetAndPublishEventAsync(Action<T> setupAction, long timeoutMs)
+        public async Task<bool> TryGetAndPublishEventAsync(Action<T> setupAction, Action onTimeout, long timeoutMs)
         {
             if (timeoutMs == 0)
                 Notify.Warning("It's very wasteful to call the async version with no timeout!");
@@ -103,6 +103,8 @@ namespace EppNet.Processes
                 Buffer.Publish(@event.SequenceID);
                 Notify.Debug($"Published {@event.GetType().Name} with Sequence ID {@event.SequenceID}");
             }
+            else
+                onTimeout?.Invoke();
 
             return @event != null;
         }

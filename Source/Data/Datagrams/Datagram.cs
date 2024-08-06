@@ -12,8 +12,8 @@ namespace EppNet.Data.Datagrams
     public class Datagram : BytePayload, IDatagram
     {
         public byte Header { internal set; get; }
-
         public bool Written { internal set; get; }
+        public long Size { get => Length; }
 
         /// <summary>
         /// This is populated remotely.

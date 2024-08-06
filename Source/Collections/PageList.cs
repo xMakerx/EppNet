@@ -17,7 +17,7 @@ using System.Threading;
 namespace EppNet.Collections
 {
 
-    public class PageList<T> where T : IPageable, new()
+    public class PageList<T> : IDisposable where T : IPageable, new()
     {
         public readonly int ItemsPerPage;
         public Action<T> OnAllocate;
@@ -232,6 +232,14 @@ namespace EppNet.Collections
             return item;
         }
 
+        public void Dispose()
+        {
+            Clear();
+            _lock.Dispose();
+
+            OnAllocate = null;
+            OnFree = null;
+        }
     }
 
     public interface IPage

@@ -4,12 +4,14 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Commands;
 using EppNet.Logging;
 using EppNet.Objects;
 using EppNet.Time;
 using EppNet.Utilities;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace EppNet.Snapshots
@@ -25,6 +27,8 @@ namespace EppNet.Snapshots
     {
 
         public readonly ObjectAgent Object;
+
+        protected ConcurrentQueue<ObjectCommand> _commands;
 
         protected SortedList<string, object> _method2Value;
         protected SortedList<string, object> _prop2Value;

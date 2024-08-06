@@ -94,6 +94,8 @@ namespace EppNet.Services
             return true;
         }
 
+        public virtual void Dispose(bool disposing) { }
+
         /// <summary>
         /// Marks this service as dirty and needing cleaning next update.
         /// </summary>

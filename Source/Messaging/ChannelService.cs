@@ -4,10 +4,13 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
+using Disruptor;
+
 using ENet;
 
 using EppNet.Data.Datagrams;
 using EppNet.Logging;
+using EppNet.Processes.Events;
 using EppNet.Services;
 using EppNet.Utilities;
 
@@ -17,14 +20,23 @@ using System.Collections.Concurrent;
 namespace EppNet.Messaging
 {
 
-    public class ChannelService : Service
+    public class ChannelService : Service, IEventHandler<PacketReceivedEvent>
     {
 
-        protected ConcurrentDictionary<byte, Channel> _channels;
+        protected readonly ConcurrentDictionary<byte, Channel> _channels;
 
         public ChannelService(ServiceManager svcMgr) : base(svcMgr)
         {
             this._channels = new();
+        }
+
+        public void OnEvent(PacketReceivedEvent data, long sequence, bool endOfBatch)
+        {
+            // Let's try to fetch the channel by id
+            Channel channel = GetChannelById(data.ChannelID);
+
+            if (channel != null)
+                channel.ReceiveOrQueue(data.Datagram);
         }
 
         public bool TrySendTo(Peer peer, IDatagram datagram, PacketFlags flags)
@@ -92,6 +104,30 @@ namespace EppNet.Messaging
             }
 
             return started;
+        }
+
+        public override bool Stop()
+        {
+            bool stopped = base.Stop();
+
+            if (stopped)
+            {
+                // Reset every channel
+                foreach (var channel in _channels.Values)
+                {
+                    channel.Clear();
+                    channel.ResetStatistics();
+                }
+            }
+
+            return stopped;
+        }
+
+        public override void Dispose(bool disposing)
+        {
+            // Dispose every channel
+            foreach (var channel in _channels.Values)
+                channel.Dispose();
         }
 
         private bool _Internal_TryAddChannel(byte id, out Channel newChannel, ChannelFlags flags = ChannelFlags.None)

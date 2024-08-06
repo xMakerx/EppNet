@@ -6,11 +6,13 @@
 
 using ENet;
 
+using EppNet.Data.Datagrams;
 using EppNet.Logging;
-
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using EppNet.Utilities;
 
 using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace EppNet.Messaging
 {
@@ -45,60 +47,25 @@ namespace EppNet.Messaging
 
         public readonly ChannelService Service;
 
+        public Action<IDatagram> DatagramReceived;
+
         public ILoggable Notify { get => this; }
 
         public readonly byte Id;
         public ChannelFlags Flags { protected set; get; }
 
-        public int DatagramsReceived
-        {
-            private set
-            {
-                lock (_threadLock)
-                    _datagramsReceived = value;
-            }
-
-            get => _datagramsReceived;
-        }
-
-        public int DatagramsSent
-        {
-            private set
-            {
-                lock (_threadLock)
-                    _datagramsSent = value;
-            }
-
-            get => _datagramsSent;
-        }
-
-        public long TotalBytesReceived
-        { 
-            private set
-            {
-
-                lock (_threadLock)
-                    _totalBytesReceived = value;
-            }
-
-            get => _totalBytesReceived;
-        }
-
-        public long TotalBytesSent
-        {
-            private set
-            {
-                lock (_threadLock)
-                    _totalBytesSent = value;
-            }
-
-            get => _totalBytesSent;
-        }
-
-
-        private object _threadLock;
-
         // Statistics
+        public int DatagramsReceived { get => _datagramsReceived; }
+        public int DatagramsSent { get => _datagramsSent; }
+
+        public long TotalBytesReceived { get => _totalBytesReceived; }
+
+        public long TotalBytesSent { get => _totalBytesSent; }
+
+
+        private readonly Queue<IDatagram> _buffer;
+        private readonly object _bufferLock;
+
         protected int _datagramsReceived;
         protected int _datagramsSent;
         protected long _totalBytesReceived;
@@ -109,17 +76,60 @@ namespace EppNet.Messaging
             this.Service = service;
             this.Id = id;
             this.Flags = ChannelFlags.None;
-
-            this._threadLock = new();
-            this._datagramsReceived = 0;
-            this._datagramsSent = 0;
-            this._totalBytesReceived = 0L;
-            this._totalBytesSent = 0L;
+            this._buffer = (Flags & ChannelFlags.ProcessImmediately) == 0 ? new() : null;
+            this._bufferLock = _buffer != null ? new() : null;
         }
 
         public Channel(ChannelService service, byte id, ChannelFlags flags) : this(service, id)
         {
             this.Flags = flags;
+        }
+
+        public void ReceiveOrQueue(IDatagram datagram)
+        {
+            if (datagram == null)
+                // Nothing to do.
+                return;
+
+            if (Flags.HasFlag(ChannelFlags.ProcessImmediately))
+                Receive(datagram);
+            else
+            {
+                lock (_bufferLock)
+                    _buffer.Enqueue(datagram);
+            }
+        }
+
+        public void Receive(IDatagram datagram)
+        {
+            Interlocked.Increment(ref _datagramsReceived);
+            Interlocked.Add(ref _totalBytesReceived, datagram.Size);
+            DatagramReceived?.GlobalInvoke(datagram);
+        }
+
+        public void ReceiveQueue()
+        {
+
+            IDatagram[] datagrams = new IDatagram[_buffer.Count];
+
+            lock (_bufferLock)
+            {
+                _buffer.CopyTo(datagrams, 0);
+                _buffer.Clear();
+            }
+
+            for (int i = 0; i < datagrams.Length; i++)
+                Receive(datagrams[i]);
+        }
+
+        public void Clear()
+        {
+            if (_buffer == null)
+                // Nothing to clear
+                return;
+
+            lock (_bufferLock)
+                _buffer.Clear();
         }
 
         public bool SendTo(Peer peer, byte[] bytes, PacketFlags flags)
@@ -134,8 +144,8 @@ namespace EppNet.Messaging
                 // Send the packet to our ENet peer
                 if (peer.Send(Id, ref packet))
                 {
-                    DatagramsSent++;
-                    _totalBytesSent += bytes.LongLength;
+                    Interlocked.Increment(ref _datagramsReceived);
+                    Interlocked.Add(ref _totalBytesSent, bytes.LongLength);
                     return true;
                 }
             }
@@ -162,20 +172,18 @@ namespace EppNet.Messaging
 
         public void ResetStatistics()
         {
-            lock (_threadLock)
-            {
-                _datagramsReceived = 0;
-                _datagramsSent = 0;
-                _totalBytesReceived = 0L;
-                _totalBytesSent = 0L;
-
-                Notify.Debug("Statistics were reset!");
-            }
+            Interlocked.Exchange(ref _datagramsReceived, 0);
+            Interlocked.Exchange(ref _datagramsSent, 0);
+            Interlocked.Exchange(ref _totalBytesReceived, 0);
+            Interlocked.Exchange(ref _totalBytesSent, 0);
         }
 
         public void Dispose()
         {
+            Clear();
             ResetStatistics();
+
+            DatagramReceived = null;
         }
 
         public bool Equals(Channel other) => other.Id == Id;

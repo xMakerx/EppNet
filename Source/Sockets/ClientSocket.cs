@@ -30,7 +30,7 @@ namespace EppNet.Sockets
 
         public void ConnectTo(string host, int port) => ConnectTo(host, Convert.ToUInt16(port));
 
-        public override void OnPacketReceived(Peer peer, Packet packet)
+        public override void OnPacketReceived(Peer peer, Packet packet, byte channelID)
         {
             
         }

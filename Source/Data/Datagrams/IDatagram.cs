@@ -12,6 +12,7 @@ namespace EppNet.Data.Datagrams
     public interface IDatagram
     {
 
+        public long Size { get; }
         public bool Written { get; }
 
         public void Read();
