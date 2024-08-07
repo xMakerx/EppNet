@@ -8,8 +8,6 @@ using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Utilities;
 
-using Newtonsoft.Json.Linq;
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -17,8 +15,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-
-using static Disruptor.EventPoller;
 
 namespace EppNet.Processes
 {
@@ -55,21 +51,16 @@ namespace EppNet.Processes
             this.Next = null;
         }
 
-        public bool Execute(T @event, CancellationTokenSource tokenSrc)
+        public bool Execute(T @event, CancellationTokenSource tokenSrc, ParallelOptions options)
         {
             bool canContinue = false;
 
             if (_handlers.Count > 1)
             {
-                CancellationToken token = tokenSrc.Token;
-                ParallelOptions options = new()
-                {
-                    CancellationToken = token
-                };
 
-                Parallel.ForEach(_handlers, options, (IBufferEventHandler<T> handler) =>
+                Parallel.ForEach(Partitioner.Create(_handlers, EnumerablePartitionerOptions.NoBuffering), options, (IBufferEventHandler<T> handler) =>
                 {
-                    canContinue = !token.IsCancellationRequested;
+                    canContinue = !tokenSrc.IsCancellationRequested;
                     if (!canContinue)
                         return;
 
@@ -121,6 +112,8 @@ namespace EppNet.Processes
         protected bool _started;
 
         protected ConcurrentStack<T> _pool;
+        protected SpinWait _waiter;
+        protected ParallelOptions _options;
 
         public MultithreadedBuffer([NotNull] NetworkNode node, int poolSize = 5)
         {
@@ -133,8 +126,10 @@ namespace EppNet.Processes
             this._tokenSrc = new CancellationTokenSource();
             this._token = default;
 
+            this._waiter = new SpinWait();
             this._readerThread = null;
             this._started = false;
+            this._options = new();
 
             this._pool = new ConcurrentStack<T>();
 
@@ -222,22 +217,22 @@ namespace EppNet.Processes
 
         public void Read()
         {
-            SpinWait waiter = new SpinWait();
-
             while (!_token.IsCancellationRequested)
             {
                 if (!_reader.TryRead(out T @event))
                 {
-                    waiter.SpinOnce();
+                    _waiter.SpinOnce();
                     continue;
                 }
 
                 using CancellationTokenSource tokenSrc = new();
                 BufferProcessStep<T> step = FirstStep;
 
+                _options.CancellationToken = tokenSrc.Token;
+
                 while (!_token.IsCancellationRequested && step != null)
                 {
-                    if (!step.Execute(@event, tokenSrc))
+                    if (!step.Execute(@event, tokenSrc, _options))
                         break;
 
                     step = step.Next;
