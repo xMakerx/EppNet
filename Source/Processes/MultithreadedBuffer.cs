@@ -75,33 +75,6 @@ namespace EppNet.Processes
             await taskRoot;
         }
 
-        public bool Execute(T @event, CancellationTokenSource tokenSrc, ParallelOptions options)
-        {
-
-            if (_handlers.Count == 1)
-            {
-                Task.Run(() => _handlers[0].Handle(ref @event));
-                return true;
-            }
-
-            bool canContinue = false;
-
-            Parallel.ForEach(Partitioner.Create(_handlers, EnumerablePartitionerOptions.NoBuffering), options, (IBufferEventHandler<T> handler) =>
-            {
-                canContinue = !tokenSrc.IsCancellationRequested && @event.ShouldContinue;
-                if (!canContinue)
-                    return;
-
-                if (!handler.Handle(ref @event))
-                {
-                    canContinue = false;
-                    tokenSrc.Cancel();
-                }
-            });
-
-            return canContinue;
-        }
-
         public BufferProcessStep<T> With([NotNull] IBufferEventHandler<T> handler)
         {
             Guard.AgainstNull(handler);
