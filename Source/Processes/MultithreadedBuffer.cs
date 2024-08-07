@@ -12,6 +12,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -22,11 +23,13 @@ namespace EppNet.Processes
     public interface IBufferEventHandler<T> where T : IBufferEvent
     {
 
-        public bool Handle(in T @event);
+        public bool Handle(ref T @event);
     }
 
     public interface IBufferEvent : IDisposable
     {
+
+        public bool ShouldContinue { set; get; }
 
         public void Initialize();
         public void Cleanup();
@@ -41,7 +44,7 @@ namespace EppNet.Processes
         public readonly MultithreadedBuffer<T> Buffer;
         public BufferProcessStep<T> Next { private set; get; }
 
-        protected readonly List<IBufferEventHandler<T>> _handlers;
+        private readonly List<IBufferEventHandler<T>> _handlers;
 
         public BufferProcessStep([NotNull] MultithreadedBuffer<T> buffer, [NotNull] IBufferEventHandler<T> handler)
         {
@@ -51,30 +54,52 @@ namespace EppNet.Processes
             this.Next = null;
         }
 
-        public bool Execute(T @event, CancellationTokenSource tokenSrc, ParallelOptions options)
+        public async Task ExecuteAsync(T @event, CancellationTokenSource tokenSrc)
         {
-            bool canContinue = false;
+            T currentEvent = Unsafe.AsRef(@event);
+            CancellationToken token = tokenSrc.Token;
 
-            if (_handlers.Count > 1)
+            Task taskRoot = null;
+
+            if (_handlers.Count == 1)
+                taskRoot = Task.Run(() => _handlers[0].Handle(ref currentEvent), token);
+            else
             {
-
-                Parallel.ForEach(Partitioner.Create(_handlers, EnumerablePartitionerOptions.NoBuffering), options, (IBufferEventHandler<T> handler) =>
+                taskRoot = Task.Run(() => Parallel.ForEachAsync(_handlers, Buffer.Options, async (handler, cancelToken) =>
                 {
-                    canContinue = !tokenSrc.IsCancellationRequested;
-                    if (!canContinue)
-                        return;
-
-                    if (!handler.Handle(@event))
-                    {
-                        canContinue = false;
+                    if (cancelToken.IsCancellationRequested || !handler.Handle(ref @event))
                         tokenSrc.Cancel();
-                    }
-                });
-
-                return canContinue;
+                }));
             }
 
-            return _handlers[0].Handle(@event);
+            await taskRoot;
+        }
+
+        public bool Execute(T @event, CancellationTokenSource tokenSrc, ParallelOptions options)
+        {
+
+            if (_handlers.Count == 1)
+            {
+                Task.Run(() => _handlers[0].Handle(ref @event));
+                return true;
+            }
+
+            bool canContinue = false;
+
+            Parallel.ForEach(Partitioner.Create(_handlers, EnumerablePartitionerOptions.NoBuffering), options, (IBufferEventHandler<T> handler) =>
+            {
+                canContinue = !tokenSrc.IsCancellationRequested && @event.ShouldContinue;
+                if (!canContinue)
+                    return;
+
+                if (!handler.Handle(ref @event))
+                {
+                    canContinue = false;
+                    tokenSrc.Cancel();
+                }
+            });
+
+            return canContinue;
         }
 
         public BufferProcessStep<T> With([NotNull] IBufferEventHandler<T> handler)
@@ -101,6 +126,10 @@ namespace EppNet.Processes
         public ILoggable Notify => this;
         public BufferProcessStep<T> FirstStep { private set; get; }
 
+        public Action OnCanceled;
+
+        public readonly ParallelOptions Options;
+
         protected NetworkNode _node;
         protected Channel<T> _channel;
         protected ChannelReader<T> _reader;
@@ -113,9 +142,8 @@ namespace EppNet.Processes
 
         protected ConcurrentStack<T> _pool;
         protected SpinWait _waiter;
-        protected ParallelOptions _options;
 
-        public MultithreadedBuffer([NotNull] NetworkNode node, int poolSize = 5)
+        public MultithreadedBuffer([NotNull] NetworkNode node, int poolSize = 256)
         {
             Guard.AgainstNull(node);
             this._node = node;
@@ -129,7 +157,8 @@ namespace EppNet.Processes
             this._waiter = new SpinWait();
             this._readerThread = null;
             this._started = false;
-            this._options = new();
+            this.OnCanceled = null;
+            this.Options = new();
 
             this._pool = new ConcurrentStack<T>();
 
@@ -173,6 +202,7 @@ namespace EppNet.Processes
             }
 
             _started = false;
+            OnCanceled?.Invoke();
             Notify.Debug("Buffer canceled!");
         }
 
@@ -217,29 +247,31 @@ namespace EppNet.Processes
 
         public void Read()
         {
+            CancellationTokenSource tokenSrc = new();
             while (!_token.IsCancellationRequested)
             {
                 if (!_reader.TryRead(out T @event))
                 {
-                    _waiter.SpinOnce();
+                    Thread.Yield();
                     continue;
                 }
 
-                using CancellationTokenSource tokenSrc = new();
-                BufferProcessStep<T> step = FirstStep;
-
-                _options.CancellationToken = tokenSrc.Token;
-
-                while (!_token.IsCancellationRequested && step != null)
+                Task.Run(async () =>
                 {
-                    if (!step.Execute(@event, tokenSrc, _options))
-                        break;
 
-                    step = step.Next;
-                }
+                    Options.CancellationToken = tokenSrc.Token;
+                    BufferProcessStep<T> step = FirstStep;
 
-                @event.Dispose();
-                _pool.Push(@event);
+                    while (!_token.IsCancellationRequested && step != null)
+                    {
+                        await step.ExecuteAsync(@event, tokenSrc);
+                        step = step.Next;
+                    }
+
+                    @event.Dispose();
+                    _pool.Push(@event);
+                });
+
             }
 
         }

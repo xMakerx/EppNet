@@ -4,12 +4,8 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
-using Disruptor;
-using Disruptor.Dsl;
-
 using ENet;
 
-using EppNet.Connections;
 using EppNet.Data.Datagrams;
 using EppNet.Logging;
 using EppNet.Processes.Events;
@@ -18,12 +14,11 @@ using EppNet.Sockets;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 namespace EppNet.Processes
 {
 
-    public class PacketDeserializer : ManagedDisruptor<PacketReceivedEvent>, IEventHandler<PacketReceivedEvent>
+    public class PacketDeserializer : MultithreadedBuffer<PacketReceivedEvent>, IBufferEventHandler<PacketReceivedEvent>
     {
 
         public int DroppedPackets { private set; get; }
@@ -33,8 +28,7 @@ namespace EppNet.Processes
         protected DatagramRegister _dgRegister;
 
         public PacketDeserializer([NotNull] BaseSocket socket, int bufferSize) : base(socket.Node, 
-            () => new PacketReceivedEvent(), bufferSize, TaskScheduler.Default, 
-            ProducerType.Single, new BlockingSpinWaitWaitStrategy())
+            bufferSize)
         {
             this._socket = socket;
             this._dgRegister = DatagramRegister.Get();
@@ -43,7 +37,7 @@ namespace EppNet.Processes
             this.HandleEventsWith(this).Then(socket.ChannelService);
         }
 
-        public void OnEvent(PacketReceivedEvent data, long sequence, bool endOfBatch)
+        public bool Handle(ref PacketReceivedEvent data)
         {
             byte[] bytes = data.Data;
             byte header = bytes[0];
@@ -53,11 +47,12 @@ namespace EppNet.Processes
             if (dgRegistration == null)
             {
                 Notify.Error(new TemplatedMessage("Received new datagram of unknown type with header {id}! Is it registered correctly?", header));
-                return;
+                return false;
             }
 
             data.Datagram = dgRegistration.NewInstance() as IDatagram;
             data.Datagram.Read();
+            return true;
         }
 
         public void HandlePacket(Peer peer, Packet packet, byte channelID, int timeoutMs = 10)
@@ -66,13 +61,7 @@ namespace EppNet.Processes
             packet.CopyTo(data);
 
             Action<PacketReceivedEvent> setupAction = (PacketReceivedEvent @event) => SetupPacket(@event, peer, data, channelID);
-            bool fetched = this.TryGetAndPublishEvent(setupAction);
-
-            if (!fetched)
-            {
-                // Let's retry for up to our timeout interval
-                _ = this.TryGetAndPublishEventAsync(setupAction, () => DropPacket(data), timeoutMs);
-            }
+            CreateAndWrite(setupAction);
         }
 
         public void SetupPacket(PacketReceivedEvent @event, Peer peer, byte[] data, byte channelID)
@@ -86,7 +75,6 @@ namespace EppNet.Processes
             DroppedPackets++;
             Notify.Warning("Dropped packet!");
         }
-
     }
 
 

@@ -4,12 +4,11 @@
 /// Author: Maverick Liberty
 //////////////////////////////////////////////
 
-using Disruptor;
-
 using ENet;
 
 using EppNet.Data.Datagrams;
 using EppNet.Logging;
+using EppNet.Processes;
 using EppNet.Processes.Events;
 using EppNet.Services;
 using EppNet.Utilities;
@@ -20,7 +19,7 @@ using System.Collections.Concurrent;
 namespace EppNet.Messaging
 {
 
-    public class ChannelService : Service, IEventHandler<PacketReceivedEvent>
+    public class ChannelService : Service, IBufferEventHandler<PacketReceivedEvent>
     {
 
         protected readonly ConcurrentDictionary<byte, Channel> _channels;
@@ -30,13 +29,15 @@ namespace EppNet.Messaging
             this._channels = new();
         }
 
-        public void OnEvent(PacketReceivedEvent data, long sequence, bool endOfBatch)
+        public bool Handle(ref PacketReceivedEvent data)
         {
             // Let's try to fetch the channel by id
             Channel channel = GetChannelById(data.ChannelID);
 
             if (channel != null)
                 channel.ReceiveOrQueue(data.Datagram);
+
+            return true;
         }
 
         public bool TrySendTo(Peer peer, IDatagram datagram, PacketFlags flags)

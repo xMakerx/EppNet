@@ -4,8 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using Disruptor.Dsl;
-
 using ENet;
 
 using EppNet.Attributes;
@@ -109,7 +107,6 @@ namespace EppNet.Sim
         protected bool _initialized;
 
         protected Timer _tickerTimer;
-        protected Disruptor<SimulationTickEvent> _tickQueue;
         protected bool _stopRequested;
         protected bool _running;
 
@@ -124,7 +121,6 @@ namespace EppNet.Sim
             Simulation._instance = this;
             this._initialized = false;
             this._tickerTimer = null;
-            this._tickQueue = null;
             this._stopRequested = false;
             this._running = false;
 
@@ -186,8 +182,6 @@ namespace EppNet.Sim
             }
 
             _stopRequested = false;
-
-            _tickQueue = new Disruptor<SimulationTickEvent>(() => new SimulationTickEvent(), ringBufferSize: 1024);
             
             // FIXME: Setup processing order and start disruptor
 
@@ -233,15 +227,7 @@ namespace EppNet.Sim
                 _running = false;
 
                 // FIXME: Clear queues here?
-                _tickQueue.Shutdown();
                 return;
-            }
-
-            using (var scope = _tickQueue.PublishEvent())
-            {
-                SimulationTickEvent tickEvent = scope.Event();
-                tickEvent.Initialize((int) scope.Sequence, Clock.Time);
-                Log.Information("Tick");
             }
 
         }

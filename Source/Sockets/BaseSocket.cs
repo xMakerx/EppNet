@@ -179,7 +179,7 @@ namespace EppNet.Sockets
 
         public virtual void OnPacketReceived(Peer peer, Packet packet, byte channelId)
         {
-            _packetDeserializer.HandlePacket(peer, packet, channelId);
+            //_packetDeserializer.HandlePacket(peer, packet, channelId);
         }
 
         public virtual void Tick(float delta)
@@ -301,7 +301,7 @@ namespace EppNet.Sockets
 
         public void Dispose(bool disposing)
         {
-            _packetDeserializer.Halt();
+            _packetDeserializer.Cancel();
             Clock?.Stop();
 
             if (!IsServer())

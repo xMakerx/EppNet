@@ -16,7 +16,7 @@ using EppNet.Time;
 namespace EppNet.Processes.Events
 {
 
-    public class PacketReceivedEvent : RingBufferEvent
+    public class PacketReceivedEvent : IBufferEvent
     {
 
 
@@ -25,12 +25,15 @@ namespace EppNet.Processes.Events
         public byte[] Data { internal set; get; }
         public byte ChannelID { internal set; get; }
 
+        public bool Disposed { internal set; get; }
+
         /// <summary>
         /// Monotonic time of reception
         /// </summary>
         public Timestamp MonoTimestamp { internal set; get; }
 
         public IDatagram Datagram { internal set; get; }
+        public bool ShouldContinue { set; get; }
 
         public PacketReceivedEvent()
         {
@@ -47,15 +50,24 @@ namespace EppNet.Processes.Events
             this.MonoTimestamp = Timestamp.FromMonoNow();
         }
 
-        public override void Dispose()
+        public void Initialize()
+        {
+            this.Disposed = false;
+        }
+
+        public void Cleanup()
         {
             this.Datagram = null;
             this.Sender = null;
             this.Data = null;
             this.ChannelID = 0;
             this.MonoTimestamp = default;
+            this.Disposed = true;
         }
 
+        public bool IsDisposed() => Disposed;
+
+        public void Dispose() => Cleanup();
     }
 
 }
