@@ -46,7 +46,7 @@ E++Net will take care of the rest!
 > **No!** E++Net is a general purpose networking library that is designed with freedom in mind.
 >
 > ## Does E++Net support multi-threading?
-> **Yes!** E++Net internally utilizes a .NET port of [LMAX Exchange's Disruptor](https://github.com/LMAX-Exchange/disruptor) called [Disruptor-Net](https://github.com/disruptor-net/Disruptor-net) for high throughput messaging.
+> **Yes!** E++Net internally utilizes [System.Threading.Channels](https://learn.microsoft.com/en-us/dotnet/core/extensions/channels) for high throughput messaging.
 >
 > ## Is E++Net memory or bandwidth intensive?
 > E++Net leverages [Microsoft's RecyclableMemoryStreams](https://github.com/microsoft/Microsoft.IO.RecyclableMemoryStream) (memory stream pooling) and stack allocated byte arrays for datagram reading and writing.
@@ -66,8 +66,7 @@ This project has been inspired by:
 
 ### Special Thanks
 - [Tanner Gooding](https://github.com/tannergooding) Microsoft .NET Team - Architecture advice
+- [Stuart Turner](https://github.com/viceroypenguin) Architecture advice
 - [Brian Lach](https://github.com/lachbr) - For listening to my ramblings, rants, and giving advice
 - [Stanislav Denisov](https://github.com/nxrighthere/) - Creator and Maintainer of C# port of ENet
-- [Olivier Coanet](https://github.com/ocoanet) - Creator and Maintainer of C# port of LMAX Group's Disruptor
 - [Lee Salzman](https://github.com/lsalzman) - Creator of ENet (to my knowledge)
-- [LMAX Group](https://lmax.com) - Inventor of the disruptor/ring buffer paradigm used for commands
