@@ -18,26 +18,30 @@ using System.Diagnostics.CodeAnalysis;
 namespace EppNet.Processes
 {
 
-    public class PacketDeserializer : MultithreadedBuffer<PacketReceivedEvent>, IBufferEventHandler<PacketReceivedEvent>
+    public class PacketDeserializer : IBufferEventHandler<PacketReceivedEvent>, ILoggable
     {
 
         public int DroppedPackets { private set; get; }
         public long DroppedBytes { private set; get; }
 
+        public ILoggable Notify { get => this; }
+
         protected BaseSocket _socket;
         protected DatagramRegister _dgRegister;
+        protected MultithreadedBuffer<PacketReceivedEvent> _buffer;
 
-        public PacketDeserializer([NotNull] BaseSocket socket, int bufferSize) : base(socket.Node, 
-            bufferSize)
+        public PacketDeserializer([NotNull] BaseSocket socket, int bufferSize)
         {
             this._socket = socket;
+
+            MultithreadedBufferBuilder<PacketReceivedEvent> builder = new(socket.Node, bufferSize);
+            this._buffer = builder.ThenUseHandlers(this).ThenUseHandlers(socket.ChannelService).Build();
+
             this._dgRegister = DatagramRegister.Get();
             this.DroppedBytes = 0;
-
-            this.HandleEventsWith(this).Then(socket.ChannelService);
         }
 
-        public bool Handle(ref PacketReceivedEvent data)
+        public bool Handle(PacketReceivedEvent data)
         {
             byte[] bytes = data.Data;
             byte header = bytes[0];
@@ -55,13 +59,16 @@ namespace EppNet.Processes
             return true;
         }
 
+        public void Start() => _buffer.Start();
+        public void Cancel() => _buffer.Cancel();
+
         public void HandlePacket(Peer peer, Packet packet, byte channelID, int timeoutMs = 10)
         {
             byte[] data = new byte[packet.Length];
             packet.CopyTo(data);
 
             Action<PacketReceivedEvent> setupAction = (PacketReceivedEvent @event) => SetupPacket(@event, peer, data, channelID);
-            CreateAndWrite(setupAction);
+            _buffer.CreateAndWrite(setupAction);
         }
 
         public void SetupPacket(PacketReceivedEvent @event, Peer peer, byte[] data, byte channelID)

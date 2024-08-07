@@ -29,7 +29,7 @@ namespace EppNet.Messaging
             this._channels = new();
         }
 
-        public bool Handle(ref PacketReceivedEvent data)
+        public bool Handle(PacketReceivedEvent data)
         {
             // Let's try to fetch the channel by id
             Channel channel = GetChannelById(data.ChannelID);

@@ -1,18 +1,16 @@
 ﻿/////////////////////////////////////////////
 /// Filename: MultithreadedBuffer.cs
 /// Date: August 6, 2024
-/// Author: Maverick Liberty
+/// Authors: Maverick Liberty, Stuart Turner
 //////////////////////////////////////////////
 
 using EppNet.Logging;
 using EppNet.Node;
-using EppNet.Utilities;
+
 using Microsoft.Extensions.ObjectPool;
+
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;

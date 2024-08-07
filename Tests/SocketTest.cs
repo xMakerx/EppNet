@@ -4,10 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using BenchmarkDotNet.Toolchains.Roslyn;
-
-using EppNet.Core;
-using EppNet.Data;
 using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Processes;
@@ -15,7 +11,6 @@ using EppNet.Sockets;
 
 using System;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace EppNet.Tests
@@ -59,7 +54,7 @@ namespace EppNet.Tests
     public class TestEventHandler : IBufferEventHandler<TestEvent>
     {
 
-        public bool Handle(ref TestEvent e)
+        public bool Handle(TestEvent e)
         {
             e.Builder.Append("Your number: ");
             e.Builder.Append(e.Number);
@@ -70,7 +65,7 @@ namespace EppNet.Tests
 
     public class TestEventHandler2 : IBufferEventHandler<TestEvent>
     {
-        public bool Handle(ref TestEvent e)
+        public bool Handle(TestEvent e)
         {
 
             if (e.Number < 10)
@@ -87,7 +82,7 @@ namespace EppNet.Tests
     public class TestEventHandler3 : IBufferEventHandler<TestEvent>
     {
 
-        public bool Handle(ref TestEvent e)
+        public bool Handle(TestEvent e)
         {
             if (e.Number != 500)
                 e.Builder.AppendLine("BAD!");
@@ -95,7 +90,7 @@ namespace EppNet.Tests
                 e.Builder.AppendLine("..Good");
 
             var s = e.Builder.ToString();
-            Console.Write(s);
+            Task.Run(() => Console.Write(s));
             return true;
         }
 
@@ -120,9 +115,13 @@ namespace EppNet.Tests
 
                 node.TryStart();
 
-                MultithreadedBuffer<TestEvent> buffer = new(node);
+                MultithreadedBufferBuilder<TestEvent> mtbb = new(node);
+                mtbb.ThenUseHandlers(new TestEventHandler())
+                    .ThenUseHandlers(new TestEventHandler2())
+                    .ThenUseHandlers(new TestEventHandler3());
+                MultithreadedBuffer<TestEvent> buffer = mtbb.Build();
+
                 buffer.SetLogLevel(LogLevelFlags.All);
-                buffer.HandleEventsWith(new TestEventHandler()).Then(new TestEventHandler2()).Then(new TestEventHandler3());
                 buffer.Start();
 
                 ConsoleKeyInfo info = Console.ReadKey(true);
