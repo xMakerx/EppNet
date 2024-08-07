@@ -172,6 +172,8 @@ public sealed class MultithreadedBuffer<T> : IDisposable, ILoggable, INodeDescen
                 _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(Buffer._tokenSrc.Token);
                 _processing = true;
 
+                var options = new ParallelOptions { CancellationToken = _tokenSource.Token };
+
                 foreach (var step in Buffer._handlers)
                 {
                     if (!_processing)
@@ -179,7 +181,7 @@ public sealed class MultithreadedBuffer<T> : IDisposable, ILoggable, INodeDescen
 
                     Parallel.ForEach(
                         step,
-                        new() { CancellationToken = _tokenSource.Token },
+                        options,
                         HandleEvent
                     );
                 }
