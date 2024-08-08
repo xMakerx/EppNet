@@ -3,16 +3,26 @@
     <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>EppNet</RootNamespace>
-    <StartupObject>EppNet.Tests.SocketTest</StartupObject>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="packages\Microsoft.NET.Test.Sdk.17.10.0\**" />
+    <Compile Remove="packages\MSTest.TestAdapter.2.2.10\**" />
+    <Compile Remove="packages\MSTest.TestFramework.2.2.10\**" />
+    <Compile Remove="Source\Tests\**" />
+    <EmbeddedResource Remove="packages\Microsoft.NET.Test.Sdk.17.10.0\**" />
+    <EmbeddedResource Remove="packages\MSTest.TestAdapter.2.2.10\**" />
+    <EmbeddedResource Remove="packages\MSTest.TestFramework.2.2.10\**" />
+    <EmbeddedResource Remove="Source\Tests\**" />
+    <None Remove="packages\Microsoft.NET.Test.Sdk.17.10.0\**" />
+    <None Remove="packages\MSTest.TestAdapter.2.2.10\**" />
+    <None Remove="packages\MSTest.TestFramework.2.2.10\**" />
+    <None Remove="Source\Tests\**" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
     <PackageReference Include="ENet-CSharp" Version="2.4.8" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.7" />
     <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.3.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
     <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />

@@ -17,24 +17,26 @@ using System.Threading;
 namespace EppNet.Collections
 {
 
-    public class PageList<T> : IDisposable where T : IPageable, new()
+    public class PageList<T> : IDisposable where T : Pageable, new()
     {
         public readonly int ItemsPerPage;
         public Action<T> OnAllocate;
         public Action<T> OnFree;
 
-        protected readonly float _itemIndexToPageIndexMult;
-        protected internal List<Page<T>> _pages;
+        public readonly float ItemIndexToPageIndexMult;
+        public List<Page<T>> Pages { protected set; get; }
 
-        internal int _pageIndexWithAvaliability;
+        public int PageIndexWithAvailability { get => _pageIndexWithAvailability; }
+
+        internal int _pageIndexWithAvailability;
         private ReaderWriterLockSlim _lock;
 
         public PageList(int itemsPerPage)
         {
             this.ItemsPerPage = itemsPerPage;
-            this._itemIndexToPageIndexMult = 1f / itemsPerPage;
-            this._pages = new List<Page<T>>();
-            this._pageIndexWithAvaliability = -1;
+            this.ItemIndexToPageIndexMult = 1f / itemsPerPage;
+            this.Pages = new List<Page<T>>();
+            this._pageIndexWithAvailability = -1;
             this._lock = new();
         }
 
@@ -44,8 +46,8 @@ namespace EppNet.Collections
             {
                 _lock.EnterReadLock();
 
-                for (int i = 0; i < _pages.Count; i++)
-                    _pages[i].DoOnActive(action);
+                for (int i = 0; i < Pages.Count; i++)
+                    Pages[i].DoOnActive(action);
 
             }
             finally { _lock.ExitReadLock(); }
@@ -56,13 +58,13 @@ namespace EppNet.Collections
             try
             {
                 _lock.EnterWriteLock();
-                for (int i = 0; i < _pages.Count; i++)
+                for (int i = 0; i < Pages.Count; i++)
                 {
-                    Page<T> page = _pages[i];
+                    Page<T> page = Pages[i];
                     page.ClearAll();
                 }
 
-                _pages.Clear();
+                Pages.Clear();
             }
             finally { _lock.ExitWriteLock(); }
         }
@@ -72,7 +74,7 @@ namespace EppNet.Collections
             try
             {
                 _lock.EnterWriteLock();
-                Iterator<Page<T>> iterator = _pages.Iterator();
+                Iterator<Page<T>> iterator = Pages.Iterator();
                 int purged = 0;
 
                 while (iterator.HasNext())
@@ -81,7 +83,7 @@ namespace EppNet.Collections
 
                     if (page.IsEmpty())
                     {
-                        _pages.Remove(page);
+                        Pages.Remove(page);
                         purged++;
                     }
                 }
@@ -95,14 +97,14 @@ namespace EppNet.Collections
 
         public bool TryAllocate(in ulong id, out T allocated)
         {
-            int pageIndex = (int) (id * _itemIndexToPageIndexMult);
+            int pageIndex = (int) (id * ItemIndexToPageIndexMult);
 
             try
             {
                 // We might have to allocate a page
                 _lock.EnterUpgradeableReadLock();
 
-                if ((pageIndex + 1) > _pages.Count)
+                if ((pageIndex + 1) > Pages.Count)
                 {
 
                     try
@@ -111,12 +113,12 @@ namespace EppNet.Collections
                         _lock.EnterWriteLock();
 
                         // We don't have a page for this
-                        int pagesToAllocate = (pageIndex + 1) - _pages.Count;
+                        int pagesToAllocate = (pageIndex + 1) - Pages.Count;
 
                         for (int i = 0; i < pagesToAllocate; i++)
                         {
-                            Page<T> newPage = new(this, _pages.Count + i);
-                            _pages.Add(newPage);
+                            Page<T> newPage = new(this, Pages.Count + i);
+                            Pages.Add(newPage);
                         }
                     }
                     finally { _lock.ExitWriteLock(); }
@@ -124,7 +126,7 @@ namespace EppNet.Collections
                 }
 
                 // Fetch the appropriate page
-                Page<T> page = _pages[pageIndex];
+                Page<T> page = Pages[pageIndex];
                 return page.TryAllocate(id, out allocated);
             }
             finally { _lock.ExitUpgradeableReadLock();  }
@@ -140,9 +142,9 @@ namespace EppNet.Collections
                 // We might have to allocate a page.
                 _lock.EnterUpgradeableReadLock();
 
-                if (_pageIndexWithAvaliability != -1)
+                if (PageIndexWithAvailability != -1)
                     // We know that this page has availability
-                    page = _pages[_pageIndexWithAvaliability];
+                    page = Pages[PageIndexWithAvailability];
                 else
                 {
                     try
@@ -151,8 +153,8 @@ namespace EppNet.Collections
 
                         // We don't have a page with availability
                         // Allocate one.
-                        page = new Page<T>(this, _pages.Count);
-                        _pages.Add(page);
+                        page = new Page<T>(this, Pages.Count);
+                        Pages.Add(page);
 
                     }
                     finally { _lock.ExitWriteLock(); }
@@ -190,12 +192,12 @@ namespace EppNet.Collections
                 // This is a read-only operation
                 _lock.EnterReadLock();
 
-                int pageIndex = (int) (id * _itemIndexToPageIndexMult);
+                int pageIndex = (int) (id * ItemIndexToPageIndexMult);
 
-                if (pageIndex >= _pages.Count)
+                if (pageIndex >= Pages.Count)
                     return true;
 
-                Page<T> page = _pages[pageIndex];
+                Page<T> page = Pages[pageIndex];
                 return page[(int) (id - (ulong) page.StartIndex)].IsFree();
             }
             finally { _lock.ExitReadLock(); }
@@ -208,15 +210,15 @@ namespace EppNet.Collections
             try
             {
                 _lock.EnterReadLock();
-                int pageIndex = (int) (id * _itemIndexToPageIndexMult);
+                int pageIndex = (int) (id * ItemIndexToPageIndexMult);
 
-                if (pageIndex >= _pages.Count)
+                if (pageIndex >= Pages.Count)
                 {
                     item = default;
                     return false;
                 }
 
-                Page<T> page = _pages[pageIndex];
+                Page<T> page = Pages[pageIndex];
                 item = page[(int) (id - ((ulong) page.StartIndex))];
                 return true;
 
@@ -249,13 +251,28 @@ namespace EppNet.Collections
 
     public interface IPageable : IDisposable
     {
-        public IPage Page { internal set; get; }
-        public long ID { set; get; }
-
         public bool IsFree();
+        public IPage GetPage();
     }
 
-    public class Page<T> : IPage where T : IPageable, new()
+    public abstract class Pageable : IPageable
+    {
+
+        public IPage Page { internal set; get; }
+        public long ID { internal set; get; }
+        public bool Allocated { internal set; get; }
+
+        public virtual void Dispose()
+        {
+            this.Allocated = false;
+        }
+
+        public bool IsFree() => !Allocated;
+        public IPage GetPage() => Page;
+
+    }
+
+    public class Page<T> : IPage where T : Pageable, new()
     {
 
         internal const int _primSize = 64;
@@ -386,6 +403,7 @@ namespace EppNet.Collections
 
             int index = (int)item.ID;
 
+            item.Allocated = false;
             item.Dispose();
             _Internal_UpdateBit(index, false);
             List.OnFree?.Invoke(item);
@@ -495,8 +513,8 @@ namespace EppNet.Collections
                 if (firstFree != -1)
                 {
                     Interlocked.Exchange(ref AvailableIndex, firstFree);
-                    if (List._pageIndexWithAvaliability == -1 || List._pageIndexWithAvaliability > Index)
-                        Interlocked.Exchange(ref List._pageIndexWithAvaliability, Index);
+                    if (List.PageIndexWithAvailability == -1 || List.PageIndexWithAvailability > Index)
+                        Interlocked.Exchange(ref List._pageIndexWithAvailability, Index);
                 }
 
             } finally { _lock.ExitWriteLock(); }
@@ -508,6 +526,7 @@ namespace EppNet.Collections
             _Internal_UpdateBit(index, true);
 
             allocated = this[index];
+            allocated.Allocated = true;
             List.OnAllocate?.Invoke(allocated);
 
             // We just completed an allocation, we are not empty.

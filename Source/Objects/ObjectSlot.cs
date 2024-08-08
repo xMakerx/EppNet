@@ -12,10 +12,8 @@ using System;
 namespace EppNet.Objects
 {
 
-    public class ObjectSlot : IPageable, IEquatable<ObjectSlot>, ICommandTarget
+    public class ObjectSlot : Pageable, IEquatable<ObjectSlot>, ICommandTarget
     {
-
-
         #region Operators
 
         /// <summary>
@@ -47,14 +45,6 @@ namespace EppNet.Objects
 
         #endregion
 
-        public IPage Page { set; get; }
-
-        /// <summary>
-        /// The ID associated with this slot<br/>
-        /// If this represents a valid ObjectSlot, the ID would be positive.
-        /// </summary>
-        public long ID { set; get; }
-
         /// <summary>
         /// The state associated with the <see cref="ObjectAgent"/> in this slot.
         /// </summary>
@@ -82,8 +72,6 @@ namespace EppNet.Objects
 
         private EnumObjectState _state;
 
-        internal bool _TESTS_ForceUsed = false;
-
         /// <summary>
         /// Instantiates a new default <see cref="ObjectSlot"/> with ID -1, <see cref="EnumObjectState.Unknown"/>,
         /// and a null <see cref="ObjectAgent"/>.
@@ -97,21 +85,14 @@ namespace EppNet.Objects
             this.Agent = null;
         }
 
-        public ObjectSlot(IPage page, long id) : this()
-        {
-            this.Page = page;
-            this.ID = id;
-        }
-
-        public void Dispose()
+        public override void Dispose()
         {
             Agent?.Dispose();
             Agent = null;
 
             _state = EnumObjectState.Unknown;
+            base.Dispose();
         }
-
-        public bool IsFree() => !_TESTS_ForceUsed || (!_TESTS_ForceUsed && Agent == null);
 
         /// <summary>
         /// Checks if the specified object is a <see cref="ObjectSlot"/> with the same ID

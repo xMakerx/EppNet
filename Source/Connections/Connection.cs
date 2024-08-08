@@ -24,7 +24,7 @@ namespace EppNet.Connections
     /// who organized.
     /// </summary>
 
-    public class Connection : IPageable, INodeDescendant, ILoggable
+    public class Connection : Pageable, INodeDescendant, ILoggable
     {
 
         public ILoggable Notify { get => this; }
@@ -62,17 +62,6 @@ namespace EppNet.Connections
 
         public bool IsAuthenticated { internal set; get; }
 
-        /// <summary>
-        /// In scenarios where this connection is part of a PageList, this is the page we're associated
-        /// with.
-        /// </summary>
-        public IPage Page { set; get; }
-        
-        /// <summary>
-        /// In scenarios where this connection is part of a page list this equals the page list's id.
-        /// </summary>
-        public long ID { set; get; }
-
         private ChannelService _channelService;
 
         public Connection()
@@ -102,12 +91,13 @@ namespace EppNet.Connections
             this.IsAuthenticated = false;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             this.ENet_Peer = default;
             this.ENet_ID = default;
             this.EstablishedMs = default;
             this.IsAuthenticated = false;
+            base.Dispose();
         }
 
         /// <summary>
@@ -165,7 +155,5 @@ namespace EppNet.Connections
         public bool IsServer() => !IsFree() && ENet_ID == 0;
 
         public override string ToString() => $"Connection ID {ENet_ID} {ENet_Peer.IP}:{ENet_Peer.Port}";
-
-        public bool IsFree() => ENet_Peer.Equals(default(Peer));
     }
 }

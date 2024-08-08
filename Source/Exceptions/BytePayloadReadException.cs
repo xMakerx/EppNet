@@ -41,7 +41,7 @@ namespace EppNet.Exceptions
         public BytePayloadReadException(BytePayload payload, int errorCode) : base()
         {
             this.Payload = payload;
-            this.Position = Payload._stream.Position;
+            this.Position = Payload.Stream.Position;
             this.Length = Payload.Length;
             this.ErrorCode = errorCode;
         }

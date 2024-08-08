@@ -145,11 +145,11 @@ namespace EppNet.Data
         {
             get
             {
-                return _stream != null ? _stream.Length : 0;
+                return Stream != null ? Stream.Length : 0;
             }
         }
 
-        protected internal RecyclableMemoryStream _stream;
+        public RecyclableMemoryStream Stream { protected set; get; }
 
         /// <summary>
         /// Initializes an empty new BytePayload. A memory stream is not fetched from the pool
@@ -159,7 +159,7 @@ namespace EppNet.Data
         public BytePayload()
         {
             this.PackedData = null;
-            this._stream = null;
+            this.Stream = null;
         }
 
         /// <summary>
@@ -170,16 +170,16 @@ namespace EppNet.Data
 
         public BytePayload(byte[] dataIn) : this()
         {
-            _stream = ObtainStream(dataIn);
-            _stream.Seek(0, System.IO.SeekOrigin.Begin);
+            Stream = ObtainStream(dataIn);
+            Stream.Seek(0, System.IO.SeekOrigin.Begin);
         }
 
         public bool Advance(int byteLength)
         {
-            if (_stream == null)
+            if (Stream == null)
                 return false;
 
-            _stream.Advance(byteLength);
+            Stream.Advance(byteLength);
             return true;
         }
 
@@ -350,13 +350,13 @@ namespace EppNet.Data
 
         public virtual byte[] Pack()
         {
-            if (_stream == null)
+            if (Stream == null)
                 return null;
 
             if (PackedData == null)
             {
-                this.PackedData = new byte[_stream.Length];
-                _stream.WriteTo(PackedData);
+                this.PackedData = new byte[Stream.Length];
+                Stream.WriteTo(PackedData);
             }
 
             return PackedData;
@@ -365,7 +365,7 @@ namespace EppNet.Data
         public virtual void Reset()
         {
 
-            bool hadStream = _stream != null;
+            bool hadStream = Stream != null;
 
             Dispose();
 
@@ -380,8 +380,8 @@ namespace EppNet.Data
 
         public virtual void Dispose()
         {
-            _stream?.Dispose();
-            _stream = null;
+            Stream?.Dispose();
+            Stream = null;
 
             PackedData = null;
         }
@@ -395,7 +395,7 @@ namespace EppNet.Data
         public string ReadString(int length)
         {
             Span<byte> buffer = stackalloc byte[length];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
 
             return Encoder.GetString(buffer);
         }
@@ -491,7 +491,7 @@ namespace EppNet.Data
         public void WriteUInt8(byte input)
         {
             EnsureReadyToWrite();
-            _stream.WriteByte(input);
+            Stream.WriteByte(input);
         }
 
         /// <summary>
@@ -504,8 +504,8 @@ namespace EppNet.Data
 
         public byte ReadUInt8()
         {
-            long pos = _stream.Position;
-            int result = _stream.ReadByte();
+            long pos = Stream.Position;
+            int result = Stream.ReadByte();
 
             if (result == -1)
             {
@@ -536,7 +536,7 @@ namespace EppNet.Data
         public void WriteInt8(sbyte input)
         {
             EnsureReadyToWrite();
-            _stream.WriteByte((byte)input);
+            Stream.WriteByte((byte)input);
         }
 
         /// <summary>
@@ -549,8 +549,8 @@ namespace EppNet.Data
 
         public sbyte ReadInt8()
         {
-            long pos = _stream.Position;
-            int result = _stream.ReadByte();
+            long pos = Stream.Position;
+            int result = Stream.ReadByte();
 
             if (result == -1)
             {
@@ -581,8 +581,8 @@ namespace EppNet.Data
         public void WriteInt16(short input)
         {
             EnsureReadyToWrite();
-            BinaryPrimitives.WriteInt16LittleEndian(_stream.GetSpan(2), input);
-            _stream.Advance(2);
+            BinaryPrimitives.WriteInt16LittleEndian(Stream.GetSpan(2), input);
+            Stream.Advance(2);
         }
 
         /// <summary>
@@ -592,7 +592,7 @@ namespace EppNet.Data
         public short ReadInt16()
         {
             Span<byte> buffer = stackalloc byte[2];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
             short output = BinaryPrimitives.ReadInt16LittleEndian(buffer);
             return output;
         }
@@ -618,8 +618,8 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            BinaryPrimitives.WriteUInt16LittleEndian(_stream.GetSpan(2), input);
-            _stream.Advance(2);
+            BinaryPrimitives.WriteUInt16LittleEndian(Stream.GetSpan(2), input);
+            Stream.Advance(2);
         }
 
         /// <summary>
@@ -629,7 +629,7 @@ namespace EppNet.Data
         public ushort ReadUInt16()
         {
             Span<byte> buffer = stackalloc byte[2];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
             ushort output = BinaryPrimitives.ReadUInt16LittleEndian(buffer);
 
             return output;
@@ -657,8 +657,8 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            BinaryPrimitives.WriteUInt32LittleEndian(_stream.GetSpan(4), input);
-            _stream.Advance(4);
+            BinaryPrimitives.WriteUInt32LittleEndian(Stream.GetSpan(4), input);
+            Stream.Advance(4);
         }
 
         /// <summary>
@@ -668,7 +668,7 @@ namespace EppNet.Data
         public uint ReadUInt32()
         {
             Span<byte> buffer = stackalloc byte[4];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
             uint output = BinaryPrimitives.ReadUInt32LittleEndian(buffer);
 
             return output;
@@ -696,8 +696,8 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            BinaryPrimitives.WriteInt32LittleEndian(_stream.GetSpan(4), input);
-            _stream.Advance(4);
+            BinaryPrimitives.WriteInt32LittleEndian(Stream.GetSpan(4), input);
+            Stream.Advance(4);
         }
 
         /// <summary>
@@ -707,7 +707,7 @@ namespace EppNet.Data
         public int ReadInt32()
         {
             Span<byte> buffer = stackalloc byte[4];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
             int output = BinaryPrimitives.ReadInt32LittleEndian(buffer);
 
             return output;
@@ -734,8 +734,8 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            BinaryPrimitives.WriteUInt64LittleEndian(_stream.GetSpan(8), input);
-            _stream.Advance(8);
+            BinaryPrimitives.WriteUInt64LittleEndian(Stream.GetSpan(8), input);
+            Stream.Advance(8);
         }
 
         /// <summary>
@@ -745,7 +745,7 @@ namespace EppNet.Data
         public ulong ReadUInt64()
         {
             Span<byte> buffer = stackalloc byte[8];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
             ulong output = BinaryPrimitives.ReadUInt64LittleEndian(buffer);
 
             return output;
@@ -773,8 +773,8 @@ namespace EppNet.Data
         {
             EnsureReadyToWrite();
 
-            BinaryPrimitives.WriteInt64LittleEndian(_stream.GetSpan(8), input);
-            _stream.Advance(8);
+            BinaryPrimitives.WriteInt64LittleEndian(Stream.GetSpan(8), input);
+            Stream.Advance(8);
         }
 
         /// <summary>
@@ -784,7 +784,7 @@ namespace EppNet.Data
         public long ReadInt64()
         {
             Span<byte> buffer = stackalloc byte[8];
-            int read = _stream.Read(buffer);
+            int read = Stream.Read(buffer);
             long output = BinaryPrimitives.ReadInt64LittleEndian(buffer);
 
             return output;
@@ -905,7 +905,7 @@ namespace EppNet.Data
 
         public double GetSizeKB()
         {
-            float length = (_stream != null) ? _stream.Length : 0;
+            float length = (Stream != null) ? Stream.Length : 0;
             return (length * 0.001).Round(3);
         }
 
@@ -915,7 +915,18 @@ namespace EppNet.Data
 
         public virtual void EnsureReadyToWrite()
         {
-            _stream ??= ObtainStream();
+            Stream ??= ObtainStream();
+        }
+
+        /// <summary>
+        /// Closes the existing stream (if necessary) and obtains
+        /// a new one.
+        /// </summary>
+
+        public virtual void ResetStream()
+        {
+            Stream?.Close();
+            Stream = ObtainStream();
         }
 
         /// <summary>
@@ -928,11 +939,11 @@ namespace EppNet.Data
 
         protected void _Internal_WriteString(string input)
         {
-            Span<byte> span = _stream.GetSpan(input.Length);
+            Span<byte> span = Stream.GetSpan(input.Length);
             ReadOnlySequence<char> chars = new(input.AsMemory());
 
             int written = Encoder.GetBytes(chars, span);
-            _stream.Advance(written);
+            Stream.Advance(written);
         }
 
     }
