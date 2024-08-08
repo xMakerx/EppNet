@@ -29,6 +29,9 @@ namespace EppNet.Sockets
     public abstract class BaseSocket : ILoggable, IDisposable
     {
 
+        public const string LocalHost = "localhost";
+        public const string LocalHostIP = "127.0.0.1";
+
         public ILoggable Notify => this;
 
         public NetworkNode Node { get => _node; }
@@ -85,8 +88,14 @@ namespace EppNet.Sockets
 
             set
             {
-                if (string.IsNullOrEmpty(value) || _hostName.Equals(value))
+                if (_hostName != null && value?.Equals(_hostName) == true)
                     return;
+
+                if (string.IsNullOrEmpty(value) || value.Equals(LocalHost, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Notify.Warning(new TemplatedMessage("Automatically setting host name to {default}...", LocalHostIP));
+                    value = LocalHostIP;
+                }
 
                 if (_enet_addr.SetHost(value))
                     _hostName = value;

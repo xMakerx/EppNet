@@ -6,7 +6,10 @@
 
 using ENet;
 
+using EppNet.Exceptions;
+using EppNet.Logging;
 using EppNet.Node;
+using EppNet.Sockets;
 
 using System;
 
@@ -58,6 +61,59 @@ namespace EppNet
             Library.Deinitialize();
             ENet_Initialized = false;
             return true;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="NetworkNode"/> with a default <see cref="ServerSocket"/> associated with it.<br/>
+        /// The following characteristics are set by default if not changed explicitly:<br/>
+        /// - <see cref="NetworkNode.Name"/> is set to "DefaultServer"<br/>
+        /// - <see cref="Exceptions.ExceptionStrategy"/> is set to <see cref="Exceptions.ExceptionStrategy.ThrowAll"/>, and<br/>
+        /// - <see cref="LogLevelFlags"/> are set to <see cref="LogLevelFlags.InfoWarnErrorFatal"/>.<br/>
+        /// <b>NOTE: </b>You are responsible for disposing of the node when you're done using it!
+        /// </summary>
+        /// <param name="listenPort">The port to listen for new clients on</param>
+        /// <param name="name">The </param>
+        /// <returns>A newly minted NetworkNode!</returns>
+
+        public static NetworkNode CreateServer(int listenPort, string name = "DefaultServer", 
+            ExceptionStrategy exceptStrat = ExceptionStrategy.ThrowAll,
+            LogLevelFlags logLevelFlags = LogLevelFlags.InfoWarnErrorFatal)
+        {
+            NetworkNodeBuilder builder = new NetworkNodeBuilder(name, Distribution.Server)
+                .SetExceptionStrategy(exceptStrat);
+
+            NetworkNode node = builder.Build();
+            ServerSocket socket = node.Socket as ServerSocket;
+            socket.Port = (ushort) listenPort;
+            socket.Notify.SetLogLevel(logLevelFlags);
+            return node;
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="NetworkNode"/> with a default <see cref="ClientSocket"/> associated with it.<br/>
+        /// The following characteristics are set by default if not changed explicitly:<br/>
+        /// - <see cref="NetworkNode.Name"/> is set to "DefaultServer"<br/>
+        /// - <see cref="Exceptions.ExceptionStrategy"/> is set to <see cref="Exceptions.ExceptionStrategy.ThrowAll"/>, and<br/>
+        /// - <see cref="LogLevelFlags"/> are set to <see cref="LogLevelFlags.InfoWarnErrorFatal"/>.<br/>
+        /// <b>NOTE: </b>You are responsible for disposing of the node when you're done using it!
+        /// </summary>
+        /// <param name="listenPort">The port to listen for new clients on</param>
+        /// <param name="name">The </param>
+        /// <returns>A newly minted NetworkNode!</returns>
+
+        public static NetworkNode CreateClient(string ipAddress, int port, string name = "DefaultClient",
+            ExceptionStrategy exceptStrat = ExceptionStrategy.ThrowAll,
+            LogLevelFlags logLevelFlags = LogLevelFlags.InfoWarnErrorFatal)
+        {
+            NetworkNodeBuilder builder = new NetworkNodeBuilder(name, Distribution.Client)
+                .SetExceptionStrategy(exceptStrat);
+
+            NetworkNode node = builder.Build();
+            ClientSocket socket = node.Socket as ClientSocket;
+            socket.HostName = ipAddress;
+            socket.Port = (ushort) port;
+            socket.Notify.SetLogLevel(logLevelFlags);
+            return node;
         }
 
         /// <summary>

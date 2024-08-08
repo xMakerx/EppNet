@@ -100,17 +100,8 @@ namespace EppNet.Tests
         public SocketTest()
         {
 
-            NetworkNodeBuilder builder = new NetworkNodeBuilder("SocketTest", Distribution.Server)
-                .SetExceptionStrategy(Exceptions.ExceptionStrategy.LogOnly);
-
-            NetworkNode node = builder.Build();
-
-            using (node)
+            using (NetworkNode node = EppNet.CreateServer(4296, "SocketTest", Exceptions.ExceptionStrategy.LogOnly, LogLevelFlags.All))
             {
-                ServerSocket serverSocket = node.Socket as ServerSocket;
-                serverSocket.Port = 4296;
-                serverSocket.Notify.SetLogLevel(LogLevelFlags.All);
-
                 node.TryStart();
 
                 MultithreadedBufferBuilder<TestEvent> mtbb = new(node);
