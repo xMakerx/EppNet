@@ -7,7 +7,6 @@
 using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Processes;
-using EppNet.Sockets;
 
 using System.Text;
 
