@@ -26,11 +26,8 @@ public interface IBufferEventHandler<T> where T : IBufferEvent
 public interface IBufferEvent : IDisposable
 {
 
-    public bool ShouldContinue { set; get; }
-
     public void Initialize();
     public void Cleanup();
-
     public bool IsDisposed();
 
 }

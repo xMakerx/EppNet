@@ -15,7 +15,6 @@ namespace EppNet.Tests
 
     public class TestEvent : IBufferEvent
     {
-        public bool ShouldContinue { set; get; }
 
         public int Number { set; get; }
 
@@ -37,7 +36,6 @@ namespace EppNet.Tests
         {
             this.Disposed = false;
             this.Number = Random.Shared.Next(0, 100);
-            this.ShouldContinue = true;
         }
 
         public void SetNumber(int number)
