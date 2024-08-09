@@ -120,7 +120,7 @@ namespace EppNet.Tests
 
                         for (int i = 0; i < 1 + Random.Shared.Next(5); i++)
                         {
-                            buffer.CreateAndWrite(null);
+                            buffer.CreateAndWrite();
                         }
                     }
 

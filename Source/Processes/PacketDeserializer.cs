@@ -60,7 +60,7 @@ namespace EppNet.Processes
         }
 
         public void Start() => _buffer.Start();
-        public void Cancel() => _buffer.Cancel();
+        public void Cancel() => _buffer.Stop();
 
         public void HandlePacket(Peer peer, Packet packet, byte channelID, int timeoutMs = 10)
         {

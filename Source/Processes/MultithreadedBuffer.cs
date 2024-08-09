@@ -6,6 +6,7 @@
 
 using EppNet.Logging;
 using EppNet.Node;
+using EppNet.Services;
 
 using Microsoft.Extensions.ObjectPool;
 
@@ -56,7 +57,7 @@ public sealed class MultithreadedBufferBuilder<T> where T : class, IBufferEvent,
         new(_node, _poolSize, _handlers);
 }
 
-public sealed class MultithreadedBuffer<T> : IDisposable, ILoggable, INodeDescendant where T : class, IBufferEvent, new()
+public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, INodeDescendant where T : class, IBufferEvent, new()
 {
     public NetworkNode Node { get; }
     public ILoggable Notify => this;
@@ -92,24 +93,25 @@ public sealed class MultithreadedBuffer<T> : IDisposable, ILoggable, INodeDescen
 
     public void Dispose()
     {
-        Cancel();
+        Stop();
         _tokenSrc.Dispose();
     }
 
-    public void Start()
+    public bool Start()
     {
         if (_readerTask is not null)
-            return;
+            return false;
 
         // Start tasks
         _readerTask = Task.Run(Read);
         Notify.Debug("Buffer started!");
+        return true;
     }
 
-    public void Cancel()
+    public bool Stop()
     {
         if (_readerTask is null)
-            return;
+            return false;
 
         _tokenSrc.Cancel();
 
@@ -119,13 +121,14 @@ public sealed class MultithreadedBuffer<T> : IDisposable, ILoggable, INodeDescen
 
         OnCanceled?.Invoke();
         Notify.Debug("Buffer canceled!");
+        return true;
     }
 
-    public bool CreateAndWrite(Action<T> action)
+    public bool CreateAndWrite(Action<T> setupAction = null)
     {
         var @event = _pool.Get();
         @event.Initialize();
-        action?.Invoke(@event);
+        setupAction?.Invoke(@event);
         TryWrite(@event);
         return true;
     }
