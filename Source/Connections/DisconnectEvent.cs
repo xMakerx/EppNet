@@ -9,24 +9,16 @@ using EppNet.Time;
 namespace EppNet.Connections
 {
 
-    public readonly struct DisconnectEvent
+    public readonly struct DisconnectEvent(Connection connection, DisconnectReason reason)
     {
 
-        public readonly Connection Connection;
-        public readonly DisconnectReason Reason;
+        public readonly Connection Connection = connection;
+        public readonly DisconnectReason Reason = reason;
 
         /// <summary>
         /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
         /// </summary>
-        public readonly Timestamp Timestamp;
-
-        public DisconnectEvent(Connection connection, DisconnectReason reason)
-        {
-            this.Connection = connection;
-            this.Reason = reason;
-            this.Timestamp = Timestamp.FromMonoNow();
-        }
-
+        public readonly Timestamp Timestamp = Timestamp.FromMonoNow();
     }
 
 }

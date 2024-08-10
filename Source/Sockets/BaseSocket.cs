@@ -183,7 +183,7 @@ namespace EppNet.Sockets
 
         public virtual void OnPeerDisconnected(Peer peer, uint disconnectReasonIdx)
         {
-            ConnectionService.HandleConnectionLost(peer, DisconnectReason.GetFromID(disconnectReasonIdx));
+            ConnectionService.HandleConnectionLost(peer, DisconnectReasons.GetFromID(disconnectReasonIdx));
         }
 
         public virtual void OnPacketReceived(Peer peer, Packet packet, byte channelId)

@@ -88,7 +88,7 @@ namespace EppNet.Connections
                 pageList.Dispose();
         }
 
-        public void EjectAll() => EjectAll(DisconnectReason.Unknown);
+        public void EjectAll() => EjectAll(DisconnectReasons.Unknown);
 
         public void EjectAll(DisconnectReason reason)
         {

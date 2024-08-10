@@ -104,7 +104,7 @@ namespace EppNet.Connections
         /// Forcibly closes the connection.
         /// </summary>
 
-        public void Eject() => Eject(DisconnectReason.Ejected);
+        public void Eject() => Eject(DisconnectReasons.Ejected);
 
         /// <summary>
         /// Forcibly closes the connection with the

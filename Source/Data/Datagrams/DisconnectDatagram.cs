@@ -16,7 +16,7 @@ namespace EppNet.Data.Datagrams
 
         public DisconnectDatagram()
         {
-            this.Reason = DisconnectReason.Quit;
+            this.Reason = DisconnectReasons.Quit;
             this.Header = 0x2;
             this.ChannelID = 0x0;
         }
@@ -30,7 +30,7 @@ namespace EppNet.Data.Datagrams
         {
             base.Write();
 
-            DisconnectReason generic = DisconnectReason.GetFromID(Reason.ID);
+            DisconnectReason generic = DisconnectReasons.GetFromID(Reason.ID);
             byte reasonId = Reason.ID;
 
             if (generic.Message != Reason.Message)
@@ -60,17 +60,13 @@ namespace EppNet.Data.Datagrams
                 reasonMessage = ReadString8();
             }
 
-            DisconnectReason? generic = DisconnectReason.GetFromID(Reason.ID);
+            this.Reason = DisconnectReasons.GetFromID(Reason.ID);
 
-            if (generic != null)
-            {
-                this.Reason = generic.Value;
+            if (Reason == DisconnectReasons.Unknown)
+                Reason = new DisconnectReason(reasonId, reasonMessage);
 
-                if (reasonMessage != string.Empty)
-                    this.Reason.SetMessage(reasonMessage);
-            }
-            else
-                this.Reason = new DisconnectReason(reasonId, reasonMessage);
+            else if (!string.IsNullOrEmpty(reasonMessage))
+                Reason = DisconnectReasons.From(Reason, reasonMessage);
         }
 
         public override void Dispose()
