@@ -9,10 +9,6 @@
 using EppNet.Collections;
 using EppNet.Objects;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using System;
-
 namespace EppNet.Tests
 {
 
@@ -99,7 +95,7 @@ namespace EppNet.Tests
             Page<ObjectSlot> p1 = objs.Pages[0];
             Console.WriteLine(p1.AvailableIndex);
             Console.WriteLine(p1.GetBitString());
-            Assert.IsTrue(!p1.Empty, "Page should not be full!");
+            Assert.IsTrue(!p1.Empty, "Page should not be empty!");
             Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full, so an index should be available!");
         }
 
