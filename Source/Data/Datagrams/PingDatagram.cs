@@ -45,15 +45,15 @@ namespace EppNet.Data.Datagrams
                 return;
             }
 
-            // This happens on the server
-            PingDatagram pong = new PingDatagram()
+            PingDatagram pong = new()
             {
                 ReceivedTime = Time,
-                Time = (float) Sender.Node.Socket.Node.Time.TotalMilliseconds
+                Time = (float)Sender.Node.Socket.Node.Time.TotalMilliseconds
             };
 
-            // Send an acknowledgement!
+            // Send an acknowledgement
             Sender.SendInstant(pong);
+            pong.Dispose();
         }
 
     }

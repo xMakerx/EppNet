@@ -6,10 +6,12 @@
 
 using EppNet.Connections;
 
+using System;
+
 namespace EppNet.Data.Datagrams
 {
 
-    public interface IDatagram
+    public interface IDatagram : IDisposable
     {
 
         public long Size { get; }

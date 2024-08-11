@@ -147,6 +147,7 @@ namespace EppNet.Time
             };
 
             Node.SendInstant(datagram);
+            datagram.Dispose();
         }
 
         public void Synchronize(TimeSpan remoteTimeSpan)

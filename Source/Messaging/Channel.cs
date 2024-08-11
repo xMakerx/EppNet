@@ -105,6 +105,9 @@ namespace EppNet.Messaging
             Interlocked.Increment(ref _datagramsReceived);
             Interlocked.Add(ref _totalBytesReceived, datagram.Size);
             DatagramReceived?.GlobalInvoke(datagram);
+
+            // All done
+            datagram.Dispose();
         }
 
         public void ReceiveQueue()
