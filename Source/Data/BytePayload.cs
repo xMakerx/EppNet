@@ -28,6 +28,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Data
 {
@@ -169,6 +170,11 @@ namespace EppNet.Data
         /// <param name="dataIn"></param>
 
         public BytePayload(byte[] dataIn) : this()
+        {
+            ReadFrom(dataIn);
+        }
+
+        public void ReadFrom([NotNull] byte[] dataIn)
         {
             Stream = ObtainStream(dataIn);
             Stream.Seek(0, System.IO.SeekOrigin.Begin);

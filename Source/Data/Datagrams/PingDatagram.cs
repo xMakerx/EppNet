@@ -5,7 +5,6 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Messaging;
-using EppNet.Sim;
 
 using System;
 
@@ -14,8 +13,8 @@ namespace EppNet.Data.Datagrams
 
     public class PingDatagram : Datagram
     {
-        public ulong SentTime { set; get; }
-        public ulong ReceivedTime { set; get; }
+        public float Time { set; get; }
+        public float ReceivedTime { set; get; }
 
         public PingDatagram()
         {
@@ -27,28 +26,31 @@ namespace EppNet.Data.Datagrams
         public override void Write()
         {
             base.Write();
-            WriteULong(SentTime);
-            WriteULong(ReceivedTime);
+            WriteFloat(Time);
+            WriteFloat(ReceivedTime);
         }
 
         public override void Read()
         {
             base.Read();
 
-            this.SentTime = ReadULong();
+            this.Time = ReadFloat();
 
             if (Sender.IsServer())
             {
-                this.ReceivedTime = ReadULong();
+                this.ReceivedTime = ReadFloat();
 
-                TimeSpan remoteTimeSpan = TimeSpan.FromMilliseconds(ReceivedTime);
+                TimeSpan remoteTimeSpan = TimeSpan.FromMilliseconds(Time);
                 Sender.Node.Socket.Clock.Synchronize(remoteTimeSpan);
                 return;
             }
 
             // This happens on the server
-            PingDatagram pong = new PingDatagram();
-            pong.Write();
+            PingDatagram pong = new PingDatagram()
+            {
+                ReceivedTime = Time,
+                Time = (float) Sender.Node.Socket.Node.Time.TotalMilliseconds
+            };
 
             // Send an acknowledgement!
             Sender.SendInstant(pong);

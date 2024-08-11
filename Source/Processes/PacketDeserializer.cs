@@ -54,8 +54,12 @@ namespace EppNet.Processes
                 return false;
             }
 
-            data.Datagram = dgRegistration.NewInstance() as IDatagram;
-            data.Datagram.Read();
+            Datagram dg = dgRegistration.NewInstance() as Datagram;
+            dg.Sender = data.Sender;
+            dg.ReadFrom(data.Data);
+            data.Datagram = dg;
+
+            dg.Read();
             return true;
         }
 

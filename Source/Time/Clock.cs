@@ -143,7 +143,7 @@ namespace EppNet.Time
 
             PingDatagram datagram = new()
             {
-                SentTime = (ulong)this.Time.Milliseconds
+                Time = (float) Time.TotalMilliseconds
             };
 
             Node.SendInstant(datagram);
