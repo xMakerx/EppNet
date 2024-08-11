@@ -29,13 +29,11 @@ namespace EppNet.Messaging
             this._channels = new();
         }
 
-        public bool Handle(PacketReceivedEvent data)
+        public bool Handle(PacketReceivedEvent @event)
         {
             // Let's try to fetch the channel by id
-            Channel channel = GetChannelById(data.ChannelID);
-
-            if (channel != null)
-                channel.ReceiveOrQueue(data.Datagram);
+            Channel channel = GetChannelById(@event.ChannelID);
+            channel?.ReceiveOrQueue(@event.Datagram);
 
             return true;
         }

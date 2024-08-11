@@ -21,7 +21,7 @@ namespace EppNet.Messaging
     /// This enum represents E++Net reserved channels
     /// </summary>
 
-    public enum Channels
+    public enum Channels : byte
     {
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace EppNet.Messaging
 
             if (Flags.HasFlag(ChannelFlags.ProcessImmediately))
                 Receive(datagram);
-            else
+            else if (datagram.Collectible)
             {
                 lock (_bufferLock)
                     _buffer.Enqueue(datagram);
@@ -208,6 +208,8 @@ namespace EppNet.Messaging
         public static bool operator !=(Channel left, Channel right) => !left.Equals(right);
 
         public static bool operator !=(Channel left, Channels right) => !left.Equals(right);
+
+        public static explicit operator byte(Channel channel) => channel.Id;
     }
 
 }

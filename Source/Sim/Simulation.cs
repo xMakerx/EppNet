@@ -75,8 +75,6 @@ namespace EppNet.Sim
             }
         }
 
-        public static ulong Time => (_instance != null ? _instance.Clock.Time : 0);
-
         public static bool StopRequested
         {
             set
@@ -125,7 +123,7 @@ namespace EppNet.Sim
             this._running = false;
 
             this.Socket = socket;
-            this.Clock = new();
+            //this.Clock = new();
         }
 
         public void Initialize(Callbacks enet_callbacks = null)

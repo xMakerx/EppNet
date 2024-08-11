@@ -6,6 +6,8 @@
 
 using EppNet.Time;
 
+using System;
+
 namespace EppNet.Objects
 {
 
@@ -13,7 +15,7 @@ namespace EppNet.Objects
     {
 
         public readonly ObjectSlot Slot;
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Timestamp;
 
         public ObjectCreatedEvent(ObjectService service, ObjectSlot slot)
         {
@@ -26,7 +28,7 @@ namespace EppNet.Objects
     public readonly struct ObjectDeletedEvent
     {
         public readonly ObjectSlot Slot;
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Timestamp;
 
         public ObjectDeletedEvent(ObjectService service, ObjectSlot slot)
         {
@@ -40,7 +42,7 @@ namespace EppNet.Objects
         public readonly EnumObjectState NewState;
         public readonly EnumObjectState OldState;
 
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Timestamp;
 
         public StateChangedEvent(ObjectAgent agent, EnumObjectState newState, EnumObjectState oldState)
         {
@@ -55,7 +57,7 @@ namespace EppNet.Objects
     {
         public readonly ObjectAgent NewParent;
         public readonly ObjectAgent OldParent;
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Timestamp;
 
         public ParentChangedEvent(ObjectAgent newParent, ObjectAgent oldParent)
         {
@@ -69,7 +71,7 @@ namespace EppNet.Objects
     {
 
         public readonly ObjectAgent Object;
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Timestamp;
 
         public ChildAddedEvent(ObjectAgent @object)
         {
@@ -83,7 +85,7 @@ namespace EppNet.Objects
     {
 
         public readonly ObjectAgent Object;
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Timestamp;
 
         public ChildRemovedEvent(ObjectAgent @object)
         {

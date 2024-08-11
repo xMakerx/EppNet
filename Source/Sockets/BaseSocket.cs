@@ -12,6 +12,7 @@ using EppNet.Messaging;
 using EppNet.Node;
 using EppNet.Processes;
 using EppNet.Time;
+using EppNet.Utilities;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -26,7 +27,7 @@ namespace EppNet.Sockets
         Server      = 2
     }
 
-    public abstract class BaseSocket : ILoggable, IDisposable
+    public abstract class BaseSocket : INodeDescendant, ILoggable, IDisposable
     {
 
         public const string LocalHost = "localhost";
@@ -35,7 +36,33 @@ namespace EppNet.Sockets
         public ILoggable Notify => this;
 
         public NetworkNode Node { get => _node; }
-        public Clock Clock { get => _clock; }
+        
+        public IClock Clock
+        {
+
+            set
+            {
+
+                if (IsOpen())
+                {
+                    InvalidOperationException exception = new InvalidOperationException("Cannot manage the clock with the socket open!");
+
+                    if (Node != null)
+                        Node.HandleException(exception);
+                    else
+                        throw exception;
+
+                    return;
+                }
+
+                // Let's ensure the value is non-null and set it
+                Guard.AgainstNull(value);
+                _clock = value;
+            }
+
+            get => _clock;
+        }
+
         public ConnectionService ConnectionService { get => _connSrv; }
         public ChannelService ChannelService { protected set; get; }
 
@@ -148,7 +175,7 @@ namespace EppNet.Sockets
         private int _maxClients;
 
         protected readonly SocketType _type;
-        internal Clock _clock;
+        internal IClock _clock;
 
         protected PacketDeserializer _packetDeserializer;
 
@@ -166,7 +193,7 @@ namespace EppNet.Sockets
             this._node = null;
             this._connSrv = null;
             this._type = type;
-            this._clock = new();
+            this._clock = null;
             this._ip = _hostName = string.Empty;
             this._port = 0;
             this._packetDeserializer = null;
@@ -193,7 +220,7 @@ namespace EppNet.Sockets
 
         public virtual void Tick(float delta)
         {
-            Clock.Tick(delta);
+            
         }
 
         public virtual void Poll(int timeoutMs = 0)
@@ -287,6 +314,9 @@ namespace EppNet.Sockets
                         break;
                 }
 
+                // Validate that we have all our needed dependencies
+                _Internal_ValidateDependencies();
+
                 // TODO: BaseSocket: Add a way to customize ring buffer size
                 this._packetDeserializer = new(this, 256);
 
@@ -311,7 +341,7 @@ namespace EppNet.Sockets
         public void Dispose(bool disposing)
         {
             _packetDeserializer.Cancel();
-            Clock?.Stop();
+            Clock?.Dispose();
 
             if (!IsServer())
                 _enet_peer?.DisconnectNow(0);
@@ -336,36 +366,6 @@ namespace EppNet.Sockets
 
         public bool CanConnect(Peer peer) => IsOpen() && (_connSrv == null || _connSrv.CanConnect(peer));
 
-        /// <summary>
-        /// Tries to update the <see cref="ClockStrategy"/> of the internal <see cref="Clock"/> if <see cref="IsOpen"/> == false
-        /// </summary>
-        /// <param name="strategy"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-
-        public bool SetClockStrategy([NotNull] ClockStrategy strategy)
-        {
-            if (strategy == null)
-                throw new ArgumentNullException("Must have a valid ClockStrategy instance!");
-
-            if (IsOpen())
-            {
-                InvalidOperationException exception = new InvalidOperationException("Cannot manage the clock with the socket open!");
-
-                if (Node != null)
-                {
-                    Node.HandleException(exception);
-                    return false;
-                }
-
-                // Don't have a node attached. Let's scream
-                throw exception;
-            }
-
-            _clock._strat = strategy;
-            return true;
-        }
-
         internal void _Internal_SetupFor([NotNull] NetworkNode node)
         {
             if (node == null)
@@ -382,7 +382,15 @@ namespace EppNet.Sockets
 
             // Let's set Node to use this
             Node._Internal_SetSocket(this);
+        }
 
+
+        /// <summary>
+        /// Validates that all necessary dependencies have been created. If not,
+        /// we will create them
+        /// </summary>
+        protected void _Internal_ValidateDependencies()
+        {
             // Fetches or creates a connection manager
             _connSrv = Node.Services.GetService<ConnectionService>();
 
@@ -394,6 +402,10 @@ namespace EppNet.Sockets
 
             if (ChannelService == null)
                 ChannelService = new ChannelService(Node.Services);
+
+            // Ensure we have a clock
+            if (Clock == null)
+                _clock = new Clock(this);
         }
 
     }

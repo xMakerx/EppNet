@@ -15,6 +15,12 @@ namespace EppNet.Data.Datagrams
         public long Size { get; }
         public bool Written { get; }
 
+        /// <summary>
+        /// Collectible datagrams are datagrams that are collected within a channel so something can be
+        /// executed with it later on. Set this flag to false if you are executing some code from within the Read function
+        /// </summary>
+        public bool Collectible { get; }
+
         public void Read();
 
         public void Write();

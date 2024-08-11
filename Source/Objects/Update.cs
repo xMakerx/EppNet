@@ -12,17 +12,17 @@ using System;
 namespace EppNet.Objects
 {
 
-    public class Update : IPoolable
+    public class Update
     {
 
-        private static UpdatePool _updatePool = new UpdatePool();
+        //private static UpdatePool _updatePool = new UpdatePool();
 
         /// <summary>
         /// See <see cref="ObjectPool{T}.SetCapacity(int)"/>
         /// </summary>
         /// <param name="capacity"></param>
 
-        public static void SetPoolCapacity(int capacity) => _updatePool.SetCapacity(capacity);
+        //public static void SetPoolCapacity(int capacity) => _updatePool.SetCapacity(capacity);
 
 
         /// <summary>
@@ -30,13 +30,13 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="maxCapacity"></param>
 
-        public static void SetMaxPoolCapacity(int maxCapacity) => _updatePool.SetMaxCapacity(maxCapacity);
+        //public static void SetMaxPoolCapacity(int maxCapacity) => _updatePool.SetMaxCapacity(maxCapacity);
 
         /// <summary>
         /// See <see cref="ObjectPool{T}.Get"/>
         /// </summary>
         /// <returns></returns>
-        private static Update _GetFromPoolOrInstantiate() => _updatePool.Get() as Update;
+        private static Update _GetFromPoolOrInstantiate() => new Update();// _updatePool.Get() as Update;
 
         public static Update For(ObjectAgent objDelegate, ObjectMemberDefinition mDef, object[] args)
         {
@@ -198,7 +198,7 @@ namespace EppNet.Objects
             this._initialized = false;
 
             // Let's try to add back to the pool.
-            _updatePool.TryReturnToPool(this);
+            //_updatePool.TryReturnToPool(this);
         }
 
     }

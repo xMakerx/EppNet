@@ -24,7 +24,7 @@ namespace EppNet.Commands
         public NetworkNode Node { get => _node; }
         public readonly ICommandTarget Target;
 
-        public Timestamp Timestamp { private set; get; }
+        public TimeSpan Timestamp { private set; get; }
 
         protected readonly NetworkNode _node;
 
@@ -38,7 +38,7 @@ namespace EppNet.Commands
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="ArgumentNullException"></exception>
 
-        public CommandContext([NotNull] ICommandTarget target, Timestamp? time)
+        public CommandContext([NotNull] ICommandTarget target, TimeSpan? time = null)
         {
             Guard.AgainstNull(target);
             this.Target = target;
@@ -60,7 +60,7 @@ namespace EppNet.Commands
         /// <param name="time"></param>
         /// <exception cref="InvalidOperationException"></exception>
 
-        public CommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, Timestamp? time)
+        public CommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, TimeSpan? time = null)
         {
             Guard.AgainstNull(target, node);
             this.Target = target;

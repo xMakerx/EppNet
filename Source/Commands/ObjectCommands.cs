@@ -176,7 +176,7 @@ namespace EppNet.Commands
 
         public EnumCommandResult FetchObjectResult { get; }
 
-        public ObjectCommandContext([NotNull] ICommandTarget target, Timestamp? time, long id) : base(target, time)
+        public ObjectCommandContext([NotNull] ICommandTarget target, TimeSpan? time, long id) : base(target, time)
         {
             if (target is ObjectSlot targetSlot)
             {
@@ -192,7 +192,7 @@ namespace EppNet.Commands
             }
         }
 
-        public ObjectCommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, Timestamp? time, long id) : base(target, node, time)
+        public ObjectCommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, TimeSpan? time, long id) : base(target, node, time)
         {
             if (target is ObjectSlot targetSlot)
             {

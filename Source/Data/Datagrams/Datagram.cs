@@ -5,12 +5,16 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Connections;
+using EppNet.Logging;
+using EppNet.Messaging;
 
 namespace EppNet.Data.Datagrams
 {
 
-    public class Datagram : BytePayload, IDatagram
+    public class Datagram : BytePayload, IDatagram, ILoggable
     {
+        public ILoggable Notify { get => this; }
+
         public byte Header { internal set; get; }
         public bool Written { internal set; get; }
         public long Size { get => Length; }
@@ -20,6 +24,9 @@ namespace EppNet.Data.Datagrams
         /// </summary>
         public Connection Sender { internal set; get; }
         public byte ChannelID { internal set; get; }
+        public bool Collectible { get => _collectible; }
+
+        protected bool _collectible;
 
         public Datagram()
         {
@@ -27,6 +34,7 @@ namespace EppNet.Data.Datagrams
             this.ChannelID = 0x0;
             this.Sender = null;
             this.Written = false;
+            this._collectible = true;
         }
 
         public virtual void Read() { }
@@ -34,6 +42,9 @@ namespace EppNet.Data.Datagrams
         {
             WriteHeader();
             this.Written = true;
+
+            if (!_collectible && ChannelID != (byte)Channels.Connectivity)
+                Notify.Warning("Datagram isn't collectible and isn't communicating on the connectivity channel. Consider making it collectible!");
         }
 
         public virtual void WriteHeader() => WriteUInt8(Header);

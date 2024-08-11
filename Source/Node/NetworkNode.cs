@@ -3,10 +3,14 @@
 /// Date: July 9, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
+using ENet;
+
 using EppNet.Attributes;
 using EppNet.Data;
+using EppNet.Data.Datagrams;
 using EppNet.Exceptions;
 using EppNet.Logging;
+using EppNet.Messaging;
 using EppNet.Registers;
 using EppNet.Services;
 using EppNet.Sim;
@@ -74,15 +78,17 @@ namespace EppNet.Node
 
         }
 
-        public Timestamp Time
+        public TimeSpan Time
         {
 
             get
             {
-                if (Socket == null)
-                    return Timestamp.FromMonoNow();
+                TimeSpan monoTime = TimeSpan.FromMilliseconds(ENet.Library.Time);
 
-                return new Timestamp(TimestampType.Milliseconds, false, (long) Socket.Clock.Time);
+                if (Socket != null && Socket.Clock != null)
+                    return Socket.Clock.Time;
+
+                return monoTime;
             }
 
         }
@@ -320,6 +326,35 @@ namespace EppNet.Node
 
             }
         }
+
+        public bool Send(byte[] bytes, byte channelId, PacketFlags flags)
+            => Socket.ChannelService?.TrySendDataTo(Socket.Peer.ENet_Peer, channelId, bytes, flags) == true;
+
+        /// <summary>
+        /// Packages a <see cref="IDatagram"/> (Calls <see cref="IDatagram.Pack"/>) and
+        /// sends it with the specified <see cref="PacketFlags"/>.
+        /// </summary>
+        /// <param name="datagram"></param>
+        /// <param name="flags"></param>
+
+        public bool Send(IDatagram datagram, PacketFlags flags)
+        {
+            bool sent = Socket.ChannelService?.TrySendTo(Socket.Peer.ENet_Peer, datagram, flags) == true;
+
+            if (sent)
+                Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {Socket.Peer.ENet_ID}");
+            else
+                Notify.Debug($"Failed to send Datagram {datagram.GetType().Name} to Peer {Socket.Peer.ENet_ID}");
+
+            return sent;
+        }
+
+        /// <summary>
+        /// Sends a <see cref="IDatagram"/> with <see cref="PacketFlags.Instant"/>.
+        /// </summary>
+        /// <param name="datagram"></param>
+
+        public bool SendInstant(IDatagram datagram) => Send(datagram, PacketFlags.Instant);
 
         public bool Equals(NetworkNode other)
         {

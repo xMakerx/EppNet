@@ -131,7 +131,7 @@ namespace EppNet.Utilities
                     loggable.Notify.Error(tmpMsg, exp, callerMemberName: callerMemberName);
 
             }
-            else if (host is INodeDescendant nDesc)
+            else if (host is INodeDescendant nDesc && nDesc.Node != null)
                 nDesc.Node.HandleException(exp);
             else
                 throw exp;

@@ -6,6 +6,7 @@
 
 using EppNet.Node;
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Time
@@ -15,10 +16,10 @@ namespace EppNet.Time
     {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Timestamp Time(this INodeDescendant obj) => obj.Node.Time;
+        public static TimeSpan Time(this INodeDescendant obj) => obj.Node.Time;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Timestamp DetermineCurrentTime(params object[] objects)
+        public static TimeSpan DetermineCurrentTime(params object[] objects)
         {
 
             foreach (var obj in objects)
@@ -27,7 +28,7 @@ namespace EppNet.Time
                     return nDesc.Time();
             }
 
-            return Timestamp.FromMonoNow();
+            return TimeSpan.FromMilliseconds(ENet.Library.Time);
         }
 
     }

@@ -117,7 +117,7 @@ public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, 
 
         // The task should cancel rather quickly.
         // This avoids an OperationCanceledException
-        _readerTask.WaitAsync(_tokenSrc.Token);
+        _readerTask.Wait();
 
         OnCanceled?.Invoke();
         Notify.Debug("Buffer canceled!");
