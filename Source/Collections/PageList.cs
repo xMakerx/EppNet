@@ -494,20 +494,16 @@ namespace EppNet.Collections
 
                     if (marker == ulong.MaxValue)
                         continue;
-
-                    int zeros;
-
-                    #if NET7_0_OR_GREATER
-                        zeros = System.Numerics.BitOperations.LeadingZeroCount(marker);
-                    #else
-                        zeros = Backports.LeadingZeroCount(marker);
-                    #endif
-
-                    if (zeros != 0)
+                    
+                    if (marker == 0L)
                     {
-                        firstFree = (i * _primSize) + (_primSize - zeros);
+                        firstFree = i * _primSize;
                         break;
                     }
+
+                    ulong complement = ~marker;
+                    firstFree = (i * _primSize) + (int) ulong.Log2(complement & (0 - complement));
+                    break;
                 }
 
                 if (firstFree != -1)
