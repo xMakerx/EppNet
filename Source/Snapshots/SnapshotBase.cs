@@ -45,8 +45,8 @@ namespace EppNet.Snapshots
             return new string(chars);
         }
 
-        public static bool operator ==(SnapshotBase lhs, SnapshotBase rhs) => lhs.Equals(rhs);
-        public static bool operator !=(SnapshotBase lhs, SnapshotBase rhs) => !lhs.Equals(rhs);
+        public static bool operator ==(SnapshotBase lhs, SnapshotBase rhs) => lhs?.Equals(rhs) == true;
+        public static bool operator !=(SnapshotBase lhs, SnapshotBase rhs) => !(lhs?.Equals(rhs)) == false;
         public static bool operator <(SnapshotBase lhs, SnapshotBase rhs) => lhs.CompareTo(rhs) < 0;
         public static bool operator >(SnapshotBase lhs, SnapshotBase rhs) => lhs.CompareTo(rhs) > 0;
         public static bool operator <=(SnapshotBase lhs, SnapshotBase rhs) => lhs.CompareTo(rhs) <= 0;

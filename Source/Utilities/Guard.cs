@@ -22,6 +22,19 @@ namespace EppNet.Utilities
     {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsNotNullOf<T>(object argument, out T result)
+        {
+            if (argument is not null && argument is T cast)
+            {
+                result = cast;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool AgainstNull(params object[] arguments)
         {
             INodeDescendant nodeDescendant = null;

@@ -8,47 +8,29 @@ using EppNet.Data;
 using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Objects;
-using EppNet.Time;
 using EppNet.Utilities;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 
 namespace EppNet.Commands
 {
 
-    public static class ObjectCommands
-    {
-
-        private static readonly List<SlottableEnum> _cmdsList = Commands._cmdsList;
-
-        // Creation and deletion are in the same slot as they can undo each other
-        public static readonly SlottableEnum Create = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Create_Object", 1);
-        public static readonly SlottableEnum Delete = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Delete_Object", 1);
-
-        // Generate, Enable, and Disable are in the same slot as they can undo each other
-        public static readonly SlottableEnum Object_Generate = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_Generate", 2);
-        public static readonly SlottableEnum Object_Enable = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_Enable", 2);
-        public static readonly SlottableEnum Object_Disable = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_Disable", 2);
-
-        public static readonly SlottableEnum Object_SetParent = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_SetParent", 3);
-        public static readonly SlottableEnum Object_SetProperty = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_SetProperty", 4);
-        public static readonly SlottableEnum Object_CallMethod = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_CallMethod", 5);
-        public static readonly SlottableEnum Object_AckSnapshot = SlottableEnum._Internal_CreateAndAddTo(_cmdsList, "Object_AckSnapshot", 6);
-
-    }
-
     public class ObjectCallMethodCommand : ObjectUpdateFieldCommand
     {
-        public ObjectCallMethodCommand(int index, params object[] args) : base(false, index, ObjectCommands.Object_CallMethod, args) { }
+
+        public ObjectCallMethodCommand() : base(false, Commands.Object_CallMethod) { }
+
+        public ObjectCallMethodCommand(int index, params object[] args) : base(false, index, Commands.Object_CallMethod, args) { }
     }
 
     public class ObjectSetPropertyCommand : ObjectUpdateFieldCommand
     {
 
-        public ObjectSetPropertyCommand(int index, params object[] args) : base(true, index, ObjectCommands.Object_SetProperty, args) { }
+        public ObjectSetPropertyCommand() : base(true, Commands.Object_SetProperty) { }
+
+        public ObjectSetPropertyCommand(int index, params object[] args) : base(true, index, Commands.Object_SetProperty, args) { }
 
     }
 
@@ -56,8 +38,15 @@ namespace EppNet.Commands
     {
 
         public bool IsProperty { get; }
-        public object[] Arguments { get; }
-        public int Index { get; }
+        public object[] Arguments { set; get; }
+        public int Index { set; get; }
+
+        protected ObjectUpdateFieldCommand(bool isProperty, SlottableEnum enumType) : base(enumType)
+        {
+            this.IsProperty = isProperty;
+            this.Arguments = null;
+            this.Index = -1;
+        }
 
         protected ObjectUpdateFieldCommand(bool isProperty, int index, SlottableEnum enumType, params object[] args) : base(enumType)
         {
@@ -92,13 +81,24 @@ namespace EppNet.Commands
 
             return EnumCommandResult.BadArgument;
         }
+
+        public override void Dispose()
+        {
+            this.Arguments = null;
+            this.Index = -1;
+        }
     }
 
     public class ObjectSetParentCommand : ObjectCommand
     {
-        public long ParentID { get; }
+        public long ParentID { set; get; }
 
-        public ObjectSetParentCommand(long parentID) : base(ObjectCommands.Object_SetParent)
+        public ObjectSetParentCommand() : base(Commands.Object_SetParent)
+        {
+            this.ParentID = -1;
+        }
+
+        public ObjectSetParentCommand(long parentID) : this()
         {
             this.ParentID = parentID;
         }
@@ -116,14 +116,24 @@ namespace EppNet.Commands
             return context.Slot.Agent.ReparentTo(ParentID);
         }
 
+        public override void Dispose()
+        {
+            this.ParentID = -1;
+        }
+
     }
 
     public class CreateObjectCommand : ObjectCommand
     {
 
-        public int ObjectTypeId { get; }
+        public int ObjectTypeId { set; get; }
 
-        public CreateObjectCommand(int objectTypeId) : base(ObjectCommands.Create)
+        public CreateObjectCommand() : base(Commands.Create)
+        {
+            this.ObjectTypeId = -1;
+        }
+
+        public CreateObjectCommand(int objectTypeId) : this()
         {
             this.ObjectTypeId = objectTypeId;
         }
@@ -141,13 +151,23 @@ namespace EppNet.Commands
             return result;
         }
 
+        public override void Dispose()
+        {
+            this.ObjectTypeId = -1;
+        }
+
     }
 
     public class DeleteObjectCommand : ObjectCommand
     {
-        public uint TicksUntilDeletion { get; }
+        public uint TicksUntilDeletion { set; get; }
 
-        public DeleteObjectCommand(uint ticksUntilDeletion) : base(ObjectCommands.Delete)
+        public DeleteObjectCommand() : base(Commands.Delete)
+        {
+            this.TicksUntilDeletion = 0;
+        }
+
+        public DeleteObjectCommand(uint ticksUntilDeletion) : this()
         {
             this.TicksUntilDeletion = ticksUntilDeletion;
         }
@@ -159,6 +179,11 @@ namespace EppNet.Commands
             ObjectService service = context.Node.Services.GetService<ObjectService>();
             this.IsNotNull(arg: service, tmpMsg: new TemplatedMessage("Object Service could not be found!"), fatal: true);
             return service.TryRequestDelete(context.ID, TicksUntilDeletion);
+        }
+
+        public override void Dispose()
+        {
+            this.TicksUntilDeletion = 0;
         }
 
     }
@@ -178,7 +203,7 @@ namespace EppNet.Commands
 
         public ObjectCommandContext([NotNull] ICommandTarget target, TimeSpan? time, long id) : base(target, time)
         {
-            if (target is ObjectSlot targetSlot)
+            if (Guard.IsNotNullOf(target, out ObjectSlot targetSlot))
             {
                 this.ID = id;
                 this.Slot = targetSlot;
@@ -194,7 +219,7 @@ namespace EppNet.Commands
 
         public ObjectCommandContext([NotNull] ICommandTarget target, [NotNull] NetworkNode node, TimeSpan? time, long id) : base(target, node, time)
         {
-            if (target is ObjectSlot targetSlot)
+            if (Guard.IsNotNullOf(target, out ObjectSlot targetSlot))
             {
                 this.ID = id;
                 this.Slot = targetSlot;

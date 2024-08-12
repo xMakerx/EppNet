@@ -35,10 +35,7 @@ namespace EppNet.Snapshots
 
         public ObjectSnapshot(ObjectAgent @object, string header, Timestamp time) : base(header, time)
         {
-            if (@object == null)
-                @object.Service.Notify.Error("Tried to create a new ObjectState with a NULL ObjectAgent!",
-                    new ArgumentNullException(nameof(@object), "ObjectAgent argument cannot be null!"));
-
+            Guard.AgainstNull(@object);
             this.Object = @object;
 
             this._method2Value = new(ObjectRegistration.StringSortComparer);

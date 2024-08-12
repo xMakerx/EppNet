@@ -5,14 +5,25 @@
 //////////////////////////////////////////////
 
 using EppNet.Data;
-using EppNet.Objects;
-using EppNet.Utilities;
 
+using Microsoft.Extensions.ObjectPool;
+
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 
 namespace EppNet.Commands
 {
+
+    public interface ICommand : IDisposable
+    {
+        public EnumCommandResult Execute(in object context);
+    }
+
+    public interface ICommand<TContext> : ICommand where TContext : CommandContext
+    {
+        public EnumCommandResult Execute(in TContext context);
+    }
 
     /// <summary>
     /// Slim Commands are meant to store as little data as possible as this class is meant
@@ -21,14 +32,17 @@ namespace EppNet.Commands
     /// executing context is most likely the same as all the other commands.
     /// </summary>
 
-    public abstract class SlimCommand<T> where T : CommandContext
+    public abstract class SlimCommand<T> : ICommand<T> where T : CommandContext
     {
 
         public readonly SlottableEnum EnumType;
+        public readonly IObjectPool Pool;
 
         protected SlimCommand([NotNull] SlottableEnum enumType)
         {
             this.EnumType = enumType;
+
+            Commands._cmdPools.TryGetValue(enumType, out Pool);
         }
 
         /// <summary>
@@ -38,6 +52,9 @@ namespace EppNet.Commands
         /// <param name="context"></param>
         /// <returns></returns>
         public abstract EnumCommandResult Execute(in T context);
+
+        public EnumCommandResult Execute(in object context) => Execute(context as T);
+        public abstract void Dispose();
 
     }
 
