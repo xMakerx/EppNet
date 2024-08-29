@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
 using EppNet.Objects;
 
 using System.Collections.Generic;
@@ -58,15 +59,15 @@ namespace EppNet.Data.Datagrams
             }*/
 
             // Let's record how many objects are in this datagram.
-            WriteByte((byte)Transients.Count);
+            this.WriteByte((byte)Transients.Count);
 
             foreach (KeyValuePair<ObjectAgent, List<Update>> kvp in Transients)
             {
                 // Write the ID of the object.
-                WriteULong((ulong) kvp.Key.ID);
+                this.WriteULong((ulong) kvp.Key.ID);
 
                 // Let's record the number of updates incoming.
-                WriteByte((byte)kvp.Value.Count);
+                this.WriteByte((byte)kvp.Value.Count);
 
                 foreach (Update update in kvp.Value)
                     update.WriteTo(this);
@@ -78,11 +79,11 @@ namespace EppNet.Data.Datagrams
         {
             base.Read();
 
-            byte numObjects = ReadByte();
+            byte numObjects = this.ReadByte();
 
             for (int i = 0; i < numObjects; i++)
             {
-                ulong id = (ulong) ReadULong();
+                ulong id = (ulong) this.ReadULong();
                 /*
                 ObjectAgent objDelegate = ObjectManager.Get().GetObject((long)id);
 

@@ -24,8 +24,12 @@ namespace EppNet.Connections
     /// </summary>
     public class ServerConnection(BaseSocket socket, Peer peer) : Connection(socket, peer);
 
-    public class ClientConnection(BaseSocket socket, Peer peer) : Connection(socket, peer)
+    public class ClientConnection : Connection
     {
+
+        public ClientConnection() { }
+
+        public ClientConnection(BaseSocket socket, Peer peer) : base(socket, peer) { }
 
         /// <summary>
         /// Forcibly closes the connection.

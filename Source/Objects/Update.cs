@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
 using EppNet.Data.Datagrams;
 using EppNet.Utilities;
 
@@ -86,9 +87,8 @@ namespace EppNet.Objects
                 for (int i = 0; i < numArgs; i++)
                 {
                     Type type = mDef.ParameterTypes[i];
-                    object o = datagram.TryRead(type);
 
-                    if (o == null)
+                    if (!datagram.TryRead(out object o))
                         throw new FormatException($"[Update#WriteTo()] Datagram does not know how to deserialize {type.Name}!");
 
                     args[i] = o;

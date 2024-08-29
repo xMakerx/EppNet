@@ -29,7 +29,7 @@ namespace EppNet.Tests
             }
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
-                Assert.AreEqual(input, payloadIn.ReadString8());
+                Assert.IsTrue(new Str8(input).Equals(payloadIn.ReadString8()));
         }
 
         /// <summary>

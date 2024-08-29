@@ -63,7 +63,7 @@ namespace EppNet.Data
         /// Writes a signed 64-bit integer to the stream.
         /// </summary>
         /// <param name="input"></param>
-        public static void WriteLong(this BytePayload payload, ulong input)
+        public static void WriteLong(this BytePayload payload, long input)
             => LongResolver.Instance.Write(payload, input);
 
         /// <summary>

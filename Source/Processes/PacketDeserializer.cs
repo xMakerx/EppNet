@@ -77,7 +77,10 @@ namespace EppNet.Processes
 
         public void SetupPacket(PacketReceivedEvent @event, Peer peer, byte[] data, byte channelID)
         {
-            @event.Initialize(_socket.ConnectionService.Get(peer.ID), data, channelID);
+            if (_socket is ServerSocket srvSocket)
+                @event.Initialize(srvSocket.ConnectionService.Get(peer.ID), data, channelID);
+            else
+                @event.Initialize(_socket.Companion, data, channelID);
         }
 
         public void DropPacket(byte[] data)

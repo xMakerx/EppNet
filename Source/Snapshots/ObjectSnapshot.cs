@@ -33,7 +33,7 @@ namespace EppNet.Snapshots
         protected SortedList<string, object> _method2Value;
         protected SortedList<string, object> _prop2Value;
 
-        public ObjectSnapshot(ObjectAgent @object, string header, Timestamp time) : base(header, time)
+        public ObjectSnapshot(ObjectAgent @object, SequenceNumber header, Timestamp time) : base(header)
         {
             Guard.AgainstNull(@object);
             this.Object = @object;
@@ -46,7 +46,7 @@ namespace EppNet.Snapshots
         /// Creates and records the current state of the specified <see cref="ObjectAgent"/> at the current time
         /// </summary>
         /// <param name="object"></param>
-        public ObjectSnapshot(ObjectAgent @object) : this(@object, string.Empty, 0L)
+        public ObjectSnapshot(ObjectAgent @object) : this(@object, new(), 0L)
         {
             this.RecordCurrent();
         }

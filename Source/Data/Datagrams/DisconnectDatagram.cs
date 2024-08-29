@@ -38,26 +38,26 @@ namespace EppNet.Data.Datagrams
                 // The reason message is different than the generic. Let's turn on
                 // the first bit to denote that.
                 reasonId = reasonId.EnableBit(7);
-                WriteByte(reasonId);
-                WriteString8(Reason.Message);
+                this.WriteByte(reasonId);
+                this.WriteString8(Reason.Message);
                 return;
             }
 
-            WriteByte(reasonId);
+            this.WriteByte(reasonId);
         }
 
         public override void Read()
         {
             base.Read();
 
-            byte reasonId = ReadByte();
+            byte reasonId = this.ReadByte();
             string reasonMessage = string.Empty;
 
             if (reasonId.IsBitOn(7))
             {
                 // Bit 7 was enabled, so that means we have a custom message
                 reasonId = reasonId.ResetBit(7);
-                reasonMessage = ReadString8();
+                reasonMessage = this.ReadString8();
             }
 
             this.Reason = DisconnectReasons.GetFromID(Reason.ID);

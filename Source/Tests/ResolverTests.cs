@@ -6,8 +6,6 @@
 
 using EppNet.Data;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using System.Numerics;
 
 namespace EppNet.Tests
@@ -20,7 +18,7 @@ namespace EppNet.Tests
         [TestMethod]
         public void TestVec3Resolver()
         {
-            byte[] buffer = null;
+            byte[] buffer;
 
             Vector3 l = new(3f, 0.1f, 4.0f);
 
@@ -34,8 +32,8 @@ namespace EppNet.Tests
 
             using (BytePayload payloadOut = new BytePayload(buffer))
             {
-                object result = payloadOut.TryRead(l.GetType());
-                Assert.IsTrue(l.Equals(result), $"Failed to resolve read for {l.GetType().Name}");
+                bool read = payloadOut.TryRead(out Vector3 result);
+                Assert.IsTrue(read && l.Equals(result), $"Failed to resolve read for {l.GetType().Name}");
             }
 
         }

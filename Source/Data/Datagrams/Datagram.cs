@@ -47,7 +47,7 @@ namespace EppNet.Data.Datagrams
                 Notify.Warning("Datagram isn't collectible and isn't communicating on the connectivity channel. Consider making it collectible!");
         }
 
-        public virtual void WriteHeader() => WriteUInt8(Header);
+        public virtual void WriteHeader() => this.WriteUInt8(Header);
 
         public byte GetHeader() => Header;
         public byte GetChannelID() => ChannelID;

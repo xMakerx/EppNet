@@ -26,19 +26,19 @@ namespace EppNet.Data.Datagrams
         public override void Write()
         {
             base.Write();
-            WriteFloat(Time);
-            WriteFloat(ReceivedTime);
+            this.WriteFloat(Time);
+            this.WriteFloat(ReceivedTime);
         }
 
         public override void Read()
         {
             base.Read();
 
-            this.Time = ReadFloat();
+            this.Time = this.ReadFloat();
 
             if (Sender.IsServer())
             {
-                this.ReceivedTime = ReadFloat();
+                this.ReceivedTime = this.ReadFloat();
 
                 TimeSpan remoteTimeSpan = TimeSpan.FromMilliseconds(Time);
                 Sender.Node.Socket.Clock.Synchronize(remoteTimeSpan);

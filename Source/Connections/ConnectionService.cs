@@ -56,10 +56,8 @@ namespace EppNet.Connections
 
                 _connections = new PageList<ClientConnection>(itemsPerPage);
             }
-            else if (_socket.MaxClients > 1)
-            {
+            else
                 _connections = new OrderedDictionary<ulong, Connection>();
-            }
         }
 
         public override bool Start()
@@ -109,28 +107,18 @@ namespace EppNet.Connections
             }
             else
             {
-                if (_socket.MaxClients > 1)
-                {
-                    OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
-                    foreach (ClientConnection c in dict.Values)
-                        action.Invoke(c);
+                OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
+                foreach (ClientConnection c in dict.Values)
+                    action.Invoke(c);
 
-                    dict.Clear();
-                }
-                else
-                {
-                    action.Invoke(Peer);
-                    Peer.Dispose();
-                    Peer = null;
-                }
-
+                dict.Clear();
             }
         }
 
         public bool HandleConnectionEstablished(Peer enetPeer)
         {
 
-            Connection conn;
+            ClientConnection conn;
             bool added;
 
             if (_socket.MaxClients > 64)
@@ -140,18 +128,9 @@ namespace EppNet.Connections
             }
             else
             {
-                conn = new ClientConnection();
-
-                if (_socket.MaxClients > 1)
-                {
-                    OrderedDictionary<ulong, Connection> dict = _connections as OrderedDictionary<ulong, Connection>;
-                    dict.Add(enetPeer.ID, conn);
-                }
-                else
-                {
-                    Peer = conn;
-                }
-
+                conn = new(Node.Socket, enetPeer);
+                OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
+                dict.Add(enetPeer.ID, conn);
                 added = true;
             }
 
@@ -186,22 +165,10 @@ namespace EppNet.Connections
             }
             else
             {
-
-                if (_socket.MaxClients > 1)
-                {
-                    OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
-                    dict.TryGetValue(enetPeer.ID, out conn);
-                    action.Invoke(conn);
-                    removed = dict.Remove(enetPeer.ID);
-                }
-                else
-                {
-                    action.Invoke(Peer);
-                    Peer.Dispose();
-                    Peer = null;
-                    removed = true;
-                }
-
+                OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
+                dict.TryGetValue(enetPeer.ID, out conn);
+                action.Invoke(conn);
+                removed = dict.Remove(enetPeer.ID);
             }
 
 
@@ -214,18 +181,13 @@ namespace EppNet.Connections
 
             if (_socket.MaxClients > 64)
             {
-                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
+                PageList<ClientConnection> pList = (PageList<ClientConnection>)_connections;
                 pList.TryGetById(id, out conn);
             }
             else
             {
-                if (_socket.MaxClients > 1)
-                {
-                    OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
-                    dict.TryGetValue(id, out conn);
-                }
-                else
-                    conn = Peer;
+                OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
+                dict.TryGetValue(id, out conn);
             }
 
             if (conn == null)
