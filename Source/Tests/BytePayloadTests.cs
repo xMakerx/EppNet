@@ -19,7 +19,29 @@ namespace EppNet.Tests
         public void ReadAndWriteString8()
         {
 
-            byte[] bufferIn = null;
+            byte[] bufferIn;
+            string input = "Hello World!";
+
+            using (BytePayload payloadOut = new BytePayload())
+            {
+                payloadOut.Encoder = System.Text.Encoding.ASCII;
+                payloadOut.WriteString8(input);
+                bufferIn = payloadOut.Pack();
+            }
+
+            using (BytePayload payloadIn = new BytePayload(bufferIn))
+            {
+                payloadIn.Encoder = System.Text.Encoding.ASCII;
+                Str8 result = payloadIn.ReadString8();
+                Assert.IsTrue(string.Equals(input, result.Value, StringComparison.Ordinal));
+            }
+        }
+
+        [TestMethod]
+        public void ReadAndWriteString16()
+        {
+
+            byte[] bufferIn;
             string input = "Hello World!";
 
             using (BytePayload payloadOut = new BytePayload())
@@ -29,7 +51,10 @@ namespace EppNet.Tests
             }
 
             using (BytePayload payloadIn = new BytePayload(bufferIn))
-                Assert.IsTrue(new Str8(input).Equals(payloadIn.ReadString8()));
+            {
+                Str16 result = payloadIn.ReadString16();
+                Assert.IsTrue(string.Equals(input, result.Value, StringComparison.Ordinal));
+            }
         }
 
         /// <summary>

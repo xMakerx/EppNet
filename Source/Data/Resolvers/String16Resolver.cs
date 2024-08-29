@@ -34,22 +34,26 @@ namespace EppNet.Data
                 output = payload.Encoder.GetString(buffer);
             }
 
-            return didRead;
+            return read == length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override bool _Internal_Write(BytePayload payload, Str16 input)
         {
             bool writeable = !string.IsNullOrEmpty(input.Value);
-            int length = writeable ? input.Value.Length : 0;
+            int length = payload.Encoder.GetByteCount(input.Value);
 
-            bool written = BinaryPrimitives.TryWriteUInt16LittleEndian(payload.Stream.GetSpan(LengthByteSize), (ushort) length);
+            bool written = BinaryPrimitives.TryWriteUInt16LittleEndian(
+                payload.Stream.GetSpan(LengthByteSize), (ushort) length);
 
-            if (written && writeable)
+            if (written)
+                payload.Stream.Advance(LengthByteSize);
+
+            if (writeable && payload.Encoder.TryGetBytes(input.Value, 
+                payload.Stream.GetSpan(length), out int bytes))
             {
-                Span<byte> span = payload.Stream.GetSpan(input.Value.Length);
-                int bytes = payload.Encoder.GetBytes(input.Value.AsSpan(), span);
                 payload.Stream.Advance(bytes);
+                return true;
             }
 
             return written;

@@ -183,7 +183,9 @@ namespace EppNet.Data
 
         public BytePayload(byte[] dataIn) : this()
         {
-            ReadFrom(dataIn);
+            this.PackedData = dataIn;
+            this.Stream = RecyclableStreamMgr.GetStream(dataIn);
+            this.Stream.Seek(0, System.IO.SeekOrigin.Begin);
         }
 
         public void ReadFrom([NotNull] byte[] dataIn)

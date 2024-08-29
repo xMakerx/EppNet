@@ -21,6 +21,7 @@ namespace EppNet.Data
         protected override bool _Internal_Read(BytePayload payload, out Str8 output)
         {
             int length = payload.Stream.ReadByte();
+            payload.Stream.Advance(1);
             output = new(string.Empty);
 
             if (length < 0)
@@ -33,25 +34,25 @@ namespace EppNet.Data
             Span<byte> buffer = stackalloc byte[length];
             int read = payload.Stream.Read(buffer);
             output = payload.Encoder.GetString(buffer);
-            return true;
+            return read == length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override bool _Internal_Write(BytePayload payload, Str8 input)
         {
             bool writeable = !string.IsNullOrEmpty(input.Value);
+            int numBytes = payload.Encoder.GetByteCount(input.Value);
 
-            payload.Stream.WriteByte((byte) (writeable ? input.Value.Length : 0));
+            payload.Stream.WriteByte((byte) numBytes);
             payload.Advance(sizeof(byte));
 
-            if (writeable)
+            if (writeable && payload.Encoder.TryGetBytes(input.Value, payload.Stream.GetSpan(numBytes), out int bytes))
             {
-                Span<byte> span = payload.Stream.GetSpan(input.Value.Length);
-                int bytes = payload.Encoder.GetBytes(input.Value.AsSpan(), span);
                 payload.Stream.Advance(bytes);
+                return true;
             }
 
-            return true;
+            return false;
         }
 
     }
