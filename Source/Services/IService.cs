@@ -23,9 +23,9 @@ namespace EppNet.Services
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 
         /// <summary>
-        /// Fired when Update is called
+        /// Fired when Tick is called
         /// </summary>
-        public event Action<float> OnUpdate;
+        public event Action<float> OnTick;
 
         /// <summary>
         /// Marks the service as dirty and needing cleaned up

@@ -184,7 +184,17 @@ namespace EppNet.Objects
             _objects.Dispose();
         }
 
-        internal override void Update(float dt)
+        public override bool Tick(float dt)
+        {
+            if (!Started)
+                return false;
+
+            Update(dt);
+            base.Tick(dt);
+            return true;
+        }
+
+        internal void Update(float dt)
         {
             HashSet<ObjectSlot> clearThisTick = new();
 
@@ -204,8 +214,6 @@ namespace EppNet.Objects
 
             foreach (ObjectSlot slot in clearThisTick)
                 _Internal_DeleteObject(slot);
-
-            base.Update(dt);
         }
 
         protected EnumCommandResult _Internal_CreateObject(ObjectRegistration registration, out ObjectSlot slot, long id = -1)

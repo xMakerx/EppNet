@@ -30,11 +30,15 @@ namespace EppNet.Sockets
 
         public void ConnectTo(string host, int port) => ConnectTo(host, Convert.ToUInt16(port));
 
-        public override void OnPacketReceived(Peer peer, Packet packet, byte channelID)
+        public override void OnPeerConnected(Peer peer)
         {
-            
+            this.Companion = new ServerConnection(this, peer);
         }
 
+        public override void OnPeerDisconnected(Peer peer, uint disconnectReasonIdx)
+        {
+            this.Companion.Dispose();
+        }
     }
 
 }

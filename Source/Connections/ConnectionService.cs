@@ -54,7 +54,7 @@ namespace EppNet.Connections
                 if (result >= 4)
                     itemsPerPage = 256;
 
-                _connections = new PageList<Connection>(itemsPerPage);
+                _connections = new PageList<ClientConnection>(itemsPerPage);
             }
             else if (_socket.MaxClients > 1)
             {
@@ -84,7 +84,7 @@ namespace EppNet.Connections
 
         public override void Dispose(bool disposing)
         {
-            if (_connections is PageList<Connection> pageList)
+            if (_connections is PageList<ClientConnection> pageList)
                 pageList.Dispose();
         }
 
@@ -93,7 +93,7 @@ namespace EppNet.Connections
         public void EjectAll(DisconnectReason reason)
         {
 
-            Action<Connection> action = (Connection c) =>
+            Action<ClientConnection> action = (ClientConnection c) =>
             {
                 Notify.Debug($"Forcibly ejected {c}...");
                 c.Eject(reason);
@@ -102,7 +102,7 @@ namespace EppNet.Connections
 
             if (_socket.MaxClients > 64)
             {
-                PageList<Connection> pList = _connections as PageList<Connection>;
+                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
                 pList.DoOnActive(action);
                 pList.Clear();
                 pList.PurgeEmptyPages();
@@ -111,8 +111,8 @@ namespace EppNet.Connections
             {
                 if (_socket.MaxClients > 1)
                 {
-                    OrderedDictionary<ulong, Connection> dict = _connections as OrderedDictionary<ulong, Connection>;
-                    foreach (Connection c in dict.Values)
+                    OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
+                    foreach (ClientConnection c in dict.Values)
                         action.Invoke(c);
 
                     dict.Clear();
@@ -135,12 +135,12 @@ namespace EppNet.Connections
 
             if (_socket.MaxClients > 64)
             {
-                PageList<Connection> pList = _connections as PageList<Connection>;
+                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
                 added = pList.TryAllocate(enetPeer.ID, out conn);
             }
             else
             {
-                conn = new Connection();
+                conn = new ClientConnection();
 
                 if (_socket.MaxClients > 1)
                 {
@@ -168,18 +168,18 @@ namespace EppNet.Connections
 
         public bool HandleConnectionLost(Peer enetPeer, DisconnectReason reason)
         {
-            Action<Connection> action = (Connection c) =>
+            Action<ClientConnection> action = (ClientConnection c) =>
             {
                 Notify.Debug($"Connection to {c} lost");
                 OnConnectionLost?.Invoke(new DisconnectEvent(c, reason));
             };
 
-            Connection conn;
+            ClientConnection conn;
             bool removed;
 
             if (_socket.MaxClients > 64)
             {
-                PageList<Connection> pList = _connections as PageList<Connection>;
+                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
                 pList.TryGetById(enetPeer.ID, out conn);
                 action.Invoke(conn);
                 removed = pList.TryFree(conn);
@@ -189,7 +189,7 @@ namespace EppNet.Connections
 
                 if (_socket.MaxClients > 1)
                 {
-                    OrderedDictionary<ulong, Connection> dict = _connections as OrderedDictionary<ulong, Connection>;
+                    OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
                     dict.TryGetValue(enetPeer.ID, out conn);
                     action.Invoke(conn);
                     removed = dict.Remove(enetPeer.ID);
@@ -208,20 +208,20 @@ namespace EppNet.Connections
             return removed;
         }
 
-        public Connection Get(ulong id)
+        public ClientConnection Get(ulong id)
         {
-            Connection conn;
+            ClientConnection conn;
 
             if (_socket.MaxClients > 64)
             {
-                PageList<Connection> pList = _connections as PageList<Connection>;
+                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
                 pList.TryGetById(id, out conn);
             }
             else
             {
                 if (_socket.MaxClients > 1)
                 {
-                    OrderedDictionary<ulong, Connection> dict = _connections as OrderedDictionary<ulong, Connection>;
+                    OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
                     dict.TryGetValue(id, out conn);
                 }
                 else

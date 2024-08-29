@@ -63,6 +63,7 @@ public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, 
     public ILoggable Notify => this;
 
     public Action OnCanceled;
+    public bool Started { get => _readerTask is not null; }
 
     private readonly Channel<T> _channel;
     private readonly ChannelReader<T> _reader;
@@ -99,7 +100,7 @@ public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, 
 
     public bool Start()
     {
-        if (_readerTask is not null)
+        if (Started)
             return false;
 
         // Start tasks
@@ -110,7 +111,7 @@ public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, 
 
     public bool Stop()
     {
-        if (_readerTask is null)
+        if (!Started)
             return false;
 
         _tokenSrc.Cancel();

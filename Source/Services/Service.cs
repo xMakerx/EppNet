@@ -27,9 +27,11 @@ namespace EppNet.Services
 
         public event Action<ServiceStateChangedEvent> OnStateChanged;
 
-        public event Action<float> OnUpdate;
+        public event Action<float> OnTick;
 
         public int SortOrder;
+
+        public bool Started { private set; get; }
 
         public ServiceState Status
         {
@@ -58,6 +60,7 @@ namespace EppNet.Services
         {
             this._status = ServiceState.Offline;
             this._serviceMgr = svcMgr;
+            this._isDirty = false;
 
             if (_serviceMgr == null)
                 throw new ArgumentNullException(nameof(svcMgr), "Must pass a valid ServiceManager instance to a service!");
@@ -68,13 +71,25 @@ namespace EppNet.Services
         }
 
         /// <summary>
-        /// Called every tick
+        /// Called every tick by the <see cref="ServiceManager"/>
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
+
+        public virtual bool Tick(float dt)
+        {
+            if (!Started)
+                return false;
+
+            OnTick?.Invoke(dt);
+            return true;
+        }
+
+        /// <summary>
+        /// <b>NOTE: Explicit IRunnable override!! </b>Called every tick. See <see cref="Tick(float)"/>
         /// </summary>
 
-        internal virtual void Update(float dt)
-        {
-            OnUpdate?.Invoke(dt);
-        }
+        bool IRunnable.Tick(float dt) => Tick(dt);
 
         public virtual bool Start()
         {
@@ -82,6 +97,7 @@ namespace EppNet.Services
                 return false;
 
             this.Status = ServiceState.Starting;
+            this.Started = true;
             return true;
         }
 
@@ -91,10 +107,14 @@ namespace EppNet.Services
                 return false;
 
             this.Status = ServiceState.ShuttingDown;
+            this.Started = false;
             return true;
         }
 
-        public virtual void Dispose(bool disposing) { }
+        public virtual void Dispose(bool disposing)
+        {
+            this.Stop();
+        }
 
         /// <summary>
         /// Marks this service as dirty and needing cleaning next update.

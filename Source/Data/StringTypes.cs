@@ -4,6 +4,9 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using System;
+
+
 namespace EppNet.Data
 {
 
@@ -12,25 +15,24 @@ namespace EppNet.Data
     /// like 16-bit strings to be used for wire communications.
     /// </summary>
 
-    public struct Str16
+    public readonly struct Str16
     {
 
-        public string Value;
+        public readonly string Value;
 
         public Str16(string value)
         {
+            if (value?.Length > byte.MaxValue)
+                throw new ArgumentOutOfRangeException($"String16 must be between 0 and {ushort.MaxValue}");
+
             this.Value = value;
         }
 
         public static implicit operator Str16(string value)
-        {
-            if (value == null)
-                return null;
+            => new(value);
 
-            return new Str16(value);
-        }
-
-        public static implicit operator string(Str16 a) => a.Value;
+        public static implicit operator string(Str16 a)
+            => a.Value;
 
     }
 
@@ -39,25 +41,24 @@ namespace EppNet.Data
     /// like 8-bit strings to be used for wire communications.
     /// </summary>
 
-    public struct Str8
+    public readonly struct Str8
     {
 
-        public string Value;
+        public readonly string Value;
 
         public Str8(string value)
         {
+            if (value.Length > byte.MaxValue)
+                throw new ArgumentOutOfRangeException($"String8 must be between 0 and {byte.MaxValue}");
+
             this.Value = value;
         }
 
         public static implicit operator Str8(string value)
-        {
-            if (value == null)
-                return null;
+            => new(value);
 
-            return new Str8(value);
-        }
-
-        public static implicit operator string(Str8 a) => a.Value;
+        public static implicit operator string(Str8 a)
+            => a.Value;
 
     }
 

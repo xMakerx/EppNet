@@ -13,7 +13,7 @@ using System.Collections.Generic;
 namespace EppNet.Services
 {
 
-    public class ServiceManager : INodeDescendant, IDisposable
+    public class ServiceManager : INodeDescendant, IRunnable, IDisposable
     {
 
         public NetworkNode Node { get => _node; }
@@ -48,25 +48,31 @@ namespace EppNet.Services
         /// Does nothing if already started
         /// </summary>
 
-        public void Start()
+        public bool Start()
         {
             if (Started)
-                return;
+                return false;
 
             foreach (Service service in _services)
                 service.Start();
 
             this.Started = true;
+            return true;
         }
         
         /// <summary>
         /// Calls <see cref="Service.Update"/> on every service
         /// </summary>
 
-        public void Tick(float dt)
+        public bool Tick(float dt)
         {
+            if (!Started)
+                return false;
+
             foreach (Service service in _services)
-                service.Update(dt);
+                service.Tick(dt);
+
+            return true;
         }
 
         /// <summary>
@@ -75,22 +81,41 @@ namespace EppNet.Services
         /// Does nothing if not already started
         /// </summary>
 
-        public void Stop()
+        public bool Stop()
         {
             if (!Started)
-                return;
+                return false;
 
             foreach (Service service in _services)
                 service.Stop();
 
             this.Started = false;
+            return true;
         }
+
         public void Dispose() { Dispose(true); }
 
         public void Dispose(bool disposing)
         {
             foreach (Service service in _services)
                 service.Dispose(disposing);
+        }
+
+        /// <summary>
+        /// Tries to fetch an existing service of type <typeparamref name="T"/> or creates one and returns it.<br/>
+        /// <b>NOTE: </b>Service Manager must be offline to add additional services!
+        /// </summary>
+        /// <typeparam name="T">The type of service to create</typeparam>
+        /// <returns>The fetched or created service</returns>
+
+        public T GetOrCreate<T>() where T : Service
+        {
+            T existing = GetService<T>();
+
+            if (existing == null)
+                TryAddService(out existing);
+
+            return existing;
         }
 
         public bool TryAddService<T>(out T created) where T : Service
@@ -102,18 +127,20 @@ namespace EppNet.Services
 
             T existing = GetService<T>();
 
-            if (existing != null)
-                return false;
-
-            try
+            if (existing == null)
             {
-                created = (T)Activator.CreateInstance(typeof(T), Node);
-                _services.Add(created);
-                return true;
+                try
+                {
+                    // Every service needs a reference to the service manager
+                    created = (T)Activator.CreateInstance(typeof(T), this);
+                    _services.Add(created);
+                    return true;
 
-            } catch (Exception ex)
-            {
-                Node.HandleException(ex);
+                }
+                catch (Exception ex)
+                {
+                    Node.HandleException(ex);
+                }
             }
 
             return false;

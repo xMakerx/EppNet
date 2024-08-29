@@ -43,6 +43,8 @@ namespace EppNet.Time
         public const int MaxAllowedDesyncMs = 100;
         public const double DefaultSmoothingFactor = 0.1d;
 
+        public bool Started { get => _stopwatch.IsRunning; }
+
         public TimeSpan Time
         {
             get

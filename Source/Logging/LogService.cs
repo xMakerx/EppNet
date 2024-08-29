@@ -25,7 +25,7 @@ namespace EppNet.Logging
             this._loggerConfig = new();
         }
 
-        internal override void Update(float dt)
+        public override bool Tick(float dt)
         {
             if (Status == ServiceState.Starting)
             {
@@ -33,6 +33,8 @@ namespace EppNet.Logging
                 Log.Logger = _loggerConfig.CreateLogger();
                 Status = ServiceState.Online;
             }
+
+            return true;
         }
 
     }

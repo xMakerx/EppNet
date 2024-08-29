@@ -63,7 +63,6 @@ namespace EppNet.Sockets
             get => _clock;
         }
 
-        public ConnectionService ConnectionService { get => _connSrv; }
         public ChannelService ChannelService { protected set; get; }
 
         public SocketType Type { get => _type; }
@@ -159,7 +158,7 @@ namespace EppNet.Sockets
         /// Used on client connections as a quick way to get the server, AND<br/>
         /// used on the server if the max clients is 1.
         /// </summary>
-        public Connection Peer { get => _connSrv?.Peer; }
+        public Connection Companion { protected set; get; }
 
         internal NetworkNode _node;
         protected ConnectionService _connSrv;
@@ -203,15 +202,9 @@ namespace EppNet.Sockets
 
         ~BaseSocket() => Dispose(false);
 
-        public virtual void OnPeerConnected(Peer peer)
-        {
-            ConnectionService.HandleConnectionEstablished(peer);
-        }
+        public abstract void OnPeerConnected(Peer peer);
 
-        public virtual void OnPeerDisconnected(Peer peer, uint disconnectReasonIdx)
-        {
-            ConnectionService.HandleConnectionLost(peer, DisconnectReasons.GetFromID(disconnectReasonIdx));
-        }
+        public abstract void OnPeerDisconnected(Peer peer, uint disconnectReasonIdx);
 
         public virtual void OnPacketReceived(Peer peer, Packet packet, byte channelId)
         {
@@ -389,19 +382,10 @@ namespace EppNet.Sockets
         /// Validates that all necessary dependencies have been created. If not,
         /// we will create them
         /// </summary>
-        protected void _Internal_ValidateDependencies()
+        protected virtual void _Internal_ValidateDependencies()
         {
-            // Fetches or creates a connection manager
-            _connSrv = Node.Services.GetService<ConnectionService>();
-
-            if (_connSrv == null)
-                _connSrv = new ConnectionService(Node.Services);
-
             // Fetches or creates a channel service
-            ChannelService = Node.Services.GetService<ChannelService>();
-
-            if (ChannelService == null)
-                ChannelService = new ChannelService(Node.Services);
+            ChannelService = Node.Services.GetOrCreate<ChannelService>();
 
             // Ensure we have a clock
             if (Clock == null)

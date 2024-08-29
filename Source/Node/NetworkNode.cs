@@ -328,7 +328,7 @@ namespace EppNet.Node
         }
 
         public bool Send(byte[] bytes, byte channelId, PacketFlags flags)
-            => Socket.ChannelService?.TrySendDataTo(Socket.Peer.ENet_Peer, channelId, bytes, flags) == true;
+            => Socket.ChannelService?.TrySendDataTo(Socket.Companion.ENet_Peer, channelId, bytes, flags) == true;
 
         /// <summary>
         /// Packages a <see cref="IDatagram"/> (Calls <see cref="IDatagram.Pack"/>) and
@@ -339,12 +339,12 @@ namespace EppNet.Node
 
         public bool Send(IDatagram datagram, PacketFlags flags)
         {
-            bool sent = Socket.ChannelService?.TrySendTo(Socket.Peer.ENet_Peer, datagram, flags) == true;
+            bool sent = Socket.ChannelService?.TrySendTo(Socket.Companion.ENet_Peer, datagram, flags) == true;
 
             if (sent)
-                Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {Socket.Peer.ENet_ID}");
+                Notify.Debug($"Successfully sent Datagram {datagram.GetType().Name} to Peer {Socket.Companion.ENet_ID}");
             else
-                Notify.Debug($"Failed to send Datagram {datagram.GetType().Name} to Peer {Socket.Peer.ENet_ID}");
+                Notify.Debug($"Failed to send Datagram {datagram.GetType().Name} to Peer {Socket.Companion.ENet_ID}");
 
             return sent;
         }

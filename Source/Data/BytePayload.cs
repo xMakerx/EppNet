@@ -16,19 +16,16 @@
 /// </summary>
 
 
-using EppNet.Time;
-using EppNet.Exceptions;
 using EppNet.Utilities;
 
 using Microsoft.IO;
 
 using System;
-using System.Buffers;
-using System.Buffers.Binary;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text;
-using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Data
 {
@@ -72,6 +69,27 @@ namespace EppNet.Data
         {
             _resolvers.TryGetValue(type, out IResolver result);
             return result;
+        }
+
+        public static Resolver<T> GetResolver<T>()
+        {
+            Type type = typeof(T);
+
+            if (type.IsArray)
+                type = type.GetElementType();
+
+            else if (type.IsGenericType)
+            {
+
+                // Supported collection types
+                Type genType = type.GetGenericTypeDefinition();
+
+                if (genType == typeof(List<>) || genType == typeof(HashSet<>) || genType == typeof(SortedSet<>) || genType == typeof(LinkedList<>))
+                    type = type.GetGenericArguments()[0];
+            }
+
+            _resolvers.TryGetValue(type, out IResolver result);
+            return (Resolver<T>)result;
         }
 
         /// <summary>
@@ -142,13 +160,7 @@ namespace EppNet.Data
         /// The length of this payload in bytes
         /// </summary>
 
-        public long Length
-        {
-            get
-            {
-                return Stream != null ? Stream.Length : 0;
-            }
-        }
+        public long Length { get => Stream != null ? Stream.Length : 0; }
 
         public RecyclableMemoryStream Stream { protected set; get; }
 
@@ -189,6 +201,140 @@ namespace EppNet.Data
             return true;
         }
 
+        public virtual bool TryWriteDictionary<TKey, TValue>(in IDictionary<TKey, TValue> dict)
+        {
+            if (dict == null)
+                return false;
+
+            Resolver<TKey> keyResolver = GetResolver<TKey>();
+            Resolver<TValue> valueResolver = GetResolver<TValue>();
+
+            if (keyResolver == null || valueResolver == null)
+            {
+                Serilog.Log.Warning($"BytePayload#TryWriteDictionary(): Cannot resolve IDictionary<{typeof(TKey).Name}, {typeof(TValue).Name}>! Do you have resolvers for both types?");
+                return false;
+            }
+
+            bool shouldContinue = UInt32Resolver.Instance.Write(this, dict.Count);
+
+            foreach (KeyValuePair<TKey, TValue> kvp in dict)
+            {
+                if (!shouldContinue)
+                    break;
+
+                // Write key value pairs next to each other.
+                shouldContinue = keyResolver.Write(this, kvp.Key);
+
+                if (!shouldContinue)
+                    break;
+
+                shouldContinue = valueResolver.Write(this, kvp.Value);
+            }
+
+            return shouldContinue;
+        }
+
+        public virtual bool TryWriteDictionary(in IDictionary dict, in Type keyType, in Type valueType)
+        {
+            if (dict == null)
+                return false;
+
+            IResolver keyResolver = GetResolver(keyType);
+            IResolver valueResolver = GetResolver(valueType);
+
+            if (keyResolver == null || valueResolver == null)
+            {
+                Serilog.Log.Warning($"BytePayload#TryWriteDictionary(): Cannot resolve IDictionary<{keyType.Name}, {valueType.Name}>! Do you have resolvers for both types?");
+                return false;
+            }
+
+            bool shouldContinue = UInt32Resolver.Instance.Write(this, dict.Count);
+
+            foreach (object o in dict.Keys)
+            {
+                if (!shouldContinue)
+                    break;
+
+                // Write key value pairs next to each other.
+                shouldContinue = keyResolver.Write(this, o);
+
+                if (!shouldContinue)
+                    break;
+
+                shouldContinue = valueResolver.Write(this, dict[o]);
+            }
+
+            return shouldContinue;
+        }
+
+        private bool _Internal_TryReadDictionary<T>(in Type keyType, in Type valueType, out T output) where T : new()
+        {
+            output = default;
+
+            IResolver keyResolver = GetResolver(keyType);
+            IResolver valueResolver = GetResolver(valueType);
+
+            if (keyResolver == null || valueResolver == null)
+            {
+                Serilog.Log.Warning($"BytePayload#TryReadDictionary(): Cannot resolve IDictionary<{keyType.Name}, {valueType.Name}>! Do you have resolvers for both types?");
+                return false;
+            }
+
+            if (!UInt32Resolver.Instance.Read(this, out uint length))
+                return false;
+
+            T dictOutput = new();
+
+            for (int i = 0; i < length; i++)
+            {
+                if (keyResolver.Read(this, out object key) && valueResolver.Read(this, out object value))
+                {
+                    ((IDictionary) dictOutput).Add(key, value);
+                    continue;
+                }
+
+                // Something went wrong reading a key or value.
+                break;
+            }
+
+            output = dictOutput;
+            return ((IDictionary)dictOutput).Count == length;
+        }
+
+        public virtual bool TryReadDictionary<TKey, TValue>(out Dictionary<TKey, TValue> output)
+        {
+            output = null;
+
+            Resolver<TKey> keyResolver = GetResolver<TKey>();
+            Resolver<TValue> valueResolver = GetResolver<TValue>();
+
+            if (keyResolver == null || valueResolver == null)
+            {
+                Serilog.Log.Warning($"BytePayload#TryReadDictionary(): Cannot resolve IDictionary<{typeof(TKey).Name}, {typeof(TValue).Name}>! Do you have resolvers for both types?");
+                return false;
+            }
+
+            if (!UInt32Resolver.Instance.Read(this, out uint length))
+                return false;
+
+            Dictionary<TKey, TValue> dictOutput = new();
+
+            for (int i = 0; i < length; i++)
+            {
+                if (keyResolver.Read(this, out TKey key) && valueResolver.Read(this, out TValue value))
+                {
+                    dictOutput.Add(key, value);
+                    continue;
+                }
+
+                // Something went wrong reading a key or value.
+                break;
+            }
+
+            output = dictOutput;
+            return dictOutput.Count == length;
+        }
+
         /// <summary>
         /// Tries to write an object of unknown type.
         /// Returns true if a successful companion write function was called or
@@ -197,78 +343,44 @@ namespace EppNet.Data
 
         public virtual bool TryWrite(object input)
         {
+            Type type = input.GetType();
 
-            switch (Type.GetTypeCode(input.GetType()))
+            if (type.IsArray)
+                type = type.GetElementType();
+
+            if (Type.GetTypeCode(type) == TypeCode.String)
             {
-                case TypeCode.String:
-                    // We didn't use a custom string type
-                    return false;
-
-                case TypeCode.Boolean:
-                    WriteBool((bool)input);
-                    break;
-
-                case TypeCode.Byte:
-                    WriteByte((byte)input);
-                    break;
-
-                case TypeCode.SByte:
-                    WriteSByte((sbyte)input);
-                    break;
-
-                case TypeCode.Int16:
-                    WriteInt16((short)input);
-                    break;
-
-                case TypeCode.UInt16:
-                    WriteUInt16((ushort)input);
-                    break;
-
-                case TypeCode.Int32:
-                    WriteInt32((int)input);
-                    break;
-
-                case TypeCode.UInt32:
-                    WriteUInt32((uint)input);
-                    break;
-
-                case TypeCode.Int64:
-                    WriteInt64((long)input);
-                    break;
-
-                case TypeCode.UInt64:
-                    WriteUInt64((ulong)input);
-                    break;
-
-                case TypeCode.Single:
-                    WriteSingle((float)input);
-                    break;
-
-                case TypeCode.Object:
-                    // Try to resolve the type to either a string type or
-                    // a type we have a resolver for
-
-                    if (input.GetType() == typeof(Str16))
-                    {
-                        WriteString16((Str16)input);
-                        break;
-                    }    
-
-                    if (input.GetType() == typeof(Str8))
-                    {
-                        WriteString8((Str8)input);
-                        break;
-                    }
-
-                    IResolver resolver = GetResolver(input.GetType());
-                    return resolver?.Write(this, input) == true;
-
-                default:
-                    return false;
-
+                // Cannot just write a string willy nilly
+                Serilog.Log.Warning("BytePayload#TryWrite(): You must specify if this is a String8 or String16!");
+                return false;
             }
 
-            return true;
+            IResolver resolver = GetResolver(type);
+            return resolver?.Write(this, input) == true;
+        }
+
+        /// <summary>
+        /// Tries to write an object of unknown type.
+        /// Returns true if a successful companion write function was called or
+        /// false if unable to find the correct function.
+        /// </summary>
+
+        public virtual bool TryWrite<T>(T input)
+        {
+            Type type = input.GetType();
+
+            if (Type.GetTypeCode(type) == TypeCode.String || (type.IsArray && Type.GetTypeCode(type.GetElementType()) == TypeCode.String))
+            {
+                // Cannot just write a string willy nilly
+                Serilog.Log.Warning("BytePayload#TryWrite(): You must specify if this is a String8 or String16!");
+                return false;
+            }
+
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                return TryWriteDictionary((IDictionary) input, type.GetGenericArguments()[0], type.GetGenericArguments()[1]);
+
+            Resolver<T> resolver = GetResolver<T>();
+            return resolver?.Write(this, input) == true;
         }
 
         /// <summary>
@@ -279,73 +391,23 @@ namespace EppNet.Data
         /// <param name="type"></param>
         /// <returns>Result of companion #Read?() function or null</returns>
 
-        public virtual object TryRead(Type type)
+        public virtual bool TryRead<T>(out T output) where T : new()
         {
+            Type type = typeof(T);
+            output = default;
 
-            object output = null;
-
-            switch (Type.GetTypeCode(type))
+            if (Type.GetTypeCode(type) == TypeCode.String || (type.IsArray && Type.GetTypeCode(type.GetElementType()) == TypeCode.String))
             {
-                case TypeCode.String:
-                    // Must explicitly specify a string type!
-                    return null;
-
-                case TypeCode.Boolean:
-                    output = ReadBool();
-                    break;
-
-                case TypeCode.Byte:
-                    output = ReadByte();
-                    break;
-
-                case TypeCode.SByte:
-                    output = ReadSByte();
-                    break;
-
-                case TypeCode.Int16:
-                    output = ReadInt16();
-                    break;
-
-                case TypeCode.UInt16:
-                    output = ReadUInt16();
-                    break;
-
-                case TypeCode.Int32:
-                    output = ReadInt32();
-                    break;
-
-                case TypeCode.UInt32:
-                    output = ReadUInt32();
-                    break;
-
-                case TypeCode.Int64:
-                    output = ReadInt64();
-                    break;
-
-                case TypeCode.UInt64:
-                    output = ReadUInt64();
-                    break;
-
-                case TypeCode.Single:
-                    output = ReadSingle();
-                    break;
-
-                case TypeCode.Object:
-
-                    if (type == typeof(Str16))
-                        return ReadString16();
-                    else if (type == typeof(Str8))
-                        return ReadString8();
-
-                    // Try to resolve the type
-                    IResolver resolver = GetResolver(type);
-                    resolver?.Read(this, out output);
-
-                    break;
-
+                // Cannot just write a string willy nilly
+                Serilog.Log.Warning("BytePayload#TryRead(): You must specify if this is a String8 or String16!");
+                return false;
             }
 
-            return output;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                return _Internal_TryReadDictionary(type.GetGenericArguments()[0], type.GetGenericArguments()[1], out output);
+
+            Resolver<T> resolver = GetResolver<T>();
+            return resolver?.Read(this, out output) == true;
         }
 
         /// <summary>
@@ -407,504 +469,6 @@ namespace EppNet.Data
         }
 
         /// <summary>
-        /// Writes an unsigned 8-bit integer denoting the length as well as
-        /// the specified string in the encoding specified by <see cref="Encoder"/>
-        /// to the stream.<br/>
-        /// Writes are between 16 bytes and 2,048 bytes inclusive.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteString8(string input)
-        {
-            if (input.Length == 0 || input.Length > byte.MaxValue)
-                throw new ArgumentOutOfRangeException($"BytePayload#WriteString8(string) must be between 1 and {byte.MaxValue}.");
-
-            EnsureReadyToWrite();
-
-            WriteUInt8((byte)input.Length);
-            _Internal_WriteString(input);
-        }
-
-        /// <summary>
-        /// Reads a string in the encoding specified by <see cref="Encoder"/>. <br/>
-        /// See <see cref="WriteString8(string)"/> for more information on how this is
-        /// written to the stream.
-        /// </summary>
-        /// <returns></returns>
-
-        public string ReadString8()
-        {
-            int length = ReadUInt8();
-            return ReadString(length);
-        }
-
-        /// <summary>
-        /// Writes an unsigned 16-bit integer denoting the length as well as
-        /// the specified string in the encoding specified by <see cref="Encoder"/>
-        /// to the stream.<br/>
-        /// Writes are between 24 bytes and 524,296 bytes (~524.296KB) inclusive.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteString16(string input)
-        {
-            if (input.Length == 0 || input.Length > ushort.MaxValue)
-                throw new ArgumentOutOfRangeException($"BytePayload#WriteString16(string) must be between 1 and {ushort.MaxValue}.");
-
-            EnsureReadyToWrite();
-
-            WriteUInt16((ushort)input.Length);
-            _Internal_WriteString(input);
-        }
-
-        /// <summary>
-        /// Reads a string in the encoding specified by <see cref="Encoder"/>. <br/>
-        /// See <see cref="WriteString16(string)"/> for more information on how this is
-        /// written to the stream.
-        /// </summary>
-        /// <returns></returns>
-
-        public string ReadString16()
-        {
-            int length = ReadUInt16();
-            return ReadString(length);
-        }
-
-        /// <summary>
-        /// Writes an unsigned 8-bit integer to the stream denoting 1 (true) or 0 (false).
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteBool(bool input)
-        {
-            EnsureReadyToWrite();
-            WriteUInt8((byte) (input ? 1 : 0));
-        }
-
-        /// <summary>
-        /// Reads an unsigned 8-bit integer from the stream and checks if it equals 1 or 0.<br/>
-        /// <see cref="WriteBool(bool)"/>
-        /// </summary>
-        /// <returns></returns>
-
-        public bool ReadBool() => (ReadUInt8() == 1);
-
-        /// <summary>
-        /// Writes an unsigned 8-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteUInt8(byte input)
-        {
-            EnsureReadyToWrite();
-            Stream.WriteByte(input);
-        }
-
-        /// <summary>
-        /// Reads an unsigned 8-bit integer from the stream.
-        /// <br/>
-        /// <br/>
-        /// Exceptions: <br/>
-        /// - <see cref="BytePayloadReadException"/> Out of Range
-        /// </summary>
-
-        public byte ReadUInt8()
-        {
-            long pos = Stream.Position;
-            int result = Stream.ReadByte();
-
-            if (result == -1)
-            {
-                // This is the end of the stream.
-                throw BytePayloadReadException.NewOutOfRangeException(this, pos, 1);
-            }
-
-            return (byte)result;
-        }
-
-        /// <summary>
-        /// Writes an unsigned 8-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteByte(byte input) => WriteUInt8(input);
-
-        /// <summary>
-        /// Reads an unsigned 8-bit integer from the stream.
-        /// </summary>
-        public byte ReadByte() => ReadUInt8();
-
-        /// <summary>
-        /// Writes an 8-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteInt8(sbyte input)
-        {
-            EnsureReadyToWrite();
-            Stream.WriteByte((byte)input);
-        }
-
-        /// <summary>
-        /// Reads an 8-bit integer from the stream.
-        /// <br/>
-        /// <br/>
-        /// Exceptions: <br/>
-        /// - <see cref="BytePayloadReadException"/> Out of Range
-        /// </summary>
-
-        public sbyte ReadInt8()
-        {
-            long pos = Stream.Position;
-            int result = Stream.ReadByte();
-
-            if (result == -1)
-            {
-                // This is the end of the stream.
-                throw BytePayloadReadException.NewOutOfRangeException(this, pos, 1);
-            }
-
-            return (sbyte)result;
-        }
-
-        /// <summary>
-        /// Writes an 8-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteSByte(sbyte input) => WriteInt8(input);
-
-        /// <summary>
-        /// Reads an 8-bit integer from the stream.
-        /// </summary>
-        public sbyte ReadSByte() => ReadInt8();
-
-        /// <summary>
-        /// Writes a 16-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteInt16(short input)
-        {
-            EnsureReadyToWrite();
-            BinaryPrimitives.WriteInt16LittleEndian(Stream.GetSpan(2), input);
-            Stream.Advance(2);
-        }
-
-        /// <summary>
-        /// Reads a 16-bit integer from the stream.
-        /// </summary>
-
-        public short ReadInt16()
-        {
-            Span<byte> buffer = stackalloc byte[2];
-            int read = Stream.Read(buffer);
-            short output = BinaryPrimitives.ReadInt16LittleEndian(buffer);
-            return output;
-        }
-
-        /// <summary>
-        /// Writes a 16-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteShort(short input) => WriteInt16(input);
-
-        /// <summary>
-        /// Reads a 16-bit integer from the stream.
-        /// </summary>
-        public short ReadShort() => ReadInt16();
-
-        /// <summary>
-        /// Writes an unsigned 16-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteUInt16(ushort input)
-        {
-            EnsureReadyToWrite();
-
-            BinaryPrimitives.WriteUInt16LittleEndian(Stream.GetSpan(2), input);
-            Stream.Advance(2);
-        }
-
-        /// <summary>
-        /// Reads an unsigned 16-bit integer from the stream.
-        /// </summary>
-
-        public ushort ReadUInt16()
-        {
-            Span<byte> buffer = stackalloc byte[2];
-            int read = Stream.Read(buffer);
-            ushort output = BinaryPrimitives.ReadUInt16LittleEndian(buffer);
-
-            return output;
-        }
-
-        /// <summary>
-        /// Writes an unsigned 16-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteUShort(ushort input) => WriteUInt16(input);
-
-        /// <summary>
-        /// Reads an unsigned 16-bit integer from the stream.
-        /// </summary>
-
-        public ushort ReadUShort() => ReadUInt16();
-
-        /// <summary>
-        /// Writes an unsigned 32-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteUInt32(uint input)
-        {
-            EnsureReadyToWrite();
-
-            BinaryPrimitives.WriteUInt32LittleEndian(Stream.GetSpan(4), input);
-            Stream.Advance(4);
-        }
-
-        /// <summary>
-        /// Reads an unsigned 32-bit integer from the stream.
-        /// </summary>
-
-        public uint ReadUInt32()
-        {
-            Span<byte> buffer = stackalloc byte[4];
-            int read = Stream.Read(buffer);
-            uint output = BinaryPrimitives.ReadUInt32LittleEndian(buffer);
-
-            return output;
-        }
-
-        /// <summary>
-        /// Writes an unsigned 32-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteUInt(uint input) => WriteUInt32(input);
-
-        /// <summary>
-        /// Reads an unsigned 32-bit integer from the stream.
-        /// </summary>
-
-        public uint ReadUInt() => ReadUInt32();
-
-        /// <summary>
-        /// Writes a 32-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteInt32(int input)
-        {
-            EnsureReadyToWrite();
-
-            BinaryPrimitives.WriteInt32LittleEndian(Stream.GetSpan(4), input);
-            Stream.Advance(4);
-        }
-
-        /// <summary>
-        /// Reads a 32-bit integer from the stream.
-        /// </summary>
-
-        public int ReadInt32()
-        {
-            Span<byte> buffer = stackalloc byte[4];
-            int read = Stream.Read(buffer);
-            int output = BinaryPrimitives.ReadInt32LittleEndian(buffer);
-
-            return output;
-        }
-
-        /// <summary>
-        /// Writes a 32-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteInt(int input) => WriteInt32(input);
-
-        /// <summary>
-        /// Reads a 32-bit integer from the stream.
-        /// </summary>
-        public int ReadInt() => ReadInt32();
-
-        /// <summary>
-        /// Writes an unsigned 64-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteUInt64(ulong input)
-        {
-            EnsureReadyToWrite();
-
-            BinaryPrimitives.WriteUInt64LittleEndian(Stream.GetSpan(8), input);
-            Stream.Advance(8);
-        }
-
-        /// <summary>
-        /// Reads an unsigned 64-bit integer from the stream.
-        /// </summary>
-
-        public ulong ReadUInt64()
-        {
-            Span<byte> buffer = stackalloc byte[8];
-            int read = Stream.Read(buffer);
-            ulong output = BinaryPrimitives.ReadUInt64LittleEndian(buffer);
-
-            return output;
-        }
-
-        /// <summary>
-        /// Writes an unsigned 64-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteULong(ulong input) => WriteUInt64(input);
-
-        /// <summary>
-        /// Reads an unsigned 64-bit integer from the stream.
-        /// </summary>
-
-        public ulong ReadULong() => ReadUInt64();
-
-        /// <summary>
-        /// Writes a 64-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteInt64(long input)
-        {
-            EnsureReadyToWrite();
-
-            BinaryPrimitives.WriteInt64LittleEndian(Stream.GetSpan(8), input);
-            Stream.Advance(8);
-        }
-
-        /// <summary>
-        /// Reads a 64-bit integer from the stream.
-        /// </summary>
-
-        public long ReadInt64()
-        {
-            Span<byte> buffer = stackalloc byte[8];
-            int read = Stream.Read(buffer);
-            long output = BinaryPrimitives.ReadInt64LittleEndian(buffer);
-
-            return output;
-        }
-
-        /// <summary>
-        /// Writes a 64-bit integer to the stream.
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteLong(long input) => WriteInt64(input);
-
-        /// <summary>
-        /// Reads a 64-bit integer from the stream.
-        /// </summary>
-
-        public long ReadLong() => ReadInt64();
-
-        /// <summary>
-        /// Writes a provided float input as a 32-bit integer.<br/>
-        /// Floats are sent with the precision specified by <see cref="FloatPrecision"/>
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteFloat(float input)
-        {
-            EnsureReadyToWrite();
-
-            double rounded = input.Round(FloatPrecision);
-
-            int i32 = (int)(rounded * PrecisionDecimalPlaces);
-            WriteInt32(i32);
-        }
-
-        /// <summary>
-        /// Writes a provided float input as a 32-bit integer.<br/>
-        /// Floats are sent with the precision specified by <see cref="FloatPrecision"/>
-        /// </summary>
-        /// <param name="input"></param>
-
-        public void WriteSingle(float input) => WriteFloat(input);
-
-        /// <summary>
-        /// Reads a float from the stream.<br/>
-        /// Floats are sent with the precision specified by <see cref="FloatPrecision"/>
-        /// </summary>
-        /// <returns></returns>
-
-        public float ReadFloat()
-        {
-            float i32 = ReadInt32();
-            return (float) (i32 * PrecisionReturnDecimalPlaces);
-        }
-
-        /// <summary>
-        /// Reads a float from the stream.<br/>
-        /// Floats are sent with the precision specified by <see cref="FloatPrecision"/>
-        /// </summary>
-        /// <returns></returns>
-
-        public float ReadSingle() => ReadFloat();
-
-        /// <summary>
-        /// Writes a timestamp to the wire including its unsigned 8-bit integer type and
-        /// 64-bit integer denoting its value.
-        /// </summary>
-
-        public void WriteTypedTimestamp(Timestamp input)
-        {
-            EnsureReadyToWrite();
-
-            WriteUInt8((byte)input.Type);
-            WriteLong(input.Value);
-        }
-
-        /// <summary>
-        /// Reads a 64-integer and creates a <see cref="Timestamp"/> with
-        /// the received time and type.
-        /// </summary>
-        /// <returns></returns>
-
-        public Timestamp ReadTypedTimestamp()
-        {
-            byte type = ReadUInt8();
-            long value = ReadLong();
-
-            TimestampType tsType = (TimestampType)Enum.ToObject(typeof(TimestampType), type);
-            return new Timestamp(tsType, false, value);
-        }
-
-        /// <summary>
-        /// Writes a 64-bit integer denoting the value of the specified <see cref="Timestamp"/>.
-        /// </summary>
-
-        public void WriteTimestamp(Timestamp input)
-        {
-            EnsureReadyToWrite();
-
-            WriteLong(input.Value);
-        }
-
-        /// <summary>
-        /// Reads a 64-integer and creates a <see cref="TimestampType.None"/> <see cref="Timestamp"/> with
-        /// the received time.
-        /// </summary>
-        /// <returns></returns>
-
-        public Timestamp ReadTimestamp()
-        {
-            long value = ReadLong();
-            return new Timestamp() { Value = value };
-        }
-
-        /// <summary>
         /// Returns the size of this payload in kilobytes.
         /// </summary>
         /// <returns></returns>
@@ -933,23 +497,6 @@ namespace EppNet.Data
         {
             Stream?.Close();
             Stream = ObtainStream();
-        }
-
-        /// <summary>
-        /// Directly writes a string to the stream. Call AFTER writing the length
-        /// of the string being written. See <see cref="WriteString8(string)"/> and <see cref="WriteString16(string)"/>
-        /// for the intended approach. <br/>If your string is larger than 65,535 characters, you should reconsider what
-        /// you're doing as it's incredibly wasteful to send a string that large over the wire.
-        /// </summary>
-        /// <param name="input"></param>
-
-        protected void _Internal_WriteString(string input)
-        {
-            Span<byte> span = Stream.GetSpan(input.Length);
-            ReadOnlySequence<char> chars = new(input.AsMemory());
-
-            int written = Encoder.GetBytes(chars, span);
-            Stream.Advance(written);
         }
 
     }
