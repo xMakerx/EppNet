@@ -41,7 +41,7 @@ namespace EppNet.Data
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
-        protected override bool _Internal_Read(BytePayload payload, out Quaternion output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out Quaternion output)
         {
             // Let's consider the header
             byte header = payload.ReadByte();
@@ -51,7 +51,7 @@ namespace EppNet.Data
             {
                 // Yay! Just match the quaternion and return!
                 output = header == IdentityHeader ? Quaternion.Identity : Quaternion.Zero;
-                return true;
+                return ReadResult.Success;
             }
 
             // We didn't have the easy way out. Consider the most significant bit.
@@ -89,7 +89,7 @@ namespace EppNet.Data
             for (int i = 0; i < components.Length; i++)
                 output[i] = components[i];
 
-            return true;
+            return ReadResult.Success;
         }
 
 

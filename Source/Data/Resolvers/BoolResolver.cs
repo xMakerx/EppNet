@@ -20,12 +20,12 @@ namespace EppNet.Data
             => BytePayload.AddResolver(typeof(bool), Instance);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool _Internal_Read(BytePayload payload, out bool output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out bool output)
         {
             int result = payload.Stream.ReadByte();
             output = ((byte)result == 1);
 
-            return result != -1;
+            return result == -1 ? ReadResult.Failed : ReadResult.Success;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

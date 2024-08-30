@@ -12,9 +12,35 @@ using System.Runtime.InteropServices;
 namespace EppNet.Data
 {
 
-    public abstract class Resolver<T> : IResolver
+    public enum ReadResult
+    {
+        /// <summary>
+        /// Failed to read from the stream
+        /// </summary>
+        Failed,
+
+        /// <summary>
+        /// Successfully read from the stream<br/>
+        /// In cases of vectors, this means an absolute value was returned
+        /// </summary>
+        Success,
+
+        /// <summary>
+        /// Successfully read from the stream<br/>
+        /// In cases of vectors, this means a delta value was returned.
+        /// </summary>
+        SuccessDelta
+    }
+
+    public static class ReadResultExtensions
     {
 
+        public static bool IsSuccess(this ReadResult result) 
+            => result == ReadResult.Success || result == ReadResult.SuccessDelta;
+    }
+
+    public abstract class Resolver<T> : IResolver
+    {
         public readonly Type Output;
 
         /// <summary>
@@ -46,26 +72,63 @@ namespace EppNet.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Read(BytePayload payload, out T output)
+        public ReadResult Read(BytePayload payload, out T output)
             => _Internal_Read(payload, out output);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Read(BytePayload payload, out object output)
+        public ReadResult Read(BytePayload payload, out object output)
         {
-            bool read = _Internal_Read(payload, out T result);
+            ReadResult read = _Internal_Read(payload, out T result);
             output = result;
 
             return read;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Read(BytePayload payload, out T[] output)
+        public ReadResult Read(BytePayload payload, out T[] output)
         {
             output = default;
-            bool read = UInt32Resolver.Instance.Read(payload, out uint length);
 
-            if (!read)
-                return false;
+            ReadResult read = ByteResolver.Instance.Read(payload, out byte header);
+
+            if (!read.IsSuccess())
+                return ReadResult.Failed;
+
+            if (header == IResolver.NullArrayHeader)
+            {
+                output = null;
+                return ReadResult.Success;
+            }
+
+            if (header == IResolver.EmptyArrayHeader)
+            {
+                output = new T[0];
+                return ReadResult.Success;
+            }
+
+            int typeIndex = byte.TrailingZeroCount(header);
+            int length;
+
+            switch (typeIndex)
+            {
+                case 0:
+                    ByteResolver.Instance.Read(payload, out byte bLength);
+                    length = bLength;
+                    break;
+
+                case 1:
+                    UShortResolver.Instance.Read(payload, out ushort uLength);
+                    length = uLength;
+                    break;
+
+                case 2:
+                    UInt32Resolver.Instance.Read(payload, out uint iLength);
+                    length = (int) iLength;
+                    break;
+
+                default:
+                    return ReadResult.Failed;
+            }
 
             output = new T[length];
 
@@ -73,7 +136,7 @@ namespace EppNet.Data
             {
                 read = _Internal_Read(payload, out T element);
 
-                if (!read)
+                if (read == ReadResult.Failed)
                     break;
 
                 output[i] = element;
@@ -83,13 +146,46 @@ namespace EppNet.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Read<TCollection>(BytePayload payload, out TCollection output) where TCollection : ICollection<T>, new()
+        public ReadResult Read<TCollection>(BytePayload payload, out TCollection output) where TCollection : ICollection<T>, new()
         {
             output = default;
-            bool read = UInt32Resolver.Instance.Read(payload, out uint length);
+            ReadResult read = ByteResolver.Instance.Read(payload, out byte header);
 
-            if (!read)
-                return false;
+            if (!read.IsSuccess())
+                return ReadResult.Failed;
+
+            if (header == IResolver.NullArrayHeader)
+                return ReadResult.Success;
+
+            if (header == IResolver.EmptyArrayHeader)
+            {
+                output = new();
+                return ReadResult.Success;
+            }
+
+            int typeIndex = byte.TrailingZeroCount(header);
+            int length;
+
+            switch (typeIndex)
+            {
+                case 0:
+                    ByteResolver.Instance.Read(payload, out byte bLength);
+                    length = bLength;
+                    break;
+
+                case 1:
+                    UShortResolver.Instance.Read(payload, out ushort uLength);
+                    length = uLength;
+                    break;
+
+                case 2:
+                    UInt32Resolver.Instance.Read(payload, out uint iLength);
+                    length = (int)iLength;
+                    break;
+
+                default:
+                    return ReadResult.Failed;
+            }
 
             output = new();
 
@@ -97,7 +193,7 @@ namespace EppNet.Data
             {
                 read = _Internal_Read(payload, out T element);
 
-                if (!read)
+                if (!read.IsSuccess())
                     break;
 
                 output.Add(element);
@@ -130,7 +226,44 @@ namespace EppNet.Data
         {
             payload.EnsureReadyToWrite();
 
-            bool written = UInt32Resolver.Instance.Write(payload, input.Length);
+            if (input == null)
+            {
+                ByteResolver.Instance.Write(payload, IResolver.NullArrayHeader);
+                return true;
+            }
+            else if (input.Length == 0)
+            {
+                ByteResolver.Instance.Write(payload, IResolver.EmptyArrayHeader);
+                return true;
+            }
+
+            int typeIndex = 2;
+
+            if (byte.MinValue <= input.Length && input.Length <= byte.MaxValue)
+                typeIndex = 0;
+
+            else if (ushort.MinValue <= input.Length && input.Length <= ushort.MaxValue)
+                typeIndex = 1;
+
+            byte header = 0;
+            header = (byte)(header | (1 << typeIndex));
+            bool written = ByteResolver.Instance.Write(payload, header);
+
+            // Let's write the length
+            switch (typeIndex)
+            {
+                case 0:
+                    ByteResolver.Instance.Write(payload, input.Length);
+                    break;
+
+                case 1:
+                    UShortResolver.Instance.Write(payload, input.Length);
+                    break;
+
+                case 2:
+                    UInt32Resolver.Instance.Write(payload, input.Length);
+                    break;
+            }
 
             for (int i = 0; i < input.Length; i++)
             {
@@ -151,7 +284,30 @@ namespace EppNet.Data
         {
             payload.EnsureReadyToWrite();
 
-            bool written = UInt32Resolver.Instance.Write(payload, input.Count);
+            if (input == null)
+            {
+                ByteResolver.Instance.Write(payload, IResolver.NullArrayHeader);
+                return true;
+            }
+
+            if (input.Count == 0)
+            {
+                ByteResolver.Instance.Write(payload, IResolver.EmptyArrayHeader);
+                return true;
+            }
+
+            int typeIndex = 2;
+
+            if (byte.MinValue <= input.Count && input.Count <= byte.MaxValue)
+                typeIndex = 0;
+
+            else if (ushort.MinValue <= input.Count && input.Count <= ushort.MaxValue)
+                typeIndex = 1;
+
+            byte header = 0;
+            header = (byte)(header | (1 << typeIndex));
+            bool written = ByteResolver.Instance.Write(payload, header);
+
             IEnumerator<T> inputEnum = input.GetEnumerator();
 
             while (written && inputEnum.MoveNext())
@@ -191,12 +347,16 @@ namespace EppNet.Data
         }
 
         protected abstract bool _Internal_Write(BytePayload payload, T input);
-        protected abstract bool _Internal_Read(BytePayload payload, out T output);
+        protected abstract ReadResult _Internal_Read(BytePayload payload, out T output);
     }
 
     public interface IResolver
     {
-        public bool Read(BytePayload payload, out object output);
+
+        public const byte NullArrayHeader = 0;
+        public const byte EmptyArrayHeader = 16;
+
+        public ReadResult Read(BytePayload payload, out object output);
         public bool Write(BytePayload payload, object input);
     }
 

@@ -54,16 +54,10 @@ namespace EppNet.Data
             options.GenerateCallStacks = false;
 
             RecyclableStreamMgr = new(options);
-
-            AddResolver(typeof(Vector2), new Vector2Resolver());
-            AddResolver(typeof(Vector3), new Vector3Resolver());
-            AddResolver(typeof(Vector4), new Vector4Resolver());
         }
 
         public static void AddResolver(Type type, IResolver resolver)
-        {
-            _resolvers.Add(type, resolver);
-        }
+            => _resolvers.Add(type, resolver);
 
         public static IResolver GetResolver(Type type)
         {
@@ -282,14 +276,52 @@ namespace EppNet.Data
                 return false;
             }
 
-            if (!UInt32Resolver.Instance.Read(this, out uint length))
+            ReadResult read = ByteResolver.Instance.Read(this, out byte header);
+
+            if (!read.IsSuccess())
                 return false;
+
+            if (header == IResolver.NullArrayHeader)
+            {
+                output = default;
+                return true;
+            }
+
+            if (header == IResolver.EmptyArrayHeader)
+            {
+                output = new();
+                return true;
+            }
+
+            int typeIndex = byte.TrailingZeroCount(header);
+            int length;
+
+            switch (typeIndex)
+            {
+                case 0:
+                    ByteResolver.Instance.Read(this, out byte bLength);
+                    length = bLength;
+                    break;
+
+                case 1:
+                    UShortResolver.Instance.Read(this, out ushort uLength);
+                    length = uLength;
+                    break;
+
+                case 2:
+                    UInt32Resolver.Instance.Read(this, out uint iLength);
+                    length = (int)iLength;
+                    break;
+
+                default:
+                    return false;
+            }
 
             T dictOutput = new();
 
             for (int i = 0; i < length; i++)
             {
-                if (keyResolver.Read(this, out object key) && valueResolver.Read(this, out object value))
+                if (keyResolver.Read(this, out object key).IsSuccess() && valueResolver.Read(this, out object value).IsSuccess())
                 {
                     ((IDictionary) dictOutput).Add(key, value);
                     continue;
@@ -316,14 +348,52 @@ namespace EppNet.Data
                 return false;
             }
 
-            if (!UInt32Resolver.Instance.Read(this, out uint length))
+            ReadResult read = ByteResolver.Instance.Read(this, out byte header);
+
+            if (!read.IsSuccess())
                 return false;
+
+            if (header == IResolver.NullArrayHeader)
+            {
+                output = null;
+                return true;
+            }
+
+            if (header == IResolver.EmptyArrayHeader)
+            {
+                output = new();
+                return true;
+            }
+
+            int typeIndex = byte.TrailingZeroCount(header);
+            int length;
+
+            switch (typeIndex)
+            {
+                case 0:
+                    ByteResolver.Instance.Read(this, out byte bLength);
+                    length = bLength;
+                    break;
+
+                case 1:
+                    UShortResolver.Instance.Read(this, out ushort uLength);
+                    length = uLength;
+                    break;
+
+                case 2:
+                    UInt32Resolver.Instance.Read(this, out uint iLength);
+                    length = (int)iLength;
+                    break;
+
+                default:
+                    return false;
+            }
 
             Dictionary<TKey, TValue> dictOutput = new();
 
             for (int i = 0; i < length; i++)
             {
-                if (keyResolver.Read(this, out TKey key) && valueResolver.Read(this, out TValue value))
+                if (keyResolver.Read(this, out TKey key).IsSuccess() && valueResolver.Read(this, out TValue value).IsSuccess())
                 {
                     dictOutput.Add(key, value);
                     continue;
@@ -409,7 +479,7 @@ namespace EppNet.Data
                 return _Internal_TryReadDictionary(type.GetGenericArguments()[0], type.GetGenericArguments()[1], out output);
 
             Resolver<T> resolver = GetResolver<T>();
-            return resolver?.Read(this, out output) == true;
+            return resolver?.Read(this, out output).IsSuccess() == true; 
         }
 
         /// <summary>

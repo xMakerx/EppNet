@@ -6,6 +6,8 @@
 
 using EppNet.Utilities;
 
+using Microsoft.Diagnostics.Runtime.Utilities;
+
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
@@ -24,14 +26,14 @@ namespace EppNet.Data
         public FloatResolver() : base(sizeof(int)) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool _Internal_Read(BytePayload payload, out float output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out float output)
         {
             Span<byte> buffer = stackalloc byte[Size];
             int read = payload.Stream.Read(buffer);
             
             bool didRead = BinaryPrimitives.TryReadInt32LittleEndian(buffer, out int i32);
             output = didRead ? (float)(i32 * BytePayload.PrecisionReturnDecimalPlaces) : float.NaN;
-            return didRead;
+            return didRead ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

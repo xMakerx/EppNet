@@ -19,10 +19,11 @@ namespace EppNet.Data
         public String16Resolver() : base(autoAdvance: false) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool _Internal_Read(BytePayload payload, out Str16 output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out Str16 output)
         {
             Span<byte> buffer = stackalloc byte[LengthByteSize];
             int read = payload.Stream.Read(buffer);
+            payload.Stream.Advance(read);
             
             bool didRead = BinaryPrimitives.TryReadUInt16LittleEndian(buffer, out ushort length);
             output = null;
@@ -32,9 +33,10 @@ namespace EppNet.Data
                 buffer = stackalloc byte[length];
                 read = payload.Stream.Read(buffer);
                 output = payload.Encoder.GetString(buffer);
+                payload.Stream.Advance(read);
             }
 
-            return read == length;
+            return read == length ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

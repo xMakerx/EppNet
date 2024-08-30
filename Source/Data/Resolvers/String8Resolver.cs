@@ -18,7 +18,7 @@ namespace EppNet.Data
         public String8Resolver() : base(autoAdvance: false) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool _Internal_Read(BytePayload payload, out Str8 output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out Str8 output)
         {
             int length = payload.Stream.ReadByte();
             payload.Stream.Advance(1);
@@ -26,15 +26,15 @@ namespace EppNet.Data
 
             if (length < 0)
                 // End of stream
-                return false;
+                return ReadResult.Failed;
             else if (length == 0)
                 // Empty string
-                return true;
+                return ReadResult.Success;
 
             Span<byte> buffer = stackalloc byte[length];
             int read = payload.Stream.Read(buffer);
             output = payload.Encoder.GetString(buffer);
-            return read == length;
+            return read == length ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

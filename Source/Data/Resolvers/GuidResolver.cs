@@ -22,13 +22,13 @@ namespace EppNet.Data
         public GuidResolver() : base(16) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool _Internal_Read(BytePayload payload, out Guid output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out Guid output)
         {
             Span<byte> buffer = stackalloc byte[Size];
             int read = payload.Stream.Read(buffer);
 
             output = (read == buffer.Length) ? new(buffer, false) : default;
-            return read == buffer.Length;
+            return read == buffer.Length ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

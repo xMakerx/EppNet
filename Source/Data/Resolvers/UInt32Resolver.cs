@@ -20,11 +20,11 @@ namespace EppNet.Data
             => BytePayload.AddResolver(typeof(uint), Instance);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override bool _Internal_Read(BytePayload payload, out uint output)
+        protected override ReadResult _Internal_Read(BytePayload payload, out uint output)
         {
             Span<byte> buffer = stackalloc byte[Size];
             int read = payload.Stream.Read(buffer);
-            return BinaryPrimitives.TryReadUInt32LittleEndian(buffer, out output);
+            return BinaryPrimitives.TryReadUInt32LittleEndian(buffer, out output) ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
