@@ -38,6 +38,13 @@ namespace EppNet.Data
             this.AutoAdvance = true;
         }
 
+        public Resolver(int size, bool autoAdvance = true)
+        {
+            this.Output = typeof(T);
+            this.Size = size;
+            this.AutoAdvance = autoAdvance;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Read(BytePayload payload, out T output)
             => _Internal_Read(payload, out output);

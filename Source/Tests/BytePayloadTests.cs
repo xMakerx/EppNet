@@ -5,8 +5,11 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Data;
+using EppNet.Utilities;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using System.Numerics;
 
 namespace EppNet.Tests
 {
@@ -14,6 +17,45 @@ namespace EppNet.Tests
     [TestClass]
     public class BytePayloadTests
     {
+
+        [TestMethod]
+        public void ReadAndWriteQuat()
+        {
+            const float MarginOfError = 0.0039f * 4f;
+
+            Quaternion a = new();
+
+            for (int i = 0; i < 4; i++)
+            {
+                a[i] = -Random.Shared.NextSingle() + Random.Shared.NextSingle();
+            }
+
+            Quaternion quantized = FastMath.Dequantized(FastMath.Quantized(a));
+            byte[] bufferIn;
+
+            using (BytePayload payloadOut = new())
+            {
+                payloadOut.Write(a);
+                bufferIn = payloadOut.Pack();
+            }
+
+            using (BytePayload payloadIn = new(bufferIn))
+            {
+                var result = payloadIn.ReadQuat();
+
+                Quaternion normalized = Quaternion.Normalize(a);
+                float errorMargin = 0f;
+
+
+                Quaternion test = result - normalized;
+
+                for (int i = 0; i < 4; i++)
+                    errorMargin += test[i];
+
+                Assert.IsTrue(quantized.Equals(result) && errorMargin <= MarginOfError);
+            }
+
+        }
 
         [TestMethod]
         public void ReadAndWriteString8()
