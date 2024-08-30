@@ -52,7 +52,7 @@ namespace EppNet.Tests
                 for (int i = 0; i < 4; i++)
                     errorMargin += test[i];
 
-                Assert.IsTrue(quantized.Equals(result) && errorMargin <= MarginOfError);
+                Assert.IsTrue(quantized.Equals(result) && MathF.Abs(errorMargin) <= MarginOfError);
             }
 
         }

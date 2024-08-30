@@ -195,7 +195,8 @@ namespace EppNet.Data
         /// particular quaternion sent. <see cref="Quaternion.Zero"/> and <see cref="Quaternion.Identity"/> are
         /// the cheapest at 1 byte each. <br/><br/>
         /// With quantization enabled, the maximum size for a quaternion is 4 bytes; otherwise, it sends
-        /// <br/>one single per value which is 4 bytes per value or 33 bytes including the header.
+        /// <br/>one single per value which is 4 bytes per value or 33 bytes including the header.<br/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <param name="input"></param>
@@ -226,7 +227,8 @@ namespace EppNet.Data
         /// particular quaternion sent. <see cref="Quaternion.Zero"/> and <see cref="Quaternion.Identity"/> are
         /// the cheapest at 1 byte each. <br/><br/>
         /// With quantization enabled, the maximum size for a quaternion is 4 bytes; otherwise, it sends
-        /// <br/>one single per value which is 4 bytes per value or 33 bytes including the header.
+        /// <br/>one single per value which is 4 bytes per value or 33 bytes including the header.<br/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <param name="input"></param>
@@ -248,7 +250,8 @@ namespace EppNet.Data
         /// particular quaternion sent. <see cref="Quaternion.Zero"/> and <see cref="Quaternion.Identity"/> are
         /// the cheapest at 1 byte each. <br/><br/>
         /// With quantization enabled, the maximum size for a quaternion is 4 bytes; otherwise, it sends
-        /// <br/>one single per value which is 4 bytes per value or 33 bytes including the header.
+        /// <br/>one single per value which is 4 bytes per value or 33 bytes including the header.<br/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <param name="input"></param>
@@ -267,7 +270,8 @@ namespace EppNet.Data
 
         /// <summary>
         /// Reads a normalized <see cref="Quaternion"/> from the stream.<br/>
-        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/>
+        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
@@ -280,7 +284,8 @@ namespace EppNet.Data
 
         /// <summary>
         /// Reads a normalized <see cref="Quaternion"/> array from the stream.<br/>
-        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/>
+        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
@@ -293,7 +298,8 @@ namespace EppNet.Data
 
         /// <summary>
         /// Reads a normalized <see cref="Quaternion"/> from the stream.<br/>
-        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/>
+        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
@@ -305,8 +311,9 @@ namespace EppNet.Data
         }
 
         /// <summary>
-        /// Reads a normalized <see cref="Quaternion"/> from the stream.<br/>
-        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/>
+        /// Reads a normalized <see cref="Quaternion"/> array from the stream.<br/>
+        /// For more information on how these are encoded, see: <see cref="Write(BytePayload, Quaternion)"/><br/>
+        /// Effective margin of error: ±0.0156
         /// </summary>
         /// <param name="payload"></param>
         /// <returns></returns>
