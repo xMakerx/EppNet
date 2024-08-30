@@ -94,7 +94,7 @@ namespace EppNet.Data
         /// Reads an unsigned 16-bit integer collection from the stream.
         /// </summary>
         /// <param name="input"></param>
-        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : ICollection<ushort>, new()
+        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : class, ICollection<ushort>, new()
         {
             UShortResolver.Instance.Read(payload, out TCollection output);
             return output;

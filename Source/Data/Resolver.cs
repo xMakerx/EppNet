@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -34,13 +35,22 @@ namespace EppNet.Data
 
     public static class ReadResultExtensions
     {
-
         public static bool IsSuccess(this ReadResult result) 
             => result == ReadResult.Success || result == ReadResult.SuccessDelta;
     }
 
-    public abstract class Resolver<T> : IResolver
+    public readonly ref struct HeaderData(byte header, int typeIndex, bool signed, bool absolute, int data)
     {
+        public readonly byte Header = header;
+        public readonly int TypeIndex = typeIndex;
+        public readonly bool Signed = signed;
+        public readonly bool Absolute = absolute;
+        public readonly int Data = data;
+    }
+
+    public abstract class Resolver<T> : IResolver<T>
+    {
+
         public readonly Type Output;
 
         /// <summary>
@@ -72,6 +82,119 @@ namespace EppNet.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected HeaderData _Internal_GetHeaderData(byte header, bool signed = false)
+        {
+            bool absolute = (header & 0b1) == 1;
+            int typeIndex = header & 0b11;
+
+            int data = (header >> 2) & 0b1111;
+            return new(header, typeIndex, signed, absolute, data);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void _Internal_WriteHeaderAndLength(BytePayload payload, int length)
+        {
+            // Type indices
+            // 0 -> byte
+            // 1 -> ushort
+            // 2 -> uint
+            int typeIndex = 2;
+
+            if (byte.MinValue <= length && length <= byte.MaxValue)
+                typeIndex = 0;
+
+            else if (ushort.MinValue <= length && length <= ushort.MaxValue)
+                typeIndex = 1;
+
+            byte header = (byte)typeIndex;
+            payload.Stream.WriteByte(header);
+
+            _ = typeIndex switch
+            {
+                0 => ByteResolver.Instance.Write(payload, length),
+                1 => UShortResolver.Instance.Write(payload, length),
+                _ => UInt32Resolver.Instance.Write(payload, length),
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected ReadResult _Internal_ReadHeaderAndGetLength(BytePayload payload, byte header, out int length)
+        {
+            // Type indices
+            // 0 -> byte
+            // 1 -> ushort
+            // 2 -> uint
+
+            return ((header >> 6) & 0b11) switch
+            {
+                0 => ByteResolver.Instance.ReadAsInt(payload, out length),
+                1 => UShortResolver.Instance.ReadAsInt(payload, out length),
+                _ => UInt32Resolver.Instance.ReadAsInt(payload, out length)
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected HeaderData _Internal_CreateHeaderWithType(scoped ref Span<float> values, bool signed = false, bool absolute = true)
+        {
+            int largestTypeIndex = 0;
+
+            // Type indices
+            // 0 -> byte or sbyte
+            // 1 -> ushort or short
+            // 2 -> uint or int
+            // 3 -> float
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                float value = values[i];
+                int typeIndex;
+
+                // Floats are the largest type to represent.
+                if (value % 1 != 0)
+                {
+                    // We must use floats for all.
+                    largestTypeIndex = 3;
+                    break;
+                }
+
+                if (signed)
+                {
+                    if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
+                        typeIndex = 0;
+
+                    else if (ushort.MinValue <= value && value <= ushort.MaxValue)
+                        typeIndex = 1;
+
+                    else if (uint.MinValue <= value && value <= uint.MaxValue)
+                        typeIndex = 2;
+
+                    else
+                        typeIndex = 3;
+                }
+                else
+                {
+                    if (byte.MinValue <= value && value <= byte.MaxValue)
+                        typeIndex = 0;
+
+                    else if (short.MinValue <= value && value <= short.MaxValue)
+                        typeIndex = 1;
+
+                    else if (int.MinValue <= value && value <= int.MaxValue)
+                        typeIndex = 2;
+
+                    else
+                        typeIndex = 3;
+                }
+
+                if (typeIndex > largestTypeIndex)
+                    largestTypeIndex = typeIndex;
+            }
+
+            return new((byte)((absolute ? 128 : 0) | (byte)largestTypeIndex),
+                largestTypeIndex, signed, absolute, 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadResult Read(BytePayload payload, out T output)
             => _Internal_Read(payload, out output);
 
@@ -94,41 +217,16 @@ namespace EppNet.Data
             if (!read.IsSuccess())
                 return ReadResult.Failed;
 
-            if (header == IResolver.NullArrayHeader)
+            if (header == IResolver.NullArrayHeader || header == IResolver.EmptyArrayHeader)
             {
-                output = null;
+                output = header == IResolver.NullArrayHeader ? null : [];
                 return ReadResult.Success;
             }
 
-            if (header == IResolver.EmptyArrayHeader)
-            {
-                output = new T[0];
-                return ReadResult.Success;
-            }
+            read = _Internal_ReadHeaderAndGetLength(payload, header, out int length);
 
-            int typeIndex = byte.TrailingZeroCount(header);
-            int length;
-
-            switch (typeIndex)
-            {
-                case 0:
-                    ByteResolver.Instance.Read(payload, out byte bLength);
-                    length = bLength;
-                    break;
-
-                case 1:
-                    UShortResolver.Instance.Read(payload, out ushort uLength);
-                    length = uLength;
-                    break;
-
-                case 2:
-                    UInt32Resolver.Instance.Read(payload, out uint iLength);
-                    length = (int) iLength;
-                    break;
-
-                default:
-                    return ReadResult.Failed;
-            }
+            if (!read.IsSuccess())
+                return read;
 
             output = new T[length];
 
@@ -146,7 +244,7 @@ namespace EppNet.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadResult Read<TCollection>(BytePayload payload, out TCollection output) where TCollection : ICollection<T>, new()
+        public ReadResult Read<TCollection>(BytePayload payload, out TCollection output) where TCollection : class, ICollection<T>, new()
         {
             output = default;
             ReadResult read = ByteResolver.Instance.Read(payload, out byte header);
@@ -154,38 +252,16 @@ namespace EppNet.Data
             if (!read.IsSuccess())
                 return ReadResult.Failed;
 
-            if (header == IResolver.NullArrayHeader)
-                return ReadResult.Success;
-
-            if (header == IResolver.EmptyArrayHeader)
+            if (header == IResolver.NullArrayHeader || header == IResolver.EmptyArrayHeader)
             {
-                output = new();
+                output = header == IResolver.NullArrayHeader ? default : new();
                 return ReadResult.Success;
             }
 
-            int typeIndex = byte.TrailingZeroCount(header);
-            int length;
+            read = _Internal_ReadHeaderAndGetLength(payload, header, out int length);
 
-            switch (typeIndex)
-            {
-                case 0:
-                    ByteResolver.Instance.Read(payload, out byte bLength);
-                    length = bLength;
-                    break;
-
-                case 1:
-                    UShortResolver.Instance.Read(payload, out ushort uLength);
-                    length = uLength;
-                    break;
-
-                case 2:
-                    UInt32Resolver.Instance.Read(payload, out uint iLength);
-                    length = (int)iLength;
-                    break;
-
-                default:
-                    return ReadResult.Failed;
-            }
+            if (!read.IsSuccess())
+                return read;
 
             output = new();
 
@@ -237,33 +313,8 @@ namespace EppNet.Data
                 return true;
             }
 
-            int typeIndex = 2;
-
-            if (byte.MinValue <= input.Length && input.Length <= byte.MaxValue)
-                typeIndex = 0;
-
-            else if (ushort.MinValue <= input.Length && input.Length <= ushort.MaxValue)
-                typeIndex = 1;
-
-            byte header = 0;
-            header = (byte)(header | (1 << typeIndex));
-            bool written = ByteResolver.Instance.Write(payload, header);
-
-            // Let's write the length
-            switch (typeIndex)
-            {
-                case 0:
-                    ByteResolver.Instance.Write(payload, input.Length);
-                    break;
-
-                case 1:
-                    UShortResolver.Instance.Write(payload, input.Length);
-                    break;
-
-                case 2:
-                    UInt32Resolver.Instance.Write(payload, input.Length);
-                    break;
-            }
+            _Internal_WriteHeaderAndLength(payload, input.Length);
+            bool written = true;
 
             for (int i = 0; i < input.Length; i++)
             {
@@ -280,33 +331,20 @@ namespace EppNet.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual bool Write<TCollection>(BytePayload payload, TCollection input) where TCollection : ICollection<T>
+        public virtual bool Write<TCollection>(BytePayload payload, TCollection input) where TCollection : class, ICollection<T>
         {
             payload.EnsureReadyToWrite();
 
-            if (input == null)
+            if (input == null || input.Count == 0)
             {
-                ByteResolver.Instance.Write(payload, IResolver.NullArrayHeader);
+                ByteResolver.Instance.Write(payload, input == null ?
+                    IResolver.NullArrayHeader :
+                    IResolver.EmptyArrayHeader);
                 return true;
             }
 
-            if (input.Count == 0)
-            {
-                ByteResolver.Instance.Write(payload, IResolver.EmptyArrayHeader);
-                return true;
-            }
-
-            int typeIndex = 2;
-
-            if (byte.MinValue <= input.Count && input.Count <= byte.MaxValue)
-                typeIndex = 0;
-
-            else if (ushort.MinValue <= input.Count && input.Count <= ushort.MaxValue)
-                typeIndex = 1;
-
-            byte header = 0;
-            header = (byte)(header | (1 << typeIndex));
-            bool written = ByteResolver.Instance.Write(payload, header);
+            _Internal_WriteHeaderAndLength(payload, input.Count);
+            bool written = true;
 
             IEnumerator<T> inputEnum = input.GetEnumerator();
 
@@ -348,6 +386,33 @@ namespace EppNet.Data
 
         protected abstract bool _Internal_Write(BytePayload payload, T input);
         protected abstract ReadResult _Internal_Read(BytePayload payload, out T output);
+    }
+
+    public static class ResolverExtensions
+    {
+
+        public static ReadResult ReadAsInt<T>(this Resolver<T> resolver, BytePayload payload, out int length) where T : INumber<T>
+        {
+            ReadResult result = resolver.Read(payload, out T output);
+            length = int.CreateChecked(output);
+            return result;
+        }
+
+        public static ReadResult ReadAs<T, TOutput>(this Resolver<T> resolver, BytePayload payload, out TOutput output) 
+            where T : INumberBase<T> 
+            where TOutput : INumberBase<TOutput>
+        {
+            ReadResult result = resolver.Read(payload, out T typedOutput);
+            output = TOutput.CreateChecked(typedOutput);
+            return result;
+        }
+
+    }
+
+    public interface IResolver<T> : IResolver
+    {
+        public ReadResult Read(BytePayload payload, out T output);
+        public bool Write(BytePayload payload, T input);
     }
 
     public interface IResolver

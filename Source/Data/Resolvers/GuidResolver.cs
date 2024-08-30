@@ -57,7 +57,7 @@ namespace EppNet.Data
         /// See <see cref="Write(BytePayload, Guid)"/> for more info on how each Guid is written
         /// </summary>
         /// <param name="input"></param>
-        public static void Write<TCollection>(this BytePayload payload, TCollection input) where TCollection : ICollection<Guid>
+        public static void Write<TCollection>(this BytePayload payload, TCollection input) where TCollection : class, ICollection<Guid>
             => GuidResolver.Instance.Write(payload, input);
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace EppNet.Data
         /// See <see cref="Write(BytePayload, Guid)"/> for more info on how each Guid is written
         /// </summary>
 
-        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : ICollection<Guid>, new()
+        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : class, ICollection<Guid>, new()
         {
             GuidResolver.Instance.Read(payload, out TCollection output);
             return output;

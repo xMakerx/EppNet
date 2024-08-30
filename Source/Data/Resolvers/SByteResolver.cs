@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
@@ -13,6 +14,7 @@ namespace EppNet.Data
     {
 
         public static readonly SByteResolver Instance = new();
+        public SByteResolver() : base(autoAdvance: false) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out sbyte output)

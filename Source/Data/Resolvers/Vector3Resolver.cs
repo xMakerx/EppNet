@@ -6,162 +6,38 @@
 
 using System;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
 
-    public class Vector3Resolver : Resolver<Vector3>
+    public class Vector3Resolver : VectorResolverBase<Vector3>
     {
 
         public static readonly Vector3Resolver Instance = new();
 
-        public const byte AbsoluteHeader = 128;
-        public const byte UnitXHeader = 16;
-        public const byte UnitYHeader = 32;
-        public const byte UnitZHeader = 64;
-
-        public Vector3Resolver() : base(autoAdvance: false) { }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Write(BytePayload payload, Vector3 input, bool absolute = true)
+        public Vector3Resolver() : base(autoAdvance: false)
         {
-
-            if (input == Vector3.Zero || input == Vector3.UnitX || input == Vector3.UnitY || input == Vector3.UnitZ)
-            {
-                if (input == Vector3.Zero)
-                    payload.Stream.WriteByte(0);
-                else
-                    payload.Stream.WriteByte(input == Vector3.UnitX ? UnitXHeader : input == Vector3.UnitY ? UnitYHeader : UnitZHeader);
-
-                return true;
-            }
-
-            Vector3 typeIndices = Vector3.Zero;
-
-            for (int i = 0; i < 3; i++)
-            {
-                float value = input[i];
-                int typeIndex = 3;
-
-                if ((value % 1) != 0)
-                {
-                    typeIndices[i] = typeIndex;
-                    continue;
-                }
-
-                if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
-                    typeIndex = 0;
-
-                else if (short.MinValue <= value && value <= short.MaxValue)
-                    typeIndex = 1;
-
-                else if (int.MinValue <= value && value <= int.MaxValue)
-                    typeIndex = 2;
-
-                typeIndices[i] = typeIndex;
-            }
-
-            int useTypeIndex = (int)MathF.Max(MathF.Max(typeIndices[0], typeIndices[1]), typeIndices[2]);
-
-            byte header = absolute ? AbsoluteHeader : (byte)0;
-            header = (byte)(header | (1 << useTypeIndex));
-
-            payload.Stream.WriteByte(header);
-
-            for (int i = 0; i < 3; i++)
-            {
-
-                switch (useTypeIndex)
-                {
-                    case 0:
-                        payload.Stream.WriteByte((byte)(sbyte)input[i]);
-                        continue;
-
-                    case 1:
-                        ShortResolver.Instance.Write(payload, (short)input[i]);
-                        continue;
-
-                    case 2:
-                        Int32Resolver.Instance.Write(payload, (int)input[i]);
-                        continue;
-
-                    case 3:
-                        FloatResolver.Instance.Write(payload, input[i]);
-                        continue;
-                }
-
-            }
-
-            return true;
+            this.Default = Vector3.Zero;
+            this.UnitX = Vector3.UnitX;
+            this.UnitY = Vector3.UnitY;
+            this.UnitZ = Vector3.UnitZ;
+            this.UnitW = Vector3.Zero;
+            this.NumComponents = 3;
         }
 
-        protected override ReadResult _Internal_Read(BytePayload payload, out Vector3 output)
+        public override Span<float> GetFloats(Vector3 input, scoped ref Span<float> floats)
         {
-
-            int result = payload.Stream.ReadByte();
-            output = default;
-
-            // -1 means we received the end of the stream
-            if (result == -1)
-                return ReadResult.Failed;
-
-            byte header = (byte)result;
-
-            switch (header)
-            {
-                case 0:
-                    output = Vector3.Zero;
-                    return ReadResult.Success;
-
-                case UnitXHeader:
-                    output = Vector3.UnitX;
-                    return ReadResult.Success;
-
-                case UnitYHeader:
-                    output = Vector3.UnitY;
-                    return ReadResult.Success;
-
-                case UnitZHeader:
-                    output = Vector3.UnitZ;
-                    return ReadResult.Success;
-            }
-
-            bool absolute = (header & (1 << 7)) != 0;
-            int typeIndex = byte.TrailingZeroCount(absolute ? (byte)(header & ~(1 << 7)) : header);
-
-            output = new();
-
-            for (int i = 0; i < 3; i++)
-            {
-                switch (typeIndex)
-                {
-                    case 0:
-                        output[i] = (sbyte)payload.Stream.ReadByte();
-                        continue;
-
-                    case 1:
-                        ShortResolver.Instance.Read(payload, out short value);
-                        output[i] = value;
-                        continue;
-
-                    case 2:
-                        Int32Resolver.Instance.Read(payload, out int iValue);
-                        output[i] = iValue;
-                        continue;
-
-                    case 3:
-                        FloatResolver.Instance.Read(payload, out float fValue);
-                        output[i] = fValue;
-                        continue;
-                }
-            }
-
-            return absolute ? ReadResult.Success : ReadResult.SuccessDelta;
+            floats[0] = input.X;
+            floats[1] = input.Y;
+            floats[2] = input.Z;
+            return floats;
         }
 
-        protected override bool _Internal_Write(BytePayload payload, Vector3 input)
-            => Write(payload, input, absolute: true);
+        public override Vector3 Put(Vector3 input, float value, int index)
+        {
+            input[index] = value;
+            return input;
+        }
     }
 
 }

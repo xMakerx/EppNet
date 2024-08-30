@@ -82,7 +82,7 @@ namespace EppNet.Data
         /// Reads an unsigned 8-bit integer collection from the stream denoting 1 (true) or 0 (false).
         /// </summary>
         /// <param name="input"></param>
-        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : ICollection<bool>, new()
+        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : class, ICollection<bool>, new()
         {
             BoolResolver.Instance.Read(payload, out TCollection output);
             return output;

@@ -106,7 +106,7 @@ namespace EppNet.Data
         /// See <see cref="Write(BytePayload, Color)"/> for more info on how each Color is written
         /// </summary>
 
-        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : ICollection<Color>, new()
+        public static TCollection Read<TCollection>(this BytePayload payload) where TCollection : class, ICollection<Color>, new()
         {
             ColorResolver.Instance.Read(payload, out TCollection output);
             return output;
