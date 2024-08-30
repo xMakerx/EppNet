@@ -15,8 +15,6 @@ namespace EppNet.Data
     {
 
         public static readonly ShortResolver Instance = new();
-        static ShortResolver()
-            => BytePayload.AddResolver(typeof(short), Instance);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out short output)

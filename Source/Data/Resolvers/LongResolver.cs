@@ -16,9 +16,6 @@ namespace EppNet.Data
 
         public static readonly LongResolver Instance = new();
 
-        static LongResolver()
-            => BytePayload.AddResolver(typeof(long), Instance);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out long output)
         {

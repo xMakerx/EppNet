@@ -15,12 +15,11 @@ namespace EppNet.Data
 
         public static readonly Vector2Resolver Instance = new();
 
-        static Vector2Resolver()
-            => BytePayload.AddResolver(typeof(Vector2), Instance);
-
         public const byte AbsoluteHeader = 128;
         public const byte UnitXHeader = 16;
         public const byte UnitYHeader = 32;
+
+        public Vector2Resolver() : base(autoAdvance: false) { }
 
         public bool Write(BytePayload payload, Vector2 input, bool absolute = true)
         {
@@ -35,13 +34,18 @@ namespace EppNet.Data
                 return true;
             }
 
-            int xTypeIndex = -1;
-            int yTypeIndex = -1;
+            Vector2 typeIndices = Vector2.Zero;
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 3; i++)
             {
                 float value = input[i];
-                int typeIndex;
+                int typeIndex = 3;
+
+                if ((value % 1) != 0)
+                {
+                    typeIndices[i] = typeIndex;
+                    continue;
+                }
 
                 if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
                     typeIndex = 0;
@@ -51,16 +55,11 @@ namespace EppNet.Data
 
                 else if (int.MinValue <= value && value <= int.MaxValue)
                     typeIndex = 2;
-                else
-                    typeIndex = 3;
 
-                if (i == 0)
-                    xTypeIndex = typeIndex;
-                else
-                    yTypeIndex = typeIndex;
+                typeIndices[i] = typeIndex;
             }
 
-            int useTypeIndex = Math.Max(xTypeIndex, yTypeIndex);
+            int useTypeIndex = (int) Math.Max(typeIndices.X, typeIndices.Y);
 
             byte header = absolute ? AbsoluteHeader : (byte)0;
             header = (byte)(header | (1 << useTypeIndex));

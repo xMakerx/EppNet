@@ -16,9 +16,6 @@ namespace EppNet.Data
 
         public static GuidResolver Instance = new();
 
-        static GuidResolver()
-            => BytePayload.AddResolver(typeof(Guid), Instance);
-
         public GuidResolver() : base(16) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

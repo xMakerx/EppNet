@@ -95,6 +95,7 @@ namespace EppNet.Tests
             using (BytePayload payloadIn = new BytePayload(bufferIn))
             {
                 Str16 result = payloadIn.ReadString16();
+                Console.WriteLine(result.Value);
                 Assert.IsTrue(string.Equals(input, result.Value, StringComparison.Ordinal));
             }
         }

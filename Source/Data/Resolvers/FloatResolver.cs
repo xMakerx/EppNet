@@ -20,9 +20,6 @@ namespace EppNet.Data
 
         public static readonly FloatResolver Instance = new();
 
-        static FloatResolver()
-            => BytePayload.AddResolver(typeof(float), Instance);
-
         public FloatResolver() : base(sizeof(int)) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

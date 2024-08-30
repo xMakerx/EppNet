@@ -16,9 +16,6 @@ namespace EppNet.Data
 
         public static readonly ULongResolver Instance = new();
 
-        static ULongResolver()
-            => BytePayload.AddResolver(typeof(ulong), Instance);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out ulong output)
         {

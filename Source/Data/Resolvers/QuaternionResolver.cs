@@ -18,9 +18,6 @@ namespace EppNet.Data
 
         public static readonly QuaternionResolver Instance = new();
 
-        static QuaternionResolver()
-            => BytePayload.AddResolver(typeof(Quaternion), Instance);
-
         /// <summary>
         /// Identity quaternions send this value to save bandwidth and computation time
         /// </summary>

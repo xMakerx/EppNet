@@ -38,6 +38,31 @@ namespace EppNet.Tests
 
         }
 
+        [TestMethod]
+        public void TestVec3ZeroResolver()
+        {
+            byte[] buffer;
+
+            Vector3 l = Vector3.Zero;
+
+            using (BytePayload payloadIn = new BytePayload())
+            {
+                bool written = payloadIn.TryWrite(l);
+
+                Assert.IsTrue(written, $"Failed to resolve write for {l.GetType().Name}");
+                buffer = payloadIn.Pack();
+            }
+
+            using (BytePayload payloadOut = new BytePayload(buffer))
+            {
+                bool read = payloadOut.TryRead(out Vector3 result);
+
+                Console.WriteLine($"Buffer size: {buffer.Length}");
+                Assert.IsTrue(read && l.Equals(result), $"Failed to resolve read for {l.GetType().Name}");
+            }
+
+        }
+
 
     }
 

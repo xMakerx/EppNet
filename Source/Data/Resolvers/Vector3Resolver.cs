@@ -16,13 +16,12 @@ namespace EppNet.Data
 
         public static readonly Vector3Resolver Instance = new();
 
-        static Vector3Resolver()
-            => BytePayload.AddResolver(typeof(Vector3), Instance);
-
         public const byte AbsoluteHeader = 128;
         public const byte UnitXHeader = 16;
         public const byte UnitYHeader = 32;
         public const byte UnitZHeader = 64;
+
+        public Vector3Resolver() : base(autoAdvance: false) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Write(BytePayload payload, Vector3 input, bool absolute = true)
@@ -44,7 +43,13 @@ namespace EppNet.Data
             for (int i = 0; i < 3; i++)
             {
                 float value = input[i];
-                int typeIndex;
+                int typeIndex = 3;
+
+                if ((value % 1) != 0)
+                {
+                    typeIndices[i] = typeIndex;
+                    continue;
+                }
 
                 if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
                     typeIndex = 0;
@@ -54,8 +59,6 @@ namespace EppNet.Data
 
                 else if (int.MinValue <= value && value <= int.MaxValue)
                     typeIndex = 2;
-                else
-                    typeIndex = 3;
 
                 typeIndices[i] = typeIndex;
             }

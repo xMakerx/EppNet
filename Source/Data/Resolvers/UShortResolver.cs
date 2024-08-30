@@ -18,9 +18,6 @@ namespace EppNet.Data
 
         public static readonly UShortResolver Instance = new();
 
-        static UShortResolver()
-            => BytePayload.AddResolver(typeof(ushort), Instance);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out ushort output)
         {

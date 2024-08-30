@@ -54,6 +54,24 @@ namespace EppNet.Data
             options.GenerateCallStacks = false;
 
             RecyclableStreamMgr = new(options);
+
+            _resolvers.Add(typeof(bool), BoolResolver.Instance);
+            _resolvers.Add(typeof(byte), ByteResolver.Instance);
+            _resolvers.Add(typeof(sbyte), SByteResolver.Instance);
+            _resolvers.Add(typeof(ushort), UShortResolver.Instance);
+            _resolvers.Add(typeof(short), ShortResolver.Instance);
+            _resolvers.Add(typeof(uint), UInt32Resolver.Instance);
+            _resolvers.Add(typeof(int), Int32Resolver.Instance);
+            _resolvers.Add(typeof(ulong), ULongResolver.Instance);
+            _resolvers.Add(typeof(long), LongResolver.Instance);
+            _resolvers.Add(typeof(float), FloatResolver.Instance);
+            _resolvers.Add(typeof(Str8), String8Resolver.Instance);
+            _resolvers.Add(typeof(Str16), String16Resolver.Instance);
+            _resolvers.Add(typeof(Quaternion), QuaternionResolver.Instance);
+            _resolvers.Add(typeof(Vector2), Vector2Resolver.Instance);
+            _resolvers.Add(typeof(Vector3), Vector3Resolver.Instance);
+            _resolvers.Add(typeof(Vector4), Vector4Resolver.Instance);
+            _resolvers.Add(typeof(Guid), GuidResolver.Instance);
         }
 
         public static void AddResolver(Type type, IResolver resolver)
@@ -495,8 +513,8 @@ namespace EppNet.Data
 
             if (PackedData == null)
             {
-                this.PackedData = new byte[Stream.Length];
-                Stream.WriteTo(PackedData);
+                this.PackedData = new byte[Stream.Length - 1];
+                Stream.WriteTo(PackedData, 0, Stream.Length - 1);
             }
 
             return PackedData;

@@ -16,9 +16,6 @@ namespace EppNet.Data
 
         public static BoolResolver Instance = new();
 
-        static BoolResolver()
-            => BytePayload.AddResolver(typeof(bool), Instance);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out bool output)
         {

@@ -34,6 +34,8 @@ namespace EppNet.Data
             Span<byte> buffer = stackalloc byte[length];
             int read = payload.Stream.Read(buffer);
             output = payload.Encoder.GetString(buffer);
+            payload.Stream.Advance(read);
+
             return read == length ? ReadResult.Success : ReadResult.Failed;
         }
 

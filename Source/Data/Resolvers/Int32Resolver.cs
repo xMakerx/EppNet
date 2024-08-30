@@ -16,9 +16,6 @@ namespace EppNet.Data
 
         public static readonly Int32Resolver Instance = new();
 
-        static Int32Resolver()
-            => BytePayload.AddResolver(typeof(int), Instance);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out int output)
         {

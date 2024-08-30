@@ -14,9 +14,6 @@ namespace EppNet.Data
 
         public static readonly SByteResolver Instance = new();
 
-        static SByteResolver()
-            => BytePayload.AddResolver(typeof(sbyte), Instance);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override ReadResult _Internal_Read(BytePayload payload, out sbyte output)
         {

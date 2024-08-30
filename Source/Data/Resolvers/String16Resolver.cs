@@ -16,6 +16,7 @@ namespace EppNet.Data
 
         public static readonly String16Resolver Instance = new();
         public const int LengthByteSize = sizeof(ushort);
+
         public String16Resolver() : base(autoAdvance: false) { }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -23,7 +24,6 @@ namespace EppNet.Data
         {
             Span<byte> buffer = stackalloc byte[LengthByteSize];
             int read = payload.Stream.Read(buffer);
-            payload.Stream.Advance(read);
             
             bool didRead = BinaryPrimitives.TryReadUInt16LittleEndian(buffer, out ushort length);
             output = null;
@@ -31,7 +31,7 @@ namespace EppNet.Data
             if (didRead)
             {
                 buffer = stackalloc byte[length];
-                read = payload.Stream.Read(buffer);
+                read += payload.Stream.Read(buffer);
                 output = payload.Encoder.GetString(buffer);
                 payload.Stream.Advance(read);
             }
