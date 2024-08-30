@@ -47,13 +47,13 @@ namespace EppNet
         /// Method call is stored so it can be propagated to parties
         /// that gain interest in the object after the update.
         /// </summary>
-        public static readonly SlottableEnum Persistant = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Persistant", 5);
+        public static readonly SlottableEnum Persistent = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Persistent", 5);
 
         /// <summary>
         /// Data passed to this method is recorded for interpolation and extrapolation between
         /// ticks. In addition, the current value is queried every tick to detect changes and
         /// propagate them.
-        /// <br/>Implies <see cref="Persistant"/> as the latest snapshot value is
+        /// <br/>Implies <see cref="Persistent"/> as the latest snapshot value is
         /// sent to new parties that gain interest.
         /// </summary>
         public static readonly SlottableEnum Snapshot = SlottableEnum._Internal_CreateAndAddTo(_flagsList, "Snapshot", 5);

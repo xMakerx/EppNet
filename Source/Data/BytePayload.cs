@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Numerics;
 using System.Text;
 
@@ -34,7 +35,7 @@ namespace EppNet.Data
     {
 
         #region Static members
-        public static RecyclableMemoryStreamManager RecyclableStreamMgr { private set; get; }
+        public static RecyclableMemoryStreamManager RecyclableStreamMgr { get; }
 
         private static readonly Dictionary<Type, IResolver> _resolvers = new Dictionary<Type, IResolver>();
 
@@ -65,6 +66,7 @@ namespace EppNet.Data
             _resolvers.Add(typeof(ulong), ULongResolver.Instance);
             _resolvers.Add(typeof(long), LongResolver.Instance);
             _resolvers.Add(typeof(float), FloatResolver.Instance);
+            _resolvers.Add(typeof(Color), ColorResolver.Instance);
             _resolvers.Add(typeof(Str8), String8Resolver.Instance);
             _resolvers.Add(typeof(Str16), String16Resolver.Instance);
             _resolvers.Add(typeof(Quaternion), QuaternionResolver.Instance);
