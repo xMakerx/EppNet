@@ -513,8 +513,8 @@ namespace EppNet.Data
 
             if (PackedData == null)
             {
-                this.PackedData = new byte[Stream.Length - 1];
-                Stream.WriteTo(PackedData, 0, Stream.Length - 1);
+                this.PackedData = new byte[Stream.Length];
+                Stream.WriteTo(PackedData);
             }
 
             return PackedData;

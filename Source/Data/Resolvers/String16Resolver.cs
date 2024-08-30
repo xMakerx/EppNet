@@ -24,6 +24,10 @@ namespace EppNet.Data
         {
             Span<byte> buffer = stackalloc byte[LengthByteSize];
             int read = payload.Stream.Read(buffer);
+            output = default;
+
+            if (read == -1)
+                return ReadResult.Failed;
             
             bool didRead = BinaryPrimitives.TryReadUInt16LittleEndian(buffer, out ushort length);
             output = null;

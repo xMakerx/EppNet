@@ -58,7 +58,7 @@ namespace EppNet.Tests
                 bool read = payloadOut.TryRead(out Vector3 result);
 
                 Console.WriteLine($"Buffer size: {buffer.Length}");
-                Assert.IsTrue(read && l.Equals(result), $"Failed to resolve read for {l.GetType().Name}");
+                Assert.IsTrue(read && l.Equals(result) && buffer.Length == 1, $"Failed to resolve read for {l.GetType().Name}");
             }
 
         }

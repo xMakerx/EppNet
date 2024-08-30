@@ -34,7 +34,6 @@ namespace EppNet.Data
                 else
                     payload.Stream.WriteByte(input == Vector4.UnitX ? UnitXHeader : input == Vector4.UnitY ? UnitYHeader : input == Vector4.UnitZ ? UnitZHeader : UnitWHeader);
 
-                payload.Stream.Advance(1);
                 return true;
             }
 
@@ -69,7 +68,6 @@ namespace EppNet.Data
             header = (byte)(header | (1 << useTypeIndex));
 
             payload.Stream.WriteByte(header);
-            payload.Stream.Advance(1);
 
             for (int i = 0; i < 4; i++)
             {
@@ -78,7 +76,6 @@ namespace EppNet.Data
                 {
                     case 0:
                         payload.Stream.WriteByte((byte)(sbyte)input[i]);
-                        payload.Stream.Advance(1);
                         continue;
 
                     case 1:
@@ -108,8 +105,6 @@ namespace EppNet.Data
             // -1 means we received the end of the stream
             if (result == -1)
                 return ReadResult.Failed;
-
-            payload.Stream.Advance(1);
 
             byte header = (byte)result;
 
@@ -147,7 +142,6 @@ namespace EppNet.Data
                 {
                     case 0:
                         output[i] = (sbyte)payload.Stream.ReadByte();
-                        payload.Stream.Advance(1);
                         continue;
 
                     case 1:

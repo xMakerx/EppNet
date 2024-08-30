@@ -21,7 +21,6 @@ namespace EppNet.Data
         protected override ReadResult _Internal_Read(BytePayload payload, out Str8 output)
         {
             int length = payload.Stream.ReadByte();
-            payload.Stream.Advance(1);
             output = new(string.Empty);
 
             if (length < 0)
@@ -46,7 +45,6 @@ namespace EppNet.Data
             int numBytes = payload.Encoder.GetByteCount(input.Value);
 
             payload.Stream.WriteByte((byte) numBytes);
-            payload.Advance(sizeof(byte));
 
             if (writeable && payload.Encoder.TryGetBytes(input.Value, payload.Stream.GetSpan(numBytes), out int bytes))
             {

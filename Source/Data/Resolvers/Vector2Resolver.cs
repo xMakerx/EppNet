@@ -29,8 +29,6 @@ namespace EppNet.Data
                     payload.Stream.WriteByte(0);
                 else
                     payload.Stream.WriteByte(input == Vector2.UnitX ? UnitXHeader : UnitYHeader);
-
-                payload.Stream.Advance(1);
                 return true;
             }
 
@@ -65,7 +63,6 @@ namespace EppNet.Data
             header = (byte)(header | (1 << useTypeIndex));
 
             payload.Stream.WriteByte(header);
-            payload.Stream.Advance(1);
 
             for (int i = 0; i < 2; i++)
             {
@@ -74,7 +71,6 @@ namespace EppNet.Data
                 {
                     case 0:
                         payload.Stream.WriteByte((byte)(sbyte)input[i]);
-                        payload.Stream.Advance(1);
                         continue;
 
                     case 1:
@@ -105,8 +101,6 @@ namespace EppNet.Data
             if (result == -1)
                 return ReadResult.Failed;
 
-            payload.Stream.Advance(1);
-
             byte header = (byte)result;
 
             switch (header)
@@ -135,7 +129,6 @@ namespace EppNet.Data
                 {
                     case 0:
                         output[i] = (sbyte)payload.Stream.ReadByte();
-                        payload.Stream.Advance(1);
                         continue;
 
                     case 1:

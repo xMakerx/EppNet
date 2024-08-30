@@ -42,7 +42,6 @@ namespace EppNet.Data
         {
             // Let's consider the header
             byte header = payload.ReadByte();
-            payload.Advance(1);
 
             if (header == IdentityHeader || header == ZeroHeader)
             {
@@ -73,7 +72,6 @@ namespace EppNet.Data
 
                 // Byte dequantization
                 components[i] = FastMath.Dequantize(payload.ReadByte());
-                payload.Advance(1);
             }
 
             float sumOfSquares = 1.0f - (MathF.Pow(components[0], 2) + MathF.Pow(components[1], 2)
@@ -109,7 +107,6 @@ namespace EppNet.Data
             if (input == Quaternion.Identity || input == Quaternion.Zero)
             {
                 payload.Stream.WriteByte(input == Quaternion.Identity ? IdentityHeader : ZeroHeader);
-                payload.Stream.Advance(1);
                 return true;
             }
 
@@ -140,7 +137,6 @@ namespace EppNet.Data
                 header |= 1 << 7;
 
             payload.Stream.WriteByte(header);
-            payload.Stream.Advance(1);
 
             if (ByteQuantization)
             {
@@ -161,7 +157,6 @@ namespace EppNet.Data
 
                     // Write the byte to the stream
                     payload.Stream.WriteByte(bytes[byteIndex]);
-                    payload.Stream.Advance(1);
 
                     // Advance to the next index
                     byteIndex++;

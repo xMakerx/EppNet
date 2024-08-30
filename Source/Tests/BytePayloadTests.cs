@@ -88,7 +88,7 @@ namespace EppNet.Tests
 
             using (BytePayload payloadOut = new BytePayload())
             {
-                payloadOut.WriteString8(input);
+                payloadOut.WriteString16(input);
                 bufferIn = payloadOut.Pack();
             }
 
