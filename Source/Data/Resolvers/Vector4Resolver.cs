@@ -4,10 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using Dia2Lib;
-
-using Microsoft.Diagnostics.Runtime;
-
 using System;
 using System.Numerics;
 
