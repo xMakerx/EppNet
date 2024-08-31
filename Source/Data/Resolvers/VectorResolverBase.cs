@@ -34,6 +34,11 @@ namespace EppNet.Data
         public const byte UnitWHeader = 64 + 3;
 
         /// <summary>
+        /// Signifies that this is a uniform 1 transmission.
+        /// </summary>
+        public const byte OneHeader = 64 + 4;
+
+        /// <summary>
         /// The default Vector type output (i.e. zero for each component)
         /// </summary>
         public T Default { protected set; get; }
@@ -50,6 +55,7 @@ namespace EppNet.Data
         public T UnitY { protected set; get; }
         public T UnitZ { protected set; get; }
         public T UnitW { protected set; get; }
+        public T One { protected set; get; }
 
         protected VectorResolverBase(bool autoAdvance = true) : base(autoAdvance) { }
 
@@ -97,10 +103,16 @@ namespace EppNet.Data
                 || input.Equals(UnitX)
                 || input.Equals(UnitY)
                 || input.Equals(UnitZ)
-                || input.Equals(UnitW))
+                || input.Equals(UnitW)
+                || input.Equals(One))
             {
                 if (input.Equals(Default))
                     header = 0;
+
+                // This is up here because every single vector has this.
+                // Less branch jumping
+                else if (input.Equals(One))
+                    header = OneHeader;
 
                 else if (input.Equals(UnitX))
                     header = UnitXHeader;

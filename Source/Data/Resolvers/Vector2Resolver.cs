@@ -21,6 +21,7 @@ namespace EppNet.Data
             this.UnitX = Vector2.UnitX;
             this.UnitY = Vector2.UnitY;
             this.UnitZ = this.UnitW = Vector2.Zero;
+            this.One = Vector2.One;
             this.NumComponents = 2;
         }
 
@@ -61,7 +62,8 @@ namespace EppNet.Data
         /// The following <see cref="Vector2"/>s are considered special and cost 1 byte:<br/>
         /// - <see cref="Vector2.Zero"/><br/>
         /// - <see cref="Vector2.UnitX"/><br/>
-        /// - <see cref="Vector2.UnitY"/><br/><br/>
+        /// - <see cref="Vector2.UnitY"/><br/>
+        /// - <see cref="Vector2.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 9 bytes
         /// </summary>
@@ -126,7 +128,8 @@ namespace EppNet.Data
         /// The following <see cref="Vector2"/>s are considered special and cost 1 byte:<br/>
         /// - <see cref="Vector2.Zero"/><br/>
         /// - <see cref="Vector2.UnitX"/><br/>
-        /// - <see cref="Vector2.UnitY"/><br/><br/>
+        /// - <see cref="Vector2.UnitY"/><br/>
+        /// - <see cref="Vector2.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 9 bytes
         /// </summary>
@@ -161,7 +164,8 @@ namespace EppNet.Data
         /// The following <see cref="Vector2"/>s are considered special and cost 1 byte:<br/>
         /// - <see cref="Vector2.Zero"/><br/>
         /// - <see cref="Vector2.UnitX"/><br/>
-        /// - <see cref="Vector2.UnitY"/><br/><br/>
+        /// - <see cref="Vector2.UnitY"/><br/>
+        /// - <see cref="Vector2.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 9 bytes
         /// </summary>
@@ -192,7 +196,8 @@ namespace EppNet.Data
         /// The following <see cref="Vector2"/>s are considered special and cost 1 byte:<br/>
         /// - <see cref="Vector2.Zero"/><br/>
         /// - <see cref="Vector2.UnitX"/><br/>
-        /// - <see cref="Vector2.UnitY"/><br/><br/>
+        /// - <see cref="Vector2.UnitY"/><br/>
+        /// - <see cref="Vector2.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 9 bytes
         /// </summary>

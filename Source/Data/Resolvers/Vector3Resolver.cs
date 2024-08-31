@@ -22,6 +22,7 @@ namespace EppNet.Data
             this.UnitY = Vector3.UnitY;
             this.UnitZ = Vector3.UnitZ;
             this.UnitW = Vector3.Zero;
+            this.One = Vector3.One;
             this.NumComponents = 3;
         }
 
@@ -65,6 +66,7 @@ namespace EppNet.Data
         /// - <see cref="Vector3.UnitX"/><br/>
         /// - <see cref="Vector3.UnitY"/><br/>
         /// - <see cref="Vector3.UnitZ"/><br/>
+        /// - <see cref="Vector3.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 13 bytes
         /// </summary>
@@ -130,7 +132,8 @@ namespace EppNet.Data
         /// - <see cref="Vector3.Zero"/><br/>
         /// - <see cref="Vector3.UnitX"/><br/>
         /// - <see cref="Vector3.UnitY"/><br/>
-        /// - <see cref="Vector3.UnitZ"/><br/><br/>
+        /// - <see cref="Vector3.UnitZ"/><br/>
+        /// - <see cref="Vector3.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 13 bytes
         /// </summary>
@@ -166,7 +169,8 @@ namespace EppNet.Data
         /// - <see cref="Vector3.Zero"/><br/>
         /// - <see cref="Vector3.UnitX"/><br/>
         /// - <see cref="Vector3.UnitY"/><br/>
-        /// - <see cref="Vector3.UnitZ"/><br/><br/>
+        /// - <see cref="Vector3.UnitZ"/><br/>
+        /// - <see cref="Vector3.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 13 bytes
         /// </summary>
@@ -198,7 +202,8 @@ namespace EppNet.Data
         /// - <see cref="Vector3.Zero"/><br/>
         /// - <see cref="Vector3.UnitX"/><br/>
         /// - <see cref="Vector3.UnitY"/><br/>
-        /// - <see cref="Vector3.UnitZ"/><br/><br/>
+        /// - <see cref="Vector3.UnitZ"/><br/>
+        /// - <see cref="Vector3.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 13 bytes
         /// </summary>

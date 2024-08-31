@@ -22,6 +22,7 @@ namespace EppNet.Data
             this.UnitY = Vector4.UnitY;
             this.UnitZ = Vector4.UnitZ;
             this.UnitW = Vector4.UnitW;
+            this.One = Vector4.One;
             this.NumComponents = 4;
         }
 
@@ -66,7 +67,8 @@ namespace EppNet.Data
         /// - <see cref="Vector4.UnitX"/><br/>
         /// - <see cref="Vector4.UnitY"/><br/>
         /// - <see cref="Vector4.UnitZ"/><br/>
-        /// - <see cref="Vector4.UnitW"/><br/><br/>
+        /// - <see cref="Vector4.UnitW"/><br/>
+        /// - <see cref="Vector4.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
@@ -133,7 +135,8 @@ namespace EppNet.Data
         /// - <see cref="Vector4.UnitX"/><br/>
         /// - <see cref="Vector4.UnitY"/><br/>
         /// - <see cref="Vector4.UnitZ"/><br/>
-        /// - <see cref="Vector4.UnitW"/><br/><br/>
+        /// - <see cref="Vector4.UnitW"/><br/>
+        /// - <see cref="Vector4.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
@@ -170,7 +173,8 @@ namespace EppNet.Data
         /// - <see cref="Vector4.UnitX"/><br/>
         /// - <see cref="Vector4.UnitY"/><br/>
         /// - <see cref="Vector4.UnitZ"/><br/>
-        /// - <see cref="Vector4.UnitW"/><br/><br/>
+        /// - <see cref="Vector4.UnitW"/><br/>
+        /// - <see cref="Vector4.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
@@ -203,7 +207,8 @@ namespace EppNet.Data
         /// - <see cref="Vector4.UnitX"/><br/>
         /// - <see cref="Vector4.UnitY"/><br/>
         /// - <see cref="Vector4.UnitZ"/><br/>
-        /// - <see cref="Vector4.UnitW"/><br/><br/>
+        /// - <see cref="Vector4.UnitW"/><br/>
+        /// - <see cref="Vector4.One"/><br/><br/>
         /// 
         /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
