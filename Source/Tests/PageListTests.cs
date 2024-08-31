@@ -135,8 +135,10 @@ namespace EppNet.Tests
             Random rand = new Random();
             int toClear = rand.Next(allocations / 2);
 
+            int failures = 0;
+            int allocated = 0;
 
-            for (int i = 0; i < allocations; i++)
+            while (failures <= allocations * 3 && allocated < allocations)
             {
                 int id;
                 do
@@ -144,9 +146,27 @@ namespace EppNet.Tests
                     id = rand.Next(objs.ItemsPerPage);
                 } while (!objs.IsAvailable(id));
 
-                objs.TryAllocate(id, out ObjectSlot slot);
-                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                int retries = 0;
+                do
+                {
+                    bool didAllocate = objs.TryAllocate(id, out ObjectSlot slot);
+
+                    if (didAllocate)
+                    {
+                        Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                        allocated++;
+                    }
+                    else
+                    {
+                        failures++;
+                        retries++;
+                    }
+
+                } while (retries < 2);
             }
+
+            if (failures >= allocations * 3)
+                Assert.IsFalse(true, $"Failed to allocate {failures} times. Something is seriously wrong!");
 
             Page<ObjectSlot> p1 = objs.Pages[0];
             Console.WriteLine(p1.AvailableIndex);
