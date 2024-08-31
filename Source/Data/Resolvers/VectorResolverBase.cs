@@ -4,9 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Utilities;
-
 using System;
+using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
@@ -14,13 +13,28 @@ namespace EppNet.Data
     public abstract class VectorResolverBase<T> : Resolver<T> where T : struct, IEquatable<T>
     {
 
-        public const byte UnitXHeader = 64;
-        public const byte UnitYHeader = 32;
-        public const byte UnitZHeader = 16;
-        public const byte UnitWHeader = 8;
+        /// <summary>
+        /// Signifies that this is a UnitX transmission.
+        /// </summary>
+        public const byte UnitXHeader = 64 + 0;
 
         /// <summary>
-        /// The default Vector type output
+        /// Signifies that this is a UnitY transmission.
+        /// </summary>
+        public const byte UnitYHeader = 64 + 1;
+
+        /// <summary>
+        /// Signifies that this is a UnitZ transmission.
+        /// </summary>
+        public const byte UnitZHeader = 64 + 2;
+
+        /// <summary>
+        /// Signifies that this is a UnitW transmission.
+        /// </summary>
+        public const byte UnitWHeader = 64 + 3;
+
+        /// <summary>
+        /// The default Vector type output (i.e. zero for each component)
         /// </summary>
         public T Default { protected set; get; }
 
@@ -43,8 +57,42 @@ namespace EppNet.Data
 
         protected VectorResolverBase(int size) : base(size) { }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public virtual bool WriteArray(BytePayload payload, T[] input, bool absolute = true)
+        {
+            payload.EnsureReadyToWrite();
+
+            if (input == null)
+            {
+                ByteResolver.Instance.Write(payload, IResolver.NullArrayHeader);
+                return true;
+            }
+            else if (input.Length == 0)
+            {
+                ByteResolver.Instance.Write(payload, IResolver.EmptyArrayHeader);
+                return true;
+            }
+
+            _Internal_WriteHeaderAndLength(payload, input.Length);
+            bool written = true;
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (!written)
+                    break;
+
+                written = Write(payload, input[i], absolute);
+
+                if (written && AutoAdvance)
+                    payload.Advance(Size);
+            }
+
+            return written;
+        }
+
         public bool Write(BytePayload payload, T input, bool absolute = true)
         {
+            byte header = 0;
             if (input.Equals(Default)
                 || input.Equals(UnitX)
                 || input.Equals(UnitY)
@@ -52,20 +100,22 @@ namespace EppNet.Data
                 || input.Equals(UnitW))
             {
                 if (input.Equals(Default))
-                    payload.Stream.WriteByte(0);
+                    header = 0;
 
                 else if (input.Equals(UnitX))
-                    payload.Stream.WriteByte(UnitXHeader);
+                    header = UnitXHeader;
 
                 else if (input.Equals(UnitY))
-                    payload.Stream.WriteByte(UnitYHeader);
+                    header = UnitYHeader;
 
                 else if (input.Equals(UnitZ))
-                    payload.Stream.WriteByte(UnitZHeader);
+                    header = UnitZHeader;
 
                 else if (input.Equals(UnitW))
-                    payload.Stream.WriteByte(UnitWHeader);
+                    header = UnitWHeader;
 
+                header |= (byte)(absolute ? 128 : 0);
+                payload.Stream.WriteByte(header);
                 return true;
             }
 
@@ -74,7 +124,7 @@ namespace EppNet.Data
             HeaderData data = _Internal_CreateHeaderWithType(ref floats, true, absolute);
             bool written = true;
 
-            byte header = data.Header;
+            header = data.Header;
 
             // Let's finalize the header
             if (!absolute)
@@ -125,7 +175,13 @@ namespace EppNet.Data
 
             byte header = (byte)result;
 
-            T? fetched = header switch
+            bool absolute = (header & 0b1) == 1;
+            int typeIndex = header & 0b11;
+
+            int components = (header >> 2) & 0b1111;
+
+            // Check if we received a special value. Negate the first bit
+            T? fetched = (header & 0b01111111) switch
             {
                 0 => Default,
                 UnitXHeader => UnitX,
@@ -136,10 +192,8 @@ namespace EppNet.Data
             };
 
             if (fetched.HasValue)
-                return ReadResult.Success;
+                return absolute ? ReadResult.Success : ReadResult.SuccessDelta;
 
-            HeaderData data = _Internal_GetHeaderData(header, true);
-            int components = data.Data;
             ReadResult readResult = ReadResult.Success;
 
             output = new();
@@ -149,11 +203,11 @@ namespace EppNet.Data
 
                 // If this isn't an absolute update, we were only sent
                 // components with a bit enabled.
-                if (!data.Absolute && ((byte)components & (1 << i)) == 0)
+                if (!absolute && ((byte)components & (1 << i)) == 0)
                     continue;
 
                 float value;
-                readResult = data.TypeIndex switch
+                readResult = typeIndex switch
                 {
                     0 => SByteResolver.Instance.ReadAs(payload, out value),
                     1 => ShortResolver.Instance.ReadAs(payload, out value),
@@ -168,7 +222,7 @@ namespace EppNet.Data
             }
 
             if (readResult.IsSuccess())
-                readResult = data.Absolute ? ReadResult.Success : ReadResult.SuccessDelta;
+                readResult = absolute ? ReadResult.Success : ReadResult.SuccessDelta;
 
             return readResult;
         }
