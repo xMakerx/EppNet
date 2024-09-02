@@ -107,16 +107,26 @@ namespace EppNet.Utilities
         public static Quaternion Quantized(Quaternion input)
         {
             Quaternion result = Quaternion.Normalize(input);
+            Span<float> floats = stackalloc float[4];
+            floats[0] = result.X;
+            floats[1] = result.Y;
+            floats[2] = result.Z;
+            floats[3] = result.W;
 
-            for (int i = 0; i < 4; i++)
-                result[i] = Quantize(result[i]);
+            for (int i = 0; i < floats.Length; i++)
+                floats[i] = Quantize(floats[i]);
 
-            return result;
+            return new Quaternion(floats[0], floats[1], 
+                floats[2], floats[3]);
         }
 
         public static Quaternion Dequantized(Quaternion input)
         {
-            Quaternion result = input;
+            Span<float> result = stackalloc float[4];
+            result[0] = input.X;
+            result[1] = input.Y;
+            result[2] = input.Z;
+            result[3] = input.W;
 
             for (int i = 0; i < 4; i++)
                 result[i] = Dequantize((byte)result[i]);
@@ -141,7 +151,8 @@ namespace EppNet.Utilities
                 + MathF.Pow(result[2], 2f) + MathF.Pow(result[3], 2f)));
 
             result[largestIndex] = largest * (negative ? -1 : 1);
-            return result;
+            return new Quaternion(result[0], result[1], 
+                result[2], result[3]);
         }
 
     }

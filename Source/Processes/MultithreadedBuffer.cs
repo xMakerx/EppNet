@@ -7,6 +7,7 @@
 using EppNet.Logging;
 using EppNet.Node;
 using EppNet.Services;
+using EppNet.Utilities;
 
 using Microsoft.Extensions.ObjectPool;
 
@@ -16,191 +17,193 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace EppNet.Processes;
-
-
-public interface IBufferEventHandler<T> where T : IBufferEvent
-{
-    public bool Handle(T @event);
-}
-
-public interface IBufferEvent : IDisposable
+namespace EppNet.Processes
 {
 
-    public void Initialize();
-    public void Cleanup();
-    public bool IsDisposed();
-
-}
-
-public sealed class MultithreadedBufferBuilder<T> where T : class, IBufferEvent, new()
-{
-    private readonly List<IReadOnlyList<IBufferEventHandler<T>>> _handlers = [];
-    private readonly NetworkNode _node;
-    private readonly int _poolSize;
-
-    public MultithreadedBufferBuilder(NetworkNode node, int poolSize = 256)
+    public interface IBufferEventHandler<T> where T : IBufferEvent
     {
-        ArgumentNullException.ThrowIfNull(node);
-
-        _node = node;
-        _poolSize = poolSize;
+        public bool Handle(T @event);
     }
 
-    public MultithreadedBufferBuilder<T> ThenUseHandlers(params IBufferEventHandler<T>[] handlers)
+    public interface IBufferEvent : IDisposable
     {
-        _handlers.Add(handlers);
-        return this;
+
+        public void Initialize();
+        public void Cleanup();
+        public bool IsDisposed();
+
     }
 
-    public MultithreadedBuffer<T> Build() =>
-        new(_node, _poolSize, _handlers);
-}
-
-public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, INodeDescendant where T : class, IBufferEvent, new()
-{
-    public NetworkNode Node { get; }
-    public ILoggable Notify => this;
-
-    public Action OnCanceled;
-    public bool Started { get => _readerTask is not null; }
-
-    private readonly Channel<T> _channel;
-    private readonly ChannelReader<T> _reader;
-    private readonly ChannelWriter<T> _writer;
-    private readonly CancellationTokenSource _tokenSrc;
-
-    private readonly DefaultObjectPool<T> _pool;
-    private readonly DefaultObjectPool<EventProcessor> _processors;
-    private readonly IReadOnlyList<IReadOnlyList<IBufferEventHandler<T>>> _handlers;
-
-    private Task _readerTask;
-
-    public MultithreadedBuffer(NetworkNode node, int poolSize, IReadOnlyList<IReadOnlyList<IBufferEventHandler<T>>> handlers)
+    public sealed class MultithreadedBufferBuilder<T> where T : class, IBufferEvent, new()
     {
-        Node = node;
-        _handlers = handlers;
+        private readonly List<IReadOnlyList<IBufferEventHandler<T>>> _handlers;
+        private readonly NetworkNode _node;
+        private readonly int _poolSize;
 
-        _channel = Channel.CreateUnbounded<T>();
-        _reader = _channel.Reader;
-        _writer = _channel.Writer;
-        _tokenSrc = new CancellationTokenSource();
-
-        OnCanceled = null;
-
-        _pool = new(new DefaultPooledObjectPolicy<T>(), poolSize);
-        _processors = new(new DefaultPooledObjectPolicy<EventProcessor>(), poolSize);
-    }
-
-    public void Dispose()
-    {
-        Stop();
-        _tokenSrc.Dispose();
-    }
-
-    public bool Start()
-    {
-        if (Started)
-            return false;
-
-        // Start tasks
-        _readerTask = Task.Run(Read);
-        Notify.Debug("Buffer started!");
-        return true;
-    }
-
-    public bool Stop()
-    {
-        if (!Started)
-            return false;
-
-        _tokenSrc.Cancel();
-
-        // The task should cancel rather quickly.
-        // This avoids an OperationCanceledException
-        _readerTask.Wait();
-
-        OnCanceled?.Invoke();
-        Notify.Debug("Buffer canceled!");
-        return true;
-    }
-
-    public bool CreateAndWrite(Action<T> setupAction = null)
-    {
-        var @event = _pool.Get();
-        @event.Initialize();
-        setupAction?.Invoke(@event);
-        TryWrite(@event);
-        return true;
-    }
-
-    public bool TryWrite(in T @event)
-    {
-        if (@event == null)
+        public MultithreadedBufferBuilder(NetworkNode node, int poolSize = 256)
         {
-            Notify.Error("Cannot write a null event!");
-            return false;
+            this.IsNotNull(node);
+
+            _handlers = new();
+            _node = node;
+            _poolSize = poolSize;
         }
 
-        _writer.WriteAsync(@event, _tokenSrc.Token);
-        return true;
-    }
-
-    private async Task Read()
-    {
-        while (!_tokenSrc.IsCancellationRequested)
+        public MultithreadedBufferBuilder<T> ThenUseHandlers(params IBufferEventHandler<T>[] handlers)
         {
-            var @event = await _reader.ReadAsync(_tokenSrc.Token);
-
-            var processor = _processors.Get();
-            processor.Buffer = this;
-            processor.Event = @event;
-            _ = Task.Run(processor.ProcessEvent);
+            _handlers.Add(handlers);
+            return this;
         }
+
+        public MultithreadedBuffer<T> Build() =>
+            new(_node, _poolSize, _handlers);
     }
 
-    private sealed class EventProcessor
+    public sealed class MultithreadedBuffer<T> : IRunnable, IDisposable, ILoggable, INodeDescendant where T : class, IBufferEvent, new()
     {
-        public MultithreadedBuffer<T> Buffer { get; set; }
-        public T Event { get; set; }
+        public NetworkNode Node { get; }
+        public ILoggable Notify => this;
 
-        private CancellationTokenSource _tokenSource;
-        private bool _processing;
+        public Action OnCanceled;
+        public bool Started { get => _readerTask is not null; }
 
-        public void ProcessEvent()
+        private readonly Channel<T> _channel;
+        private readonly ChannelReader<T> _reader;
+        private readonly ChannelWriter<T> _writer;
+        private readonly CancellationTokenSource _tokenSrc;
+
+        private readonly DefaultObjectPool<T> _pool;
+        private readonly DefaultObjectPool<EventProcessor> _processors;
+        private readonly IReadOnlyList<IReadOnlyList<IBufferEventHandler<T>>> _handlers;
+
+        private Task _readerTask;
+
+        public MultithreadedBuffer(NetworkNode node, int poolSize, IReadOnlyList<IReadOnlyList<IBufferEventHandler<T>>> handlers)
         {
-            try
+            Node = node;
+            _handlers = handlers;
+
+            _channel = Channel.CreateUnbounded<T>();
+            _reader = _channel.Reader;
+            _writer = _channel.Writer;
+            _tokenSrc = new CancellationTokenSource();
+
+            OnCanceled = null;
+
+            _pool = new(new DefaultPooledObjectPolicy<T>(), poolSize);
+            _processors = new(new DefaultPooledObjectPolicy<EventProcessor>(), poolSize);
+        }
+
+        public void Dispose()
+        {
+            Stop();
+            _tokenSrc.Dispose();
+        }
+
+        public bool Start()
+        {
+            if (Started)
+                return false;
+
+            // Start tasks
+            _readerTask = Task.Run(Read);
+            Notify.Debug("Buffer started!");
+            return true;
+        }
+
+        public bool Stop()
+        {
+            if (!Started)
+                return false;
+
+            _tokenSrc.Cancel();
+
+            // The task should cancel rather quickly.
+            // This avoids an OperationCanceledException
+            _readerTask.Wait();
+
+            OnCanceled?.Invoke();
+            Notify.Debug("Buffer canceled!");
+            return true;
+        }
+
+        public bool CreateAndWrite(Action<T> setupAction = null)
+        {
+            var @event = _pool.Get();
+            @event.Initialize();
+            setupAction?.Invoke(@event);
+            TryWrite(@event);
+            return true;
+        }
+
+        public bool TryWrite(in T @event)
+        {
+            if (@event == null)
             {
-                _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(Buffer._tokenSrc.Token);
-                _processing = true;
+                Notify.Error("Cannot write a null event!");
+                return false;
+            }
 
-                var options = new ParallelOptions { CancellationToken = _tokenSource.Token };
+            _writer.WriteAsync(@event, _tokenSrc.Token);
+            return true;
+        }
 
-                foreach (var step in Buffer._handlers)
+        private async Task Read()
+        {
+            while (!_tokenSrc.IsCancellationRequested)
+            {
+                var @event = await _reader.ReadAsync(_tokenSrc.Token);
+
+                var processor = _processors.Get();
+                processor.Buffer = this;
+                processor.Event = @event;
+                _ = Task.Run(processor.ProcessEvent);
+            }
+        }
+
+        private sealed class EventProcessor
+        {
+            public MultithreadedBuffer<T> Buffer { get; set; }
+            public T Event { get; set; }
+
+            private CancellationTokenSource _tokenSource;
+            private bool _processing;
+
+            public void ProcessEvent()
+            {
+                try
                 {
-                    if (!_processing)
-                        break;
+                    _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(Buffer._tokenSrc.Token);
+                    _processing = true;
 
-                    Parallel.ForEach(
-                        step,
-                        options,
-                        HandleEvent
-                    );
+                    var options = new ParallelOptions { CancellationToken = _tokenSource.Token };
+
+                    foreach (var step in Buffer._handlers)
+                    {
+                        if (!_processing)
+                            break;
+
+                        Parallel.ForEach(
+                            step,
+                            options,
+                            HandleEvent
+                        );
+                    }
+                }
+                finally
+                {
+                    Buffer._pool.Return(Event);
+                    Buffer._processors.Return(this);
                 }
             }
-            finally
-            {
-                Buffer._pool.Return(Event);
-                Buffer._processors.Return(this);
-            }
-        }
 
-        private void HandleEvent(IBufferEventHandler<T> handler, ParallelLoopState state)
-        {
-            if (!handler.Handle(Event))
+            private void HandleEvent(IBufferEventHandler<T> handler, ParallelLoopState state)
             {
-                _processing = false;
-                _tokenSource.Cancel();
+                if (!handler.Handle(Event))
+                {
+                    _processing = false;
+                    _tokenSource.Cancel();
+                }
             }
         }
     }

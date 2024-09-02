@@ -10,7 +10,6 @@ using Serilog.Events;
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace EppNet.Logging
 {
@@ -41,7 +40,7 @@ namespace EppNet.Logging
     public static class LogLevelFlagsExtensions
     {
 
-        private static readonly ReadOnlyDictionary<LogEventLevel, LogLevelFlags> _level2Flag = new Dictionary<LogEventLevel, LogLevelFlags>
+        private static readonly Dictionary<LogEventLevel, LogLevelFlags> _level2Flag = new Dictionary<LogEventLevel, LogLevelFlags>
         {
             { LogEventLevel.Verbose, LogLevelFlags.Verbose   },
             { LogEventLevel.Debug,   LogLevelFlags.Debug     },
@@ -49,9 +48,9 @@ namespace EppNet.Logging
             { LogEventLevel.Warning, LogLevelFlags.Warn      },
             { LogEventLevel.Error, LogLevelFlags.Error       },
             { LogEventLevel.Fatal, LogLevelFlags.Fatal       }
-        }.AsReadOnly();
+        };
 
-        private static readonly ReadOnlyDictionary<LogLevelFlags, LogEventLevel> _flag2Level = new Dictionary<LogLevelFlags, LogEventLevel>
+        private static readonly Dictionary<LogLevelFlags, LogEventLevel> _flag2Level = new Dictionary<LogLevelFlags, LogEventLevel>
         {
             { LogLevelFlags.Verbose, LogEventLevel.Verbose   },
             { LogLevelFlags.Debug , LogEventLevel.Debug     },
@@ -59,7 +58,7 @@ namespace EppNet.Logging
             { LogLevelFlags.Warn , LogEventLevel.Warning      },
             { LogLevelFlags.Error , LogEventLevel.Error       },
             { LogLevelFlags.Fatal , LogEventLevel.Fatal       }
-        }.AsReadOnly();
+        };
 
         /// <summary>
         /// Converts a Serilog <see cref="LogEventLevel"/> to our <see cref="LogLevelFlags"/>

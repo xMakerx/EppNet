@@ -556,4 +556,15 @@ namespace EppNet.Data
 
     }
 
+    public static class EncodingExtensions
+    {
+
+        public static bool TryGetBytes(this System.Text.Encoding encoder, string input, Span<byte> buffer, out int bytesWritten)
+        {
+            bytesWritten = encoder.GetBytes(input.AsSpan(), buffer);
+            return true;
+        }
+
+    }
+
 }

@@ -25,7 +25,7 @@ namespace EppNet.Utilities
 
             StringBuilder builder = new();
 
-            T[] allValues = Enum.GetValues<T>();
+            T[] allValues = (T[])Enum.GetValues(typeof(T));
             int listedValues = 0;
 
             for (int i = 0; i < allValues.Length; i++)

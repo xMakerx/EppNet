@@ -16,13 +16,6 @@ namespace EppNet.Registers
         public int NumCompiled;
         public Exception Error;
 
-        public CompilationResult()
-        {
-            this.Successful = false;
-            this.NumCompiled = 0;
-            this.Error = null;
-        }
-
         public CompilationResult(bool success, int numCompiled, Exception error)
         {
             this.Successful = success;

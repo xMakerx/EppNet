@@ -12,7 +12,7 @@ namespace EppNet.Connections
 
     public static class DisconnectReasons
     {
-        internal static List<DisconnectReason> _reasons = [];
+        internal static List<DisconnectReason> _reasons = new();
 
         public static readonly DisconnectReason Unknown = new("Connection to the remote host was lost.");
         public static readonly DisconnectReason TimedOut = new("Connection to the remote host has timed out.");

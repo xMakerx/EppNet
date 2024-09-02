@@ -4,21 +4,29 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Time;
+using System;
 
 namespace EppNet.Connections
 {
 
-    public readonly struct DisconnectEvent(Connection connection, DisconnectReason reason)
+    public readonly struct DisconnectEvent
     {
 
-        public readonly Connection Connection = connection;
-        public readonly DisconnectReason Reason = reason;
+        public readonly Connection Connection;
+        public readonly DisconnectReason Reason;
 
         /// <summary>
         /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
         /// </summary>
-        public readonly Timestamp Timestamp = Timestamp.FromMonoNow();
+        public readonly TimeSpan Time;
+
+        public DisconnectEvent(Connection connection, DisconnectReason reason)
+        {
+            this.Connection = connection;
+            this.Reason = reason;
+            this.Time = connection.Node.Time;
+        }
+
     }
 
 }

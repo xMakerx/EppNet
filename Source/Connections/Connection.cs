@@ -22,7 +22,11 @@ namespace EppNet.Connections
     /// <summary>
     /// This represents a connection to the server
     /// </summary>
-    public class ServerConnection(BaseSocket socket, Peer peer) : Connection(socket, peer);
+    public class ServerConnection : Connection
+    {
+
+        public ServerConnection(BaseSocket socket, Peer peer) : base(socket, peer) { }
+    }
 
     public class ClientConnection : Connection
     {

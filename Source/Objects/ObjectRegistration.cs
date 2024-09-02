@@ -7,10 +7,12 @@
 using EppNet.Attributes;
 using EppNet.Logging;
 using EppNet.Registers;
+using EppNet.Utilities;
 
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 
 namespace EppNet.Objects
 {
@@ -272,7 +274,11 @@ namespace EppNet.Objects
                                 if (methodName.StartsWith("set"))
                                 {
                                     // Let's try to find the companion getter
-                                    methodName = $"get{methodName.AsSpan(3)}";
+
+                                    StringBuilder builder = new("get");
+                                    builder.Append(methodName.AsSpan(3));
+
+                                    methodName = $"get{builder.ToString()}";
                                     getterMthd = method.DeclaringType.GetMethod(methodName, BindingFlags.IgnoreCase | BindingFlags.Instance);
                                 }
 

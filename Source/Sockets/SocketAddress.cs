@@ -107,21 +107,31 @@ namespace EppNet.Sockets
         internal ushort _port;
         internal string _hostName;
 
-        public SocketAddress()
+        public SocketAddress(ushort port)
         {
+            this.OnIPChanged = null;
+            this.OnHostNameChanged = null;
+            this.OnPortChanged = null;
+
             this._enet_addr = new();
             this._ip = string.Empty;
             this._port = 0;
             this._hostName = string.Empty;
-        }
 
-        public SocketAddress(ushort port) : this()
-        {
             this.Port = port;
         }
 
-        public SocketAddress(string ipAddress, ushort port) : this()
+        public SocketAddress(string ipAddress, ushort port)
         {
+            this.OnIPChanged = null;
+            this.OnHostNameChanged = null;
+            this.OnPortChanged = null;
+
+            this._enet_addr = new();
+            this._ip = string.Empty;
+            this._port = 0;
+            this._hostName = string.Empty;
+
             this.IP = ipAddress;
             this.Port = port;
         }

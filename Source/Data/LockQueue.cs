@@ -85,12 +85,6 @@ namespace EppNet.Data
                 return base.ToArray();
         }
 
-        public new int EnsureCapacity(int capacity)
-        {
-            lock (_lock)
-                return base.EnsureCapacity(capacity);
-        }
-
         public new void CopyTo(T[] array, int arrayIndex)
         {
             lock (_lock)

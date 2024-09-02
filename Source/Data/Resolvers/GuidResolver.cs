@@ -24,13 +24,13 @@ namespace EppNet.Data
             Span<byte> buffer = stackalloc byte[Size];
             int read = payload.Stream.Read(buffer);
 
-            output = (read == buffer.Length) ? new(buffer, false) : default;
+            output = (read == buffer.Length) ? new(buffer) : default;
             return read == buffer.Length ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override bool _Internal_Write(BytePayload payload, Guid input)
-            => input.TryWriteBytes(payload.Stream.GetSpan(Size), false, out _);
+            => input.TryWriteBytes(payload.Stream.GetSpan(Size));
 
     }
 

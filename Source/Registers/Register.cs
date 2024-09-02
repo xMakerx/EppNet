@@ -4,15 +4,16 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Utilities;
+
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace EppNet.Registers
 {
 
     public abstract class Register<TKey, BaseType> : ICompilable, IDisposable
-        where TKey : INumber<TKey>, IEquatable<TKey>
+        where TKey : unmanaged, IComparable<TKey>, IConvertible, IEquatable<TKey>
     {
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace EppNet.Registers
 
             do
             {
-                key = TKey.CreateChecked(_lookupTable.Count + offset++);
+                key = NumberExtensions.CreateChecked<int, TKey>(_lookupTable.Count + offset++);
             } while (!IsValidKey(key));
 
             return _Internal_TryRegister<T>(key);
@@ -109,7 +110,7 @@ namespace EppNet.Registers
         {
 
             if (_compiled)
-                return new();
+                return new CompilationResult();
 
             int compiledCount = 0;
 
@@ -125,10 +126,10 @@ namespace EppNet.Registers
             }
             catch (Exception ex)
             {
-                return new(false, compiledCount, ex);
+                return new CompilationResult(false, compiledCount, ex);
             }
 
-            return new(_compiled, compiledCount, null);
+            return new CompilationResult(_compiled, compiledCount, null);
         }
 
         public bool IsCompiled()

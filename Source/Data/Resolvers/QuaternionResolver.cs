@@ -17,6 +17,7 @@ namespace EppNet.Data
     {
 
         public static readonly QuaternionResolver Instance = new();
+        public static readonly Quaternion Zero = new(0, 0, 0, 0);
 
         /// <summary>
         /// Identity quaternions send this value to save bandwidth and computation time
@@ -46,13 +47,13 @@ namespace EppNet.Data
             if (header == IdentityHeader || header == ZeroHeader)
             {
                 // Yay! Just match the quaternion and return!
-                output = header == IdentityHeader ? Quaternion.Identity : Quaternion.Zero;
+                output = header == IdentityHeader ? Quaternion.Identity : Zero;
                 return ReadResult.Success;
             }
 
             // We didn't have the easy way out. Consider the most significant bit.
             bool negative = (header & (1 << 7)) != 0;
-            int largestIndex = byte.TrailingZeroCount(negative ? (byte)(header & ~(1 << 7)) : header);
+            int largestIndex = BitOperations.TrailingZeroCount(negative ? (byte)(header & ~(1 << 7)) : header);
             Span<float> components = stackalloc float[4];
 
             for (int i = 0; i < components.Length; i++)
@@ -82,7 +83,7 @@ namespace EppNet.Data
             output = new();
 
             for (int i = 0; i < components.Length; i++)
-                output[i] = components[i];
+                output = output.Set(i, components[i]);
 
             return ReadResult.Success;
         }
@@ -104,9 +105,11 @@ namespace EppNet.Data
         {
 
             // Identity and zero quats use a single byte
-            if (input == Quaternion.Identity || input == Quaternion.Zero)
+            if (input == Quaternion.Identity || input == Zero)
             {
-                payload.Stream.WriteByte(input == Quaternion.Identity ? IdentityHeader : ZeroHeader);
+                payload.Stream.WriteByte(input == Quaternion.Identity
+                    ? IdentityHeader
+                    : ZeroHeader);
                 return true;
             }
 
@@ -118,11 +121,12 @@ namespace EppNet.Data
 
             for (int i = 1; i < 4; i++)
             {
-                float value = MathF.Abs(normalized[i]);
+                float f = normalized.At(i);
+                float value = MathF.Abs(f);
 
                 if (value > largest)
                 {
-                    negative = normalized[i] < 0;
+                    negative = f < 0;
                     largest = value;
                     largestIndex = i;
                 }
@@ -152,8 +156,9 @@ namespace EppNet.Data
                         continue;
                     }
 
+
                     // Quantize the float into a byte
-                    bytes[byteIndex] = FastMath.Quantize(normalized[quatIndex++]);
+                    bytes[byteIndex] = FastMath.Quantize(normalized.At(quatIndex++));
 
                     // Write the byte to the stream
                     payload.Stream.WriteByte(bytes[byteIndex]);
@@ -170,12 +175,60 @@ namespace EppNet.Data
                     if (i == largestIndex)
                         break;
 
-                    FloatResolver.Instance.Write(payload, normalized[i]);
+                    FloatResolver.Instance.Write(payload, normalized.At(i));
                 }
             }
 
             return true;
         }
+    }
+
+    public static class QuaternionExtensions
+    {
+
+        public static Quaternion Set(this Quaternion quaternion, int index, float value)
+        {
+            switch (index)
+            {
+                case 0:
+                    return new(value, quaternion.Y, quaternion.Z, quaternion.W);
+
+                case 1:
+                    return new(quaternion.X, value, quaternion.Z, quaternion.W);
+
+                case 2:
+                    return new(quaternion.X, quaternion.Y, value, quaternion.W);
+
+                default:
+                    return new(quaternion.X, quaternion.Y, quaternion.Z, value);
+            }
+        }
+
+        public static float At(this Quaternion input, int index)
+        {
+            float value;
+            switch (index)
+            {
+                case 0:
+                    value = input.X;
+                    break;
+
+                case 1:
+                    value = input.Y;
+                    break;
+
+                case 2:
+                    value = input.Z;
+                    break;
+
+                default:
+                    value = input.W;
+                    break;
+            }
+
+            return value;
+        }
+
     }
 
     public static class QuaternionResolverExtensions

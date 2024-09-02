@@ -89,13 +89,6 @@ namespace EppNet.Time
 
         public long Value;
 
-        public Timestamp()
-        {
-            this._type = TimestampType.None;
-            this.Monotonic = false;
-            this.Value = 0;
-        }
-
         public Timestamp(TimestampType type, bool monotonic, long value)
         {
             this._type = type;
@@ -103,28 +96,38 @@ namespace EppNet.Time
             this.Value = value;
         }
 
-        public Timestamp(int value) : this()
+        public Timestamp(int value)
         {
+            this._type = TimestampType.None;
+            this.Monotonic = false;
             this.Value = value;
         }
 
-        public Timestamp(uint value) : this()
+        public Timestamp(uint value)
         {
+            this._type = TimestampType.None;
+            this.Monotonic = false;
             this.Value = value;
         }
 
-        public Timestamp(float value) : this()
+        public Timestamp(float value)
         {
+            this._type = TimestampType.None;
+            this.Monotonic = false;
             this.Value = (long)value;
         }
 
-        public Timestamp(ulong value) : this()
+        public Timestamp(ulong value)
         {
+            this._type = TimestampType.None;
+            this.Monotonic = false;
             this.Value = (long)value;
         }
 
-        public Timestamp(long value) : this()
+        public Timestamp(long value)
         {
+            this._type = TimestampType.None;
+            this.Monotonic = false;
             this.Value = value;
         }
 

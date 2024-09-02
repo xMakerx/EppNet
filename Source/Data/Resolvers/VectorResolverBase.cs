@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
@@ -62,6 +63,88 @@ namespace EppNet.Data
         protected VectorResolverBase(int size, bool autoAdvance = true) : base(size, autoAdvance) { }
 
         protected VectorResolverBase(int size) : base(size) { }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected HeaderData _Internal_CreateHeaderWithType(T input, bool signed = false, bool absolute = true)
+        {
+            int largestTypeIndex = 0;
+
+            Span<float> values = stackalloc float[NumComponents];
+
+            if (input is Vector2 v2)
+            {
+                values[0] = v2.X;
+                values[1] = v2.Y;
+            }
+            else if (input is Vector3 v3)
+            {
+                values[0] = v3.X;
+                values[1] = v3.Y;
+                values[2] = v3.Z;
+            }
+            else if (input is Vector4 v4)
+            {
+                values[0] = v4.X;
+                values[1] = v4.Y;
+                values[2] = v4.Z;
+                values[3] = v4.W;
+            }
+
+            // Type indices
+            // 0 -> byte or sbyte
+            // 1 -> ushort or short
+            // 2 -> uint or int
+            // 3 -> float
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                float value = values[i];
+                int typeIndex;
+
+                // Floats are the largest type to represent.
+                if (value % 1 != 0)
+                {
+                    // We must use floats for all.
+                    largestTypeIndex = 3;
+                    break;
+                }
+
+                if (signed)
+                {
+                    if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
+                        typeIndex = 0;
+
+                    else if (ushort.MinValue <= value && value <= ushort.MaxValue)
+                        typeIndex = 1;
+
+                    else if (uint.MinValue <= value && value <= uint.MaxValue)
+                        typeIndex = 2;
+
+                    else
+                        typeIndex = 3;
+                }
+                else
+                {
+                    if (byte.MinValue <= value && value <= byte.MaxValue)
+                        typeIndex = 0;
+
+                    else if (short.MinValue <= value && value <= short.MaxValue)
+                        typeIndex = 1;
+
+                    else if (int.MinValue <= value && value <= int.MaxValue)
+                        typeIndex = 2;
+
+                    else
+                        typeIndex = 3;
+                }
+
+                if (typeIndex > largestTypeIndex)
+                    largestTypeIndex = typeIndex;
+            }
+
+            return new((byte)((absolute ? 128 : 0) | (byte)largestTypeIndex),
+                largestTypeIndex, signed, absolute, 0);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual bool WriteArray(BytePayload payload, T[] input, bool absolute = true)
@@ -132,8 +215,27 @@ namespace EppNet.Data
             }
 
             Span<float> floats = stackalloc float[NumComponents];
-            floats = GetFloats(input, ref floats);
-            HeaderData data = IResolver._Internal_CreateHeaderWithType(ref floats, true, absolute);
+
+            if (input is Vector2 v2)
+            {
+                floats[0] = v2.X;
+                floats[1] = v2.Y;
+            }
+            else if (input is Vector3 v3)
+            {
+                floats[0] = v3.X;
+                floats[1] = v3.Y;
+                floats[2] = v3.Z;
+            }
+            else if (input is Vector4 v4)
+            {
+                floats[0] = v4.X;
+                floats[1] = v4.Y;
+                floats[2] = v4.Z;
+                floats[3] = v4.W;
+            }
+
+            HeaderData data = _Internal_CreateHeaderWithType(input, true, absolute);
             bool written = true;
 
             header = data.Header;
@@ -243,8 +345,6 @@ namespace EppNet.Data
             => Write(payload, input, absolute: true);
 
         public abstract T Put(T input, float value, int index);
-
-        public abstract Span<float> GetFloats(T input, scoped ref Span<float> floats);
 
     }
 

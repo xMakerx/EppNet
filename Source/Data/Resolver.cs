@@ -4,8 +4,13 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Utilities;
+
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -39,13 +44,22 @@ namespace EppNet.Data
             => result == ReadResult.Success || result == ReadResult.SuccessDelta;
     }
 
-    public readonly ref struct HeaderData(byte header, int typeIndex, bool signed, bool absolute, int data)
+    public readonly ref struct HeaderData
     {
-        public readonly byte Header = header;
-        public readonly int TypeIndex = typeIndex;
-        public readonly bool Signed = signed;
-        public readonly bool Absolute = absolute;
-        public readonly int Data = data;
+        public readonly byte Header;
+        public readonly int TypeIndex;
+        public readonly bool Signed;
+        public readonly bool Absolute;
+        public readonly int Data;
+
+        public HeaderData(byte header, int typeIndex, bool signed, bool absolute, int data)
+        {
+            this.Header = header;
+            this.TypeIndex = typeIndex;
+            this.Signed = signed;
+            this.Absolute = absolute;
+            this.Data = data;
+        }
     }
 
     public abstract class Resolver<T> : IResolver<T>
@@ -106,7 +120,7 @@ namespace EppNet.Data
 
             if (header == IResolver.NullArrayHeader || header == IResolver.EmptyArrayHeader)
             {
-                output = header == IResolver.NullArrayHeader ? null : [];
+                output = header == IResolver.NullArrayHeader ? null : default;
                 return ReadResult.Success;
             }
 
@@ -278,22 +292,21 @@ namespace EppNet.Data
     public static class ResolverExtensions
     {
 
-        public static ReadResult ReadAsInt<T>(this Resolver<T> resolver, BytePayload payload, out int length) where T : INumber<T>
+        public static ReadResult ReadAsInt<T>(this Resolver<T> resolver, BytePayload payload, out int length) where T : IComparable<T>, IConvertible
         {
             ReadResult result = resolver.Read(payload, out T output);
-            length = int.CreateChecked(output);
+            length = Convert.ToInt32(output);
             return result;
         }
 
-        public static ReadResult ReadAs<T, TOutput>(this Resolver<T> resolver, BytePayload payload, out TOutput output) 
-            where T : INumberBase<T> 
-            where TOutput : INumberBase<TOutput>
+        public static ReadResult ReadAs<T, TOutput>(this Resolver<T> resolver, BytePayload payload, out TOutput output)
+            where T : unmanaged, IComparable<T>, IConvertible
+            where TOutput : unmanaged, IComparable<TOutput>, IConvertible
         {
             ReadResult result = resolver.Read(payload, out T typedOutput);
-            output = TOutput.CreateChecked(typedOutput);
+            output = NumberExtensions.CreateChecked<T, TOutput>(typedOutput);
             return result;
         }
-
     }
 
     public interface IResolver<T> : IResolver
@@ -310,67 +323,6 @@ namespace EppNet.Data
 
         public ReadResult Read(BytePayload payload, out object output);
         public bool Write(BytePayload payload, object input);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static HeaderData _Internal_CreateHeaderWithType(scoped ref Span<float> values, bool signed = false, bool absolute = true)
-        {
-            int largestTypeIndex = 0;
-
-            // Type indices
-            // 0 -> byte or sbyte
-            // 1 -> ushort or short
-            // 2 -> uint or int
-            // 3 -> float
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                float value = values[i];
-                int typeIndex;
-
-                // Floats are the largest type to represent.
-                if (value % 1 != 0)
-                {
-                    // We must use floats for all.
-                    largestTypeIndex = 3;
-                    break;
-                }
-
-                if (signed)
-                {
-                    if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
-                        typeIndex = 0;
-
-                    else if (ushort.MinValue <= value && value <= ushort.MaxValue)
-                        typeIndex = 1;
-
-                    else if (uint.MinValue <= value && value <= uint.MaxValue)
-                        typeIndex = 2;
-
-                    else
-                        typeIndex = 3;
-                }
-                else
-                {
-                    if (byte.MinValue <= value && value <= byte.MaxValue)
-                        typeIndex = 0;
-
-                    else if (short.MinValue <= value && value <= short.MaxValue)
-                        typeIndex = 1;
-
-                    else if (int.MinValue <= value && value <= int.MaxValue)
-                        typeIndex = 2;
-
-                    else
-                        typeIndex = 3;
-                }
-
-                if (typeIndex > largestTypeIndex)
-                    largestTypeIndex = typeIndex;
-            }
-
-            return new((byte)((absolute ? 128 : 0) | (byte)largestTypeIndex),
-                largestTypeIndex, signed, absolute, 0);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static internal void _Internal_WriteHeaderAndLength(BytePayload payload, int length)

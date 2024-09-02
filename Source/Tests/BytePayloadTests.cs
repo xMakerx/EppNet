@@ -44,12 +44,13 @@ namespace EppNet.Tests
                 Quaternion normalized = Quaternion.Normalize(a);
                 float errorMargin = 0f;
 
-
                 Quaternion test = result - normalized;
 
                 for (int i = 0; i < 4; i++)
                     errorMargin += test[i];
 
+                Console.WriteLine(quantized);
+                Console.WriteLine(result);
                 Assert.IsTrue(quantized.Equals(result) && MathF.Abs(errorMargin) <= MarginOfError);
             }
 

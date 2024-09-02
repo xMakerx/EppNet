@@ -56,12 +56,17 @@ namespace EppNet.Commands
         void Return(object obj);
     }
 
-    public class CommandObjectPool<TCommand>(int poolSize) : IObjectPool where TCommand : class, ICommand, new()
+    public class CommandObjectPool<TCommand> : IObjectPool where TCommand : class, ICommand, new()
     {
+        public DefaultObjectPool<TCommand> Pool { get; }
 
-        public DefaultObjectPool<TCommand> Pool { get; } = new(new DefaultPooledObjectPolicy<TCommand>(), poolSize);
+        public CommandObjectPool(int poolSize)
+        {
+            this.Pool = new(new DefaultPooledObjectPolicy<TCommand>(), poolSize);
+        }
 
-        public object Get() => Pool.Get();
+        public object Get()
+            => Pool.Get();
 
         public void Return(object obj)
         {
@@ -71,6 +76,6 @@ namespace EppNet.Commands
 
     }
 
-    public interface ICommandTarget;
+    public interface ICommandTarget { }
 
 }

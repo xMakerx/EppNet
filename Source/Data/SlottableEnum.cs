@@ -75,14 +75,6 @@ namespace EppNet.Data
         public uint Slot { internal set; get; }
         public int Value { internal set; get; }
 
-        public SlottableEnum()
-        {
-            this.Group = null;
-            this.Name = string.Empty;
-            this.Slot = 0;
-            this.Value = default;
-        }
-
         internal SlottableEnum(IList group, string name, uint slot, int value)
         {
             this.Group = group;

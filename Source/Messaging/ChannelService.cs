@@ -60,7 +60,7 @@ namespace EppNet.Messaging
         {
             newChannel = null;
             
-            if (id < (byte) Enum.GetValues<Channels>().Length)
+            if (id < (byte) Enum.GetValues(typeof(Channels)).Length)
             {
                 // This is a reserved channel id
                 string message = $"Channel ID \"{id}\" is reserved!";

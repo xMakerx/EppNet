@@ -24,11 +24,6 @@ namespace EppNet.Snapshots
 
         public readonly sbyte Value;
 
-        public SequenceNumber()
-        {
-            this.Value = MinValue;
-        }
-
         /// <summary>
         /// An out of range integer is clamped
         /// </summary>
@@ -74,7 +69,7 @@ namespace EppNet.Snapshots
         public readonly SequenceNumber Next()
         {
             if (Value + 1 > MaxValue)
-                return new(MinValue);
+                return new();
 
             return new(Value + 1);
         }
@@ -82,7 +77,7 @@ namespace EppNet.Snapshots
         public readonly SequenceNumber Previous()
         {
             if (Value - 1 < MinValue)
-                return new(MaxValue);
+                return new SequenceNumber(MaxValue);
 
             return new(Value - 1);
         }

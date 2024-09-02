@@ -9,6 +9,7 @@ using EppNet.Utilities;
 
 using System;
 using System.Buffers.Binary;
+using System.Numerics;
 
 namespace EppNet.Registers
 {
@@ -34,7 +35,7 @@ namespace EppNet.Registers
                 Datagram.HeaderByteLength = (int)MathF.Ceiling(Registrations / 255f);
 
                 byte check = (byte) (Registrations - 1);
-                Datagram.AvailableHeaderBits = byte.LeadingZeroCount(check);
+                Datagram.AvailableHeaderBits = BitOperations.LeadingZeroCount(check);
 
                 byte b = 0;
 

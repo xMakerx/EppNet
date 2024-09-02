@@ -9,6 +9,7 @@ using EppNet.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -502,7 +503,7 @@ namespace EppNet.Collections
                     }
 
                     ulong complement = ~marker;
-                    firstFree = (i * _primSize) + (int) ulong.Log2(complement & (0 - complement));
+                    firstFree = (i * _primSize) + (int) BitOperations.Log2(complement & (0 - complement));
                     break;
                 }
 

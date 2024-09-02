@@ -4,10 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Time;
-
-using System.Diagnostics.CodeAnalysis;
-
 namespace EppNet.Node
 {
 
@@ -22,7 +18,6 @@ namespace EppNet.Node
         /// The <see cref="NetworkNode"/> this object is concerned with
         /// </summary>
 
-        [MemberNotNull]
         public NetworkNode Node { get; }
 
     }

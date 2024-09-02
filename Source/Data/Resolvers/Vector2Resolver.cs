@@ -25,16 +25,21 @@ namespace EppNet.Data
             this.NumComponents = 2;
         }
 
-        public override Span<float> GetFloats(Vector2 input, scoped ref Span<float> floats)
-        {
-            floats[0] = input.X;
-            floats[1] = input.Y;
-            return floats;
-        }
-
         public override Vector2 Put(Vector2 input, float value, int index)
         {
-            input[index] = value;
+            switch (index)
+            {
+
+                case 0:
+                    input.X = value;
+                    break;
+
+                default:
+                    input.Y = value;
+                    break;
+
+            }
+
             return input;
         }
     }
