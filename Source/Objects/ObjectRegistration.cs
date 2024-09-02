@@ -23,15 +23,25 @@ namespace EppNet.Objects
         public ILoggable Notify { get => this; }
 
         public readonly NetworkObjectAttribute ObjectAttribute;
+
+        /// <summary>
+        /// This contains all the located network methods in the registered type
+        /// and its base types.
+        /// </summary>
         protected internal SortedList<string, ObjectMemberDefinition> _methods;
+
+        /// <summary>
+        /// This contains all the located network properties in the registered type
+        /// and its base types.
+        /// </summary>
         protected internal SortedList<string, ObjectMemberDefinition> _props;
+
         public ObjectRegistration(Type type, NetworkObjectAttribute attribute) : base(type)
         {
             this.ObjectAttribute = attribute;
             this._methods = null;
             this._props = null;
         }
-
 
         /// <summary>
         /// Fetches an <see cref="ObjectMemberDefinition"/> by name
@@ -62,14 +72,16 @@ namespace EppNet.Objects
         /// <param name="index"></param>
         /// <returns></returns>
 
-        public ObjectMemberDefinition GetMethod(int index) => _GetMember(index, ref _methods);
+        public ObjectMemberDefinition GetMethod(int index)
+            => _GetMember(index, ref _methods);
 
         /// <summary>
         /// Fetches a property's <see cref="ObjectMemberDefinition"/> by index.
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public ObjectMemberDefinition GetProperty(int index) => _GetMember(index, ref _props);
+        public ObjectMemberDefinition GetProperty(int index)
+            => _GetMember(index, ref _props);
 
         public override CompilationResult Compile()
         {
@@ -154,7 +166,8 @@ namespace EppNet.Objects
                             // Let's consider if we need to replace the existing result with this new one.
                             // We do this by identifying if a method exists in the dictionary with a matching
                             // signature.
-                            if (result.ReturnType == method.ReturnType && rParams.Length == mParams.Length)
+                            if (result.ReturnType == method.ReturnType &&
+                                rParams.Length == mParams.Length)
                             {
                                 int numMatches = 0;
                                 for (int k = 0; k < rParams.Length; k++)
@@ -252,7 +265,7 @@ namespace EppNet.Objects
                                 if (methodName.StartsWith("set"))
                                 {
                                     // Let's try to find the companion getter
-                                    methodName = "get" + methodName.Substring(3);
+                                    methodName = $"get{methodName.AsSpan(3)}";
                                     getterMthd = method.DeclaringType.GetMethod(methodName, BindingFlags.IgnoreCase | BindingFlags.Instance);
                                 }
 

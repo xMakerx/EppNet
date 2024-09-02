@@ -184,7 +184,8 @@ namespace EppNet.Objects
             return removed;
         }
 
-        public bool HasChild(ObjectAgent child) => child != null && _children?.Contains(child) == true;
+        public bool HasChild(ObjectAgent child)
+            => child != null && _children?.Contains(child) == true;
 
         public void ClearAllChildren()
         {
@@ -217,7 +218,8 @@ namespace EppNet.Objects
         /// <param name="other"></param>
         /// <returns>Whether or not the other instance is valid</returns>
 
-        public bool IsOtherValid(ObjectAgent other) => other != null && other != this;
+        public bool IsOtherValid(ObjectAgent other)
+            => other != null && other != this;
 
         public override bool Equals(object obj)
         {
@@ -227,7 +229,10 @@ namespace EppNet.Objects
             return false;
         }
 
-        public bool Equals(ObjectAgent other) => Metadata == other.Metadata && UserObject == other.UserObject && ID == other.ID;
+        public bool Equals(ObjectAgent other)
+            => Metadata == other.Metadata &&
+            UserObject == other.UserObject
+            && ID == other.ID;
 
         public override int GetHashCode()
         {
