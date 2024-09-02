@@ -3,10 +3,8 @@
 /// Date: September 13, 2023
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
-
-using EppNet.Registers;
 using EppNet.Data.Datagrams;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using EppNet.Registers;
 
 namespace EppNet.Tests
 {
@@ -26,9 +24,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void TestPingDatagramGen()
         {
-            IDatagram d = (IDatagram) _reg.Get(0x1).NewInstance();
-
-            Assert.IsTrue(d is PingDatagram, "Did not instantiate new ping datagram properly!");
+            bool fetched = _reg.TryGetNew(out PingDatagram _);
+            Assert.IsTrue(fetched, "Did not instantiate new ping datagram properly!");
         }
 
         [TestMethod]

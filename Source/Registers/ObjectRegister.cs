@@ -19,11 +19,12 @@ using static EppNet.Utilities.AttributeFetcher;
 namespace EppNet.Registers
 {
 
-    public class ObjectRegister : Register<int, ISimUnit>
+    public sealed class ObjectRegister : Register<int, ISimUnit>
     {
 
-        public static readonly ObjectRegister Instance = new ObjectRegister();
+        public static readonly ObjectRegister Instance = new();
         public static ObjectRegister Get() => Instance;
+        private ObjectRegister() { }
 
         public override CompilationResult Compile()
         {
@@ -46,7 +47,7 @@ namespace EppNet.Registers
                     Log.Verbose("[ObjectRegister#Compile()] Compiling {name}...", wrapper.Type.Name);
                     r.Compile();
 
-                    Add(i, r);
+                    _Internal_TryRegister(i, r);
                     compiledCount++;
                 }
 

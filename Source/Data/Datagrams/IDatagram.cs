@@ -13,6 +13,7 @@ namespace EppNet.Data.Datagrams
 
     public interface IDatagram : IDisposable
     {
+        public byte Index { get; }
 
         public long Size { get; }
         public bool Written { get; }

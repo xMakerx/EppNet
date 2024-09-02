@@ -7,8 +7,6 @@
 using EppNet.Data;
 using EppNet.Utilities;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using System.Numerics;
 
 namespace EppNet.Tests

@@ -5,29 +5,63 @@
 //////////////////////////////////////////////
 
 using EppNet.Data.Datagrams;
+using EppNet.Utilities;
+
+using System;
+using System.Buffers.Binary;
 
 namespace EppNet.Registers
 {
-    public class DatagramRegister : Register<byte, Datagram>
+    public sealed class DatagramRegister : Register<byte, Datagram>
     {
 
-        public static readonly DatagramRegister Instance = new DatagramRegister();
+        public static readonly DatagramRegister Instance = new();
         public static DatagramRegister Get() => Instance;
 
-        public DatagramRegister()
+        private DatagramRegister()
         {
-            Add<PingDatagram>(0x1);
-            Add<DisconnectDatagram>(0x2);
-            Add<ObjectUpdateDatagram>(0x3);
+            TryRegister<PingDatagram>();
+            TryRegister<DisconnectDatagram>();
+            TryRegister<ObjectUpdateDatagram>();
         }
 
-        public override bool IsValidKey(byte key)
+        public override CompilationResult Compile()
         {
-            if (key < 1)
-                throw new System.ArgumentException($"{GetType().Name} requires keys greater than 1!");
+            CompilationResult result = base.Compile();
 
-            return base.IsValidKey(key);
+            if (result.Successful)
+            {
+                Datagram.HeaderByteLength = (int)MathF.Ceiling(Registrations / 255f);
+
+                byte check = (byte) (Registrations - 1);
+                Datagram.AvailableHeaderBits = byte.LeadingZeroCount(check);
+
+                byte b = 0;
+
+                for (int i = 0; i < Datagram.AvailableHeaderBits; i++)
+                    b = b.EnableBit(i);
+
+                Datagram.MaxHeaderDataDecimalValue = b;
+            }
+
+            return result;
         }
+
+        public override bool TryGetNew<T>(out T instance)
+        {
+            instance = default;
+
+            if (_type2Keys.TryGetValue(typeof(T), out byte key))
+            {
+                IRegistration registration = _lookupTable[key];
+                instance = (T)registration.NewInstance();
+                instance.Index = key;
+                return true;
+            }
+
+            return false;
+        }
+
     }
 
 }

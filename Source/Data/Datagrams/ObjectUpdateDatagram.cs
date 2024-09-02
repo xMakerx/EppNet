@@ -26,7 +26,6 @@ namespace EppNet.Data.Datagrams
 
         public ObjectUpdateDatagram()
         {
-            this.Header = 0x3;
             this.ChannelID = 0x1;
             this.Objects = null;
             this.Transients = new Dictionary<ObjectAgent, List<Update>>();

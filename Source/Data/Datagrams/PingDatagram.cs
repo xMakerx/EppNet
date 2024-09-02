@@ -18,7 +18,6 @@ namespace EppNet.Data.Datagrams
 
         public PingDatagram()
         {
-            this.Header = 0x1;
             this.ChannelID = (byte)Channels.Connectivity;
             this._collectible = false;
         }

@@ -46,6 +46,18 @@ namespace EppNet.Sockets
                 ConnectionService = Node.Services.GetOrCreate<ConnectionService>();
         }
 
+        public override bool CanConnect(Peer peer)
+        {
+            bool canConnect = base.CanConnect(peer);
+
+            if (ConnectionService != null)
+                canConnect &= ConnectionService.CanConnect(peer);
+            else
+                canConnect &= Companion == null;
+
+            return canConnect;
+        }
+
 
     }
 

@@ -5,10 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Attributes;
-using EppNet.Objects;
 using EppNet.Sim;
-
-using System;
 
 namespace EppNet.Tests
 {
@@ -40,7 +37,7 @@ namespace EppNet.Tests
 
         public void OnDelete() { }
 
-        [NetworkMethod()]
+        [NetworkMethod]
         public void Say(string message, int number)
         {
             string r = message + number;

@@ -19,10 +19,17 @@ namespace EppNet.Objects
     {
 
         public static readonly StringComparer StringSortComparer = StringComparer.Ordinal;
+        public const int TinyFootprintCount = 28;
 
         public ILoggable Notify { get => this; }
 
         public readonly NetworkObjectAttribute ObjectAttribute;
+
+        /// <summary>
+        /// Whether or not this registration has less than <see cref="TinyFootprintCount"/> network members.<br/>
+        /// If this is true, we can do additional bandwidth optimizations
+        /// </summary>
+        public bool TinyFootprint { private set; get; }
 
         /// <summary>
         /// This contains all the located network methods in the registered type
@@ -333,6 +340,8 @@ namespace EppNet.Objects
 
             opResult.Successful = true;
             opResult.NumCompiled = _methods.Count + _props.Count;
+
+            this.TinyFootprint = _props.Count + _methods.Count <= TinyFootprintCount;
             return opResult;
 
         }

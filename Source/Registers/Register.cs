@@ -6,12 +6,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace EppNet.Registers
 {
 
     public abstract class Register<TKey, BaseType> : ICompilable, IDisposable
+        where TKey : INumber<TKey>, IEquatable<TKey>
     {
+
+        /// <summary>
+        /// The total number of registrations
+        /// </summary>
+        public int Registrations { get => _lookupTable.Count; }
 
         protected internal IDictionary<TKey, IRegistration> _lookupTable;
         protected internal Dictionary<Type, TKey> _type2Keys;
@@ -30,37 +37,39 @@ namespace EppNet.Registers
         /// <param name="key"></param>
         /// <returns></returns>
 
-        public virtual bool IsValidKey(TKey key) => !_lookupTable.ContainsKey(key);
+        public bool IsValidKey(TKey key)
+            => !_lookupTable.ContainsKey(key);
 
-        public bool Add<T>(TKey key) where T : BaseType => Add(key, typeof(T));
-
-        public bool Add(TKey key, Type type)
+        /// <summary>
+        /// Registers the specified type with a key equal to the next available index.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public virtual bool TryRegister<T>() where T : BaseType
         {
-            if (!typeof(BaseType).IsAssignableFrom(type))
-                throw new ArgumentException($"Type {type.Name} is not supported.");
 
-            if (IsValidKey(key))
+            // Ensure it isn't already registered
+            if (_type2Keys.ContainsKey(typeof(T)))
+                return false;
+
+            TKey key;
+            int offset = 0;
+
+            do
             {
-                Registration r = new Registration(type);
-                _lookupTable.Add(key, r);
-                _type2Keys.Add(type, key);
-                return true;
-            }
+                key = TKey.CreateChecked(_lookupTable.Count + offset++);
+            } while (!IsValidKey(key));
 
-            return false;
+            return _Internal_TryRegister<T>(key);
         }
 
-        public virtual bool Add(TKey key, IRegistration r)
+        public virtual bool TryGetNew<T>(out T instance) where T : BaseType
         {
-            Type regType = r.GetRegisteredType();
+            instance = default;
+            IRegistration registration = Get(typeof(T));
 
-            if (!typeof(BaseType).IsAssignableFrom(regType))
-                throw new ArgumentException($"Type {regType} is not supported.");
-
-            if (IsValidKey(key))
+            if (registration != null)
             {
-                _lookupTable.Add(key, r);
-                _type2Keys.Add(regType, key);
+                instance = (T) registration.NewInstance();
                 return true;
             }
 
@@ -73,11 +82,12 @@ namespace EppNet.Registers
             return registration;
         }
 
+        public virtual IRegistration Get<T>() where T : BaseType
+            => Get(typeof(T));
+
         public virtual IRegistration Get(Type type)
         {
-            _type2Keys.TryGetValue(type, out TKey key);
-
-            if (key == null)
+            if (!_type2Keys.TryGetValue(type, out TKey key))
                 return null;
 
             return _lookupTable[key];
@@ -121,7 +131,8 @@ namespace EppNet.Registers
             return new(_compiled, compiledCount, null);
         }
 
-        public bool IsCompiled() => _compiled;
+        public bool IsCompiled()
+            => _compiled;
 
         /// <summary>
         /// Disposes and unregisters all types.
@@ -133,6 +144,34 @@ namespace EppNet.Registers
                 registration.Dispose();
 
             _lookupTable.Clear();
+        }
+
+        protected virtual bool _Internal_TryRegister<T>(TKey key) where T : BaseType
+        {
+            Type type = typeof(T);
+
+            if (!IsValidKey(key))
+                throw new ArgumentOutOfRangeException($"Failed to register Type {type.Name} because provided key {key} is unavailable!");
+
+            Registration r = new Registration(type);
+            _lookupTable.Add(key, r);
+            _type2Keys.Add(type, key);
+            return true;
+        }
+
+        protected virtual bool _Internal_TryRegister(TKey key, IRegistration r)
+        {
+            Type regType = r.GetRegisteredType();
+
+            if (!typeof(BaseType).IsAssignableFrom(regType))
+                throw new ArgumentException($"Type {regType} is not supported.");
+
+            if (!IsValidKey(key))
+                throw new ArgumentOutOfRangeException($"Failed to register Type {regType.Name} because provided key {key} is unavailable!");
+
+            _lookupTable.Add(key, r);
+            _type2Keys.Add(regType, key);
+            return true;
         }
 
     }

@@ -161,7 +161,6 @@ namespace EppNet.Sockets
         public Connection Companion { protected set; get; }
 
         internal NetworkNode _node;
-        protected ConnectionService _connSrv;
 
         protected Host _enet_host;
         protected Peer? _enet_peer;
@@ -190,7 +189,6 @@ namespace EppNet.Sockets
 
             // Backing fields for props
             this._node = null;
-            this._connSrv = null;
             this._type = type;
             this._clock = null;
             this._ip = _hostName = string.Empty;
@@ -266,9 +264,9 @@ namespace EppNet.Sockets
 
         public virtual bool Create()
         {
-            if (_node == null || _connSrv == null)
+            if (_node == null)
             {
-                Notify.Warn("Cannot create the socket without a valid NetworkNode and valid Connection Service!");
+                Notify.Warn("Cannot create the socket without a valid NetworkNode!");
                 return false;
             }
 
@@ -357,7 +355,7 @@ namespace EppNet.Sockets
         public bool IsServer() => _type == SocketType.Server;
         public bool IsOpen() => _enet_host != null;
 
-        public bool CanConnect(Peer peer) => IsOpen() && (_connSrv == null || _connSrv.CanConnect(peer));
+        public virtual bool CanConnect(Peer peer) => IsOpen();
 
         internal void _Internal_SetupFor([NotNull] NetworkNode node)
         {

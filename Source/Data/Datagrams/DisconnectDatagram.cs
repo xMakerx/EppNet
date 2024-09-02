@@ -17,7 +17,6 @@ namespace EppNet.Data.Datagrams
         public DisconnectDatagram()
         {
             this.Reason = DisconnectReasons.Quit;
-            this.Header = 0x2;
             this.ChannelID = 0x0;
         }
 
