@@ -79,7 +79,7 @@ namespace EppNet.Data
                 return true;
             }
 
-            _Internal_WriteHeaderAndLength(payload, input.Length);
+            IResolver._Internal_WriteHeaderAndLength(payload, input.Length);
             bool written = true;
 
             for (int i = 0; i < input.Length; i++)
@@ -133,7 +133,7 @@ namespace EppNet.Data
 
             Span<float> floats = stackalloc float[NumComponents];
             floats = GetFloats(input, ref floats);
-            HeaderData data = _Internal_CreateHeaderWithType(ref floats, true, absolute);
+            HeaderData data = IResolver._Internal_CreateHeaderWithType(ref floats, true, absolute);
             bool written = true;
 
             header = data.Header;

@@ -297,7 +297,7 @@ namespace EppNet.Data
             return shouldContinue;
         }
 
-        private bool _Internal_TryReadDictionary<T>(in Type keyType, in Type valueType, out T output) where T : IDictionary, new()
+        private bool _Internal_TryReadDictionary<T>(in Type keyType, in Type valueType, out T output) where T : new()
         {
             output = default;
 
@@ -317,7 +317,8 @@ namespace EppNet.Data
 
             byte header = (byte) read;
 
-            if (header == IResolver.NullArrayHeader || header == IResolver.EmptyArrayHeader)
+            if (header == IResolver.NullArrayHeader
+                || header == IResolver.EmptyArrayHeader)
             {
                 output = header == IResolver.NullArrayHeader ? default : new();
                 return true;
@@ -331,7 +332,7 @@ namespace EppNet.Data
             {
                 if (keyResolver.Read(this, out object key).IsSuccess() && valueResolver.Read(this, out object value).IsSuccess())
                 {
-                    dictOutput.Add(key, value);
+                    ((IDictionary) dictOutput).Add(key, value);
                     continue;
                 }
 
@@ -340,7 +341,7 @@ namespace EppNet.Data
             }
 
             output = dictOutput;
-            return dictOutput.Count == length;
+            return ((IDictionary)dictOutput).Count == length;
         }
 
         public virtual bool TryReadDictionary<TKey, TValue>(out Dictionary<TKey, TValue> output)
