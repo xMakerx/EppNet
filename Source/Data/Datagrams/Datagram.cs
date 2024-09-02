@@ -8,9 +8,6 @@ using EppNet.Connections;
 using EppNet.Logging;
 using EppNet.Messaging;
 
-using System;
-using System.Buffers.Binary;
-
 namespace EppNet.Data.Datagrams
 {
 
@@ -90,38 +87,37 @@ namespace EppNet.Data.Datagrams
 
         public virtual void WriteHeader()
         {
-            Span<byte> buffer = stackalloc byte[HeaderByteLength];
+            this.WriteUInt8(GetHeader());
+        }
 
-            if (HeaderByteLength == 1)
-                buffer[0] = (byte)Index;
-            else
-                BinaryPrimitives.WriteUInt16LittleEndian(buffer, Index);
+        public byte GetHeader()
+        {
+            byte header = Index;
 
             // Let's see if we have header data to write.
-            if (HeaderData > 0)
+            if (HeaderData > 0 && HeaderFitsExtraData())
             {
-                byte edit = buffer[HeaderByteLength - 1];
+                byte edit = header;
                 int startBit = 8 - AvailableHeaderBits;
                 int mask = ((1 << AvailableHeaderBits) - 1) << startBit;
                 edit &= (byte)~mask;
 
                 int alignedSourceBits = (HeaderData << startBit) & mask;
                 edit |= (byte)alignedSourceBits;
-
+                header = edit;
             }
 
-
-
-
+            return header;
         }
 
-        public byte GetHeader() => 0;
         public byte GetChannelID() => ChannelID;
 
         public Connection GetSender() => Sender;
 
-        public bool HeaderFitsExtraData() => HeaderData <= MaxHeaderDataDecimalValue;
-        public bool HasHeaderData() => HeaderData > 0;
+        public bool HeaderFitsExtraData()
+            => HeaderData <= MaxHeaderDataDecimalValue;
+        public bool HasHeaderData()
+            => HeaderData > 0;
     }
 
 }

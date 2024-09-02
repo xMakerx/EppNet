@@ -82,119 +82,6 @@ namespace EppNet.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected HeaderData _Internal_GetHeaderData(byte header, bool signed = false)
-        {
-            bool absolute = (header & 0b1) == 1;
-            int typeIndex = header & 0b11;
-
-            int data = (header >> 2) & 0b1111;
-            return new(header, typeIndex, signed, absolute, data);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void _Internal_WriteHeaderAndLength(BytePayload payload, int length)
-        {
-            // Type indices
-            // 0 -> byte
-            // 1 -> ushort
-            // 2 -> uint
-            int typeIndex = 2;
-
-            if (byte.MinValue <= length && length <= byte.MaxValue)
-                typeIndex = 0;
-
-            else if (ushort.MinValue <= length && length <= ushort.MaxValue)
-                typeIndex = 1;
-
-            byte header = (byte)typeIndex;
-            payload.Stream.WriteByte(header);
-
-            _ = typeIndex switch
-            {
-                0 => ByteResolver.Instance.Write(payload, length),
-                1 => UShortResolver.Instance.Write(payload, length),
-                _ => UInt32Resolver.Instance.Write(payload, length),
-            };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected ReadResult _Internal_ReadHeaderAndGetLength(BytePayload payload, byte header, out int length)
-        {
-            // Type indices
-            // 0 -> byte
-            // 1 -> ushort
-            // 2 -> uint
-
-            return ((header >> 6) & 0b11) switch
-            {
-                0 => ByteResolver.Instance.ReadAsInt(payload, out length),
-                1 => UShortResolver.Instance.ReadAsInt(payload, out length),
-                _ => UInt32Resolver.Instance.ReadAsInt(payload, out length)
-            };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected HeaderData _Internal_CreateHeaderWithType(scoped ref Span<float> values, bool signed = false, bool absolute = true)
-        {
-            int largestTypeIndex = 0;
-
-            // Type indices
-            // 0 -> byte or sbyte
-            // 1 -> ushort or short
-            // 2 -> uint or int
-            // 3 -> float
-
-            for (int i = 0; i < values.Length; i++)
-            {
-                float value = values[i];
-                int typeIndex;
-
-                // Floats are the largest type to represent.
-                if (value % 1 != 0)
-                {
-                    // We must use floats for all.
-                    largestTypeIndex = 3;
-                    break;
-                }
-
-                if (signed)
-                {
-                    if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
-                        typeIndex = 0;
-
-                    else if (ushort.MinValue <= value && value <= ushort.MaxValue)
-                        typeIndex = 1;
-
-                    else if (uint.MinValue <= value && value <= uint.MaxValue)
-                        typeIndex = 2;
-
-                    else
-                        typeIndex = 3;
-                }
-                else
-                {
-                    if (byte.MinValue <= value && value <= byte.MaxValue)
-                        typeIndex = 0;
-
-                    else if (short.MinValue <= value && value <= short.MaxValue)
-                        typeIndex = 1;
-
-                    else if (int.MinValue <= value && value <= int.MaxValue)
-                        typeIndex = 2;
-
-                    else
-                        typeIndex = 3;
-                }
-
-                if (typeIndex > largestTypeIndex)
-                    largestTypeIndex = typeIndex;
-            }
-
-            return new((byte)((absolute ? 128 : 0) | (byte)largestTypeIndex),
-                largestTypeIndex, signed, absolute, 0);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadResult Read(BytePayload payload, out T output)
             => _Internal_Read(payload, out output);
 
@@ -223,7 +110,7 @@ namespace EppNet.Data
                 return ReadResult.Success;
             }
 
-            read = _Internal_ReadHeaderAndGetLength(payload, header, out int length);
+            read = IResolver._Internal_ReadHeaderAndGetLength(payload, header, out int length);
 
             if (!read.IsSuccess())
                 return read;
@@ -258,7 +145,7 @@ namespace EppNet.Data
                 return ReadResult.Success;
             }
 
-            read = _Internal_ReadHeaderAndGetLength(payload, header, out int length);
+            read = IResolver._Internal_ReadHeaderAndGetLength(payload, header, out int length);
 
             if (!read.IsSuccess())
                 return read;
@@ -313,7 +200,7 @@ namespace EppNet.Data
                 return true;
             }
 
-            _Internal_WriteHeaderAndLength(payload, input.Length);
+            IResolver._Internal_WriteHeaderAndLength(payload, input.Length);
             bool written = true;
 
             for (int i = 0; i < input.Length; i++)
@@ -343,7 +230,7 @@ namespace EppNet.Data
                 return true;
             }
 
-            _Internal_WriteHeaderAndLength(payload, input.Count);
+            IResolver._Internal_WriteHeaderAndLength(payload, input.Count);
             bool written = true;
 
             IEnumerator<T> inputEnum = input.GetEnumerator();
@@ -423,6 +310,110 @@ namespace EppNet.Data
 
         public ReadResult Read(BytePayload payload, out object output);
         public bool Write(BytePayload payload, object input);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static HeaderData _Internal_CreateHeaderWithType(scoped ref Span<float> values, bool signed = false, bool absolute = true)
+        {
+            int largestTypeIndex = 0;
+
+            // Type indices
+            // 0 -> byte or sbyte
+            // 1 -> ushort or short
+            // 2 -> uint or int
+            // 3 -> float
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                float value = values[i];
+                int typeIndex;
+
+                // Floats are the largest type to represent.
+                if (value % 1 != 0)
+                {
+                    // We must use floats for all.
+                    largestTypeIndex = 3;
+                    break;
+                }
+
+                if (signed)
+                {
+                    if (sbyte.MinValue <= value && value <= sbyte.MaxValue)
+                        typeIndex = 0;
+
+                    else if (ushort.MinValue <= value && value <= ushort.MaxValue)
+                        typeIndex = 1;
+
+                    else if (uint.MinValue <= value && value <= uint.MaxValue)
+                        typeIndex = 2;
+
+                    else
+                        typeIndex = 3;
+                }
+                else
+                {
+                    if (byte.MinValue <= value && value <= byte.MaxValue)
+                        typeIndex = 0;
+
+                    else if (short.MinValue <= value && value <= short.MaxValue)
+                        typeIndex = 1;
+
+                    else if (int.MinValue <= value && value <= int.MaxValue)
+                        typeIndex = 2;
+
+                    else
+                        typeIndex = 3;
+                }
+
+                if (typeIndex > largestTypeIndex)
+                    largestTypeIndex = typeIndex;
+            }
+
+            return new((byte)((absolute ? 128 : 0) | (byte)largestTypeIndex),
+                largestTypeIndex, signed, absolute, 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static internal void _Internal_WriteHeaderAndLength(BytePayload payload, int length)
+        {
+            // Type indices
+            // 0 -> byte
+            // 1 -> ushort
+            // 2 -> uint
+            int typeIndex = 2;
+
+            if (byte.MinValue <= length && length <= byte.MaxValue)
+                typeIndex = 0;
+
+            else if (ushort.MinValue <= length && length <= ushort.MaxValue)
+                typeIndex = 1;
+
+            byte header = (byte)typeIndex;
+            payload.Stream.WriteByte(header);
+
+            _ = typeIndex switch
+            {
+                0 => ByteResolver.Instance.Write(payload, length),
+                1 => UShortResolver.Instance.Write(payload, length),
+                _ => UInt32Resolver.Instance.Write(payload, length),
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static internal ReadResult _Internal_ReadHeaderAndGetLength(BytePayload payload, byte header, out int length)
+        {
+            // Type indices
+            // 0 -> byte
+            // 1 -> ushort
+            // 2 -> uint
+
+            return ((header >> 6) & 0b11) switch
+            {
+                0 => ByteResolver.Instance.ReadAsInt(payload, out length),
+                1 => UShortResolver.Instance.ReadAsInt(payload, out length),
+                _ => UInt32Resolver.Instance.ReadAsInt(payload, out length)
+            };
+        }
+
     }
 
 }

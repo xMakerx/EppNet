@@ -91,6 +91,9 @@ namespace EppNet.Data
 
             if (type.IsArray)
                 type = type.GetElementType();
+            
+            else if (type.IsEnum)
+                type = type.GetEnumUnderlyingType();
 
             else if (type.IsGenericType)
             {
@@ -219,9 +222,6 @@ namespace EppNet.Data
 
         public virtual bool TryWriteDictionary<TKey, TValue>(in IDictionary<TKey, TValue> dict)
         {
-            if (dict == null)
-                return false;
-
             Resolver<TKey> keyResolver = GetResolver<TKey>();
             Resolver<TValue> valueResolver = GetResolver<TValue>();
 
@@ -231,13 +231,20 @@ namespace EppNet.Data
                 return false;
             }
 
-            bool shouldContinue = UInt32Resolver.Instance.Write(this, dict.Count);
+            if (dict == null || dict.Count == 0)
+            {
+                byte header = dict == null
+                    ? IResolver.NullArrayHeader
+                    : IResolver.EmptyArrayHeader;
+                Stream.WriteByte(header);
+                return true;
+            }
+
+            IResolver._Internal_WriteHeaderAndLength(this, dict.Count);
+            bool shouldContinue = true;
 
             foreach (KeyValuePair<TKey, TValue> kvp in dict)
             {
-                if (!shouldContinue)
-                    break;
-
                 // Write key value pairs next to each other.
                 shouldContinue = keyResolver.Write(this, kvp.Key);
 
@@ -252,9 +259,6 @@ namespace EppNet.Data
 
         public virtual bool TryWriteDictionary(in IDictionary dict, in Type keyType, in Type valueType)
         {
-            if (dict == null)
-                return false;
-
             IResolver keyResolver = GetResolver(keyType);
             IResolver valueResolver = GetResolver(valueType);
 
@@ -264,7 +268,17 @@ namespace EppNet.Data
                 return false;
             }
 
-            bool shouldContinue = UInt32Resolver.Instance.Write(this, dict.Count);
+            if (dict == null || dict.Count == 0)
+            {
+                byte header = dict == null
+                    ? IResolver.NullArrayHeader
+                    : IResolver.EmptyArrayHeader;
+                Stream.WriteByte(header);
+                return true;
+            }
+
+            IResolver._Internal_WriteHeaderAndLength(this, dict.Count);
+            bool shouldContinue = true;
 
             foreach (object o in dict.Keys)
             {
@@ -283,7 +297,7 @@ namespace EppNet.Data
             return shouldContinue;
         }
 
-        private bool _Internal_TryReadDictionary<T>(in Type keyType, in Type valueType, out T output) where T : new()
+        private bool _Internal_TryReadDictionary<T>(in Type keyType, in Type valueType, out T output) where T : IDictionary, new()
         {
             output = default;
 
@@ -296,46 +310,20 @@ namespace EppNet.Data
                 return false;
             }
 
-            ReadResult read = ByteResolver.Instance.Read(this, out byte header);
+            int read = Stream.ReadByte();
 
-            if (!read.IsSuccess())
+            if (read == -1)
                 return false;
 
-            if (header == IResolver.NullArrayHeader)
+            byte header = (byte) read;
+
+            if (header == IResolver.NullArrayHeader || header == IResolver.EmptyArrayHeader)
             {
-                output = default;
+                output = header == IResolver.NullArrayHeader ? default : new();
                 return true;
             }
 
-            if (header == IResolver.EmptyArrayHeader)
-            {
-                output = new();
-                return true;
-            }
-
-            int typeIndex = byte.TrailingZeroCount(header);
-            int length;
-
-            switch (typeIndex)
-            {
-                case 0:
-                    ByteResolver.Instance.Read(this, out byte bLength);
-                    length = bLength;
-                    break;
-
-                case 1:
-                    UShortResolver.Instance.Read(this, out ushort uLength);
-                    length = uLength;
-                    break;
-
-                case 2:
-                    UInt32Resolver.Instance.Read(this, out uint iLength);
-                    length = (int)iLength;
-                    break;
-
-                default:
-                    return false;
-            }
+            IResolver._Internal_ReadHeaderAndGetLength(this, header, out int length);
 
             T dictOutput = new();
 
@@ -343,7 +331,7 @@ namespace EppNet.Data
             {
                 if (keyResolver.Read(this, out object key).IsSuccess() && valueResolver.Read(this, out object value).IsSuccess())
                 {
-                    ((IDictionary) dictOutput).Add(key, value);
+                    dictOutput.Add(key, value);
                     continue;
                 }
 
@@ -352,7 +340,7 @@ namespace EppNet.Data
             }
 
             output = dictOutput;
-            return ((IDictionary)dictOutput).Count == length;
+            return dictOutput.Count == length;
         }
 
         public virtual bool TryReadDictionary<TKey, TValue>(out Dictionary<TKey, TValue> output)
@@ -368,46 +356,20 @@ namespace EppNet.Data
                 return false;
             }
 
-            ReadResult read = ByteResolver.Instance.Read(this, out byte header);
+            int read = Stream.ReadByte();
 
-            if (!read.IsSuccess())
+            if (read == -1)
                 return false;
 
-            if (header == IResolver.NullArrayHeader)
+            byte header = (byte)read;
+
+            if (header == IResolver.NullArrayHeader || header == IResolver.EmptyArrayHeader)
             {
-                output = null;
+                output = header == IResolver.NullArrayHeader ? default : new();
                 return true;
             }
 
-            if (header == IResolver.EmptyArrayHeader)
-            {
-                output = new();
-                return true;
-            }
-
-            int typeIndex = byte.TrailingZeroCount(header);
-            int length;
-
-            switch (typeIndex)
-            {
-                case 0:
-                    ByteResolver.Instance.Read(this, out byte bLength);
-                    length = bLength;
-                    break;
-
-                case 1:
-                    UShortResolver.Instance.Read(this, out ushort uLength);
-                    length = uLength;
-                    break;
-
-                case 2:
-                    UInt32Resolver.Instance.Read(this, out uint iLength);
-                    length = (int)iLength;
-                    break;
-
-                default:
-                    return false;
-            }
+            IResolver._Internal_ReadHeaderAndGetLength(this, header, out int length);
 
             Dictionary<TKey, TValue> dictOutput = new();
 
