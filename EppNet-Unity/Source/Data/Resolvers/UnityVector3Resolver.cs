@@ -1,4 +1,5 @@
-﻿///////////////////////////////////////////////////////
+﻿#if EPPNET_UNITY
+///////////////////////////////////////////////////////
 /// Filename: UnityVector3Resolver.cs
 /// Date: September 2, 2024
 /// Author: Maverick Liberty
@@ -282,3 +283,4 @@ namespace EppNet.Data.Unity
     }
 
 }
+#endif
