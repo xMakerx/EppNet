@@ -21,14 +21,14 @@ namespace EppNet.Tests
         {
             const float MarginOfError = 0.0039f * 4f;
 
-            Quaternion a = new();
+            QuaternionAdapter a = new();
 
             for (int i = 0; i < 4; i++)
             {
                 a[i] = -Random.Shared.NextSingle() + Random.Shared.NextSingle();
             }
 
-            Quaternion quantized = FastMath.Dequantized(FastMath.Quantized(a));
+            Quaternion quantized = QuaternionAdapter.Dequantized(QuaternionAdapter.Quantized(a));
             byte[] bufferIn;
 
             using (BytePayload payloadOut = new())

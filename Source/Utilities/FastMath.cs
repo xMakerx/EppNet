@@ -17,11 +17,6 @@ namespace EppNet.Utilities
         /// </summary>
         public const int CachedDecimals = 15;
 
-        /// <summary>
-        /// Magic number for quaternion quantization
-        /// </summary>
-        public const float ByteQuantizer = 127.5f;
-
         private static readonly double[] _roundLookup = CreateRoundLookup();
 
         /// <summary>
@@ -85,74 +80,6 @@ namespace EppNet.Utilities
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Maps a floating point number from [-1, 1] to [0, 255]<br/>
-        /// <b>NOTE:</b> Input float must be normalized!
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns>Byte in domain [0, 255]</returns>
-        public static byte Quantize(float input)
-            => (byte)MathF.Round((input + 1.0f) * ByteQuantizer);
-
-        /// <summary>
-        /// Maps a byte value from [0, 255] back to [-1, 1]
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns>Float in domain [-1, 1]</returns>
-        public static float Dequantize(byte input)
-            => (input / ByteQuantizer) - 1.0f;
-
-        public static Quaternion Quantized(Quaternion input)
-        {
-            Quaternion result = Quaternion.Normalize(input);
-            Span<float> floats = stackalloc float[4];
-            floats[0] = result.X;
-            floats[1] = result.Y;
-            floats[2] = result.Z;
-            floats[3] = result.W;
-
-            for (int i = 0; i < floats.Length; i++)
-                floats[i] = Quantize(floats[i]);
-
-            return new Quaternion(floats[0], floats[1], 
-                floats[2], floats[3]);
-        }
-
-        public static Quaternion Dequantized(Quaternion input)
-        {
-            Span<float> result = stackalloc float[4];
-            result[0] = input.X;
-            result[1] = input.Y;
-            result[2] = input.Z;
-            result[3] = input.W;
-
-            for (int i = 0; i < 4; i++)
-                result[i] = Dequantize((byte)result[i]);
-
-            int largestIndex = 0;
-            float largest = MathF.Abs(result[0]);
-            bool negative = result[0] < 0;
-
-            for (int i = 1; i < 4; i++)
-            {
-                if (MathF.Abs(result[i]) > largest)
-                {
-                    largestIndex = i;
-                    largest = MathF.Abs(result[i]);
-                    negative = result[i] < 0;
-                }
-            }
-
-            result[largestIndex] = 0;
-
-            largest = MathF.Sqrt(1.0f - (MathF.Pow(result[0], 2f) + MathF.Pow(result[1], 2f)
-                + MathF.Pow(result[2], 2f) + MathF.Pow(result[3], 2f)));
-
-            result[largestIndex] = largest * (negative ? -1 : 1);
-            return new Quaternion(result[0], result[1], 
-                result[2], result[3]);
         }
 
     }

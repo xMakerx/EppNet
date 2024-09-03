@@ -1,37 +1,40 @@
-﻿///////////////////////////////////////////////////////
-/// Filename: QuaternionResolver.cs
+﻿#if EPPNET_UNITY
+///////////////////////////////////////////////////////
+/// Filename: UnityQuaternionResolver.cs
 /// Date: August 29, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using System.Numerics;
+using UnityEngine;
 
 namespace EppNet.Data
 {
 
-    public class QuaternionResolver : QuaternionResolverBase<Quaternion>
+    public class UnityQuaternionResolver : QuaternionResolverBase<Quaternion>
     {
 
-        public static readonly QuaternionResolver Instance = new();
+        public static readonly UnityQuaternionResolver Instance = new UnityQuaternionResolver();
 
 
-        public QuaternionResolver()
+        public UnityQuaternionResolver()
         {
-            this.Zero = new(0, 0, 0, 0);
-            this.Identity = Quaternion.Identity;
+            this.Zero = new Quaternion(0, 0, 0, 0);
+            this.Identity = Quaternion.identity;
         }
 
-        public override Quaternion FromAdapter(QuaternionAdapter adapter) => adapter;
+        public override Quaternion FromAdapter(QuaternionAdapter adapter)
+            => new Quaternion(adapter.X, adapter.Y, adapter.Z, adapter.W);
 
-        public override QuaternionAdapter ToAdapter(Quaternion input) => (QuaternionAdapter) input;
+        public override QuaternionAdapter ToAdapter(Quaternion input)
+            => new QuaternionAdapter(input.x, input.y, input.z, input.w);
     }
 
-    public static class QuaternionResolverExtensions
+    public static class UnityQuaternionResolverExtensions
     {
 
         /// <summary>
         /// Writes a normalized <see cref="Quaternion"/> to the stream using the Smallest Three algorithm.<br/>
-        /// Cost varies based on if <see cref="QuaternionResolver.ByteQuantization"/> is enabled, and the
+        /// Cost varies based on if <see cref="UnityQuaternionResolver.ByteQuantization"/> is enabled, and the
         /// particular quaternion sent. <see cref="Quaternion.Zero"/> and <see cref="Quaternion.Identity"/> are
         /// the cheapest at 1 byte each. <br/><br/>
         /// With quantization enabled, the maximum size for a quaternion is 4 bytes; otherwise, it sends
@@ -41,7 +44,7 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void Write(this BytePayload payload, Quaternion input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
         /// <summary>
         /// Writes an array of <see cref="Quaternion"/> to the stream<br/>
@@ -50,7 +53,7 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void Write(this BytePayload payload, Quaternion[] input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
         /// <summary>
         /// Writes an array of <see cref="Quaternion"/> to the stream<br/>
@@ -59,11 +62,11 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void WriteArray(this BytePayload payload, Quaternion[] input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
         /// <summary>
         /// Writes a normalized <see cref="Quaternion"/> to the stream using the Smallest Three algorithm.<br/>
-        /// Cost varies based on if <see cref="QuaternionResolver.ByteQuantization"/> is enabled, and the
+        /// Cost varies based on if <see cref="UnityQuaternionResolver.ByteQuantization"/> is enabled, and the
         /// particular quaternion sent. <see cref="Quaternion.Zero"/> and <see cref="Quaternion.Identity"/> are
         /// the cheapest at 1 byte each. <br/><br/>
         /// With quantization enabled, the maximum size for a quaternion is 4 bytes; otherwise, it sends
@@ -73,7 +76,7 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void WriteQuat(this BytePayload payload, Quaternion input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
         /// <summary>
         /// Writes an array of <see cref="Quaternion"/> to the stream<br/>
@@ -82,11 +85,11 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void WriteQuatArray(this BytePayload payload, Quaternion[] input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
         /// <summary>
         /// Writes a normalized <see cref="Quaternion"/> to the stream using the Smallest Three algorithm.<br/>
-        /// Cost varies based on if <see cref="QuaternionResolver.ByteQuantization"/> is enabled, and the
+        /// Cost varies based on if <see cref="UnityQuaternionResolver.ByteQuantization"/> is enabled, and the
         /// particular quaternion sent. <see cref="Quaternion.Zero"/> and <see cref="Quaternion.Identity"/> are
         /// the cheapest at 1 byte each. <br/><br/>
         /// With quantization enabled, the maximum size for a quaternion is 4 bytes; otherwise, it sends
@@ -96,7 +99,7 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void WriteQuaternion(this BytePayload payload, Quaternion input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
         /// <summary>
         /// Writes an array of <see cref="Quaternion"/> to the stream<br/>
@@ -105,7 +108,7 @@ namespace EppNet.Data
         /// <param name="payload"></param>
         /// <param name="input"></param>
         public static void WriteQuaternionArray(this BytePayload payload, Quaternion[] input)
-            => QuaternionResolver.Instance.Write(payload, input);
+            => UnityQuaternionResolver.Instance.Write(payload, input);
 
 
         /// <summary>
@@ -118,7 +121,7 @@ namespace EppNet.Data
 
         public static Quaternion ReadQuat(this BytePayload payload)
         {
-            QuaternionResolver.Instance.Read(payload, out Quaternion output);
+            UnityQuaternionResolver.Instance.Read(payload, out Quaternion output);
             return output;
         }
 
@@ -132,7 +135,7 @@ namespace EppNet.Data
 
         public static Quaternion[] ReadQuatArray(this BytePayload payload)
         {
-            QuaternionResolver.Instance.Read(payload, out Quaternion[] output);
+            UnityQuaternionResolver.Instance.Read(payload, out Quaternion[] output);
             return output;
         }
 
@@ -146,7 +149,7 @@ namespace EppNet.Data
 
         public static Quaternion ReadQuaternion(this BytePayload payload)
         {
-            QuaternionResolver.Instance.Read(payload, out Quaternion output);
+            UnityQuaternionResolver.Instance.Read(payload, out Quaternion output);
             return output;
         }
 
@@ -160,10 +163,11 @@ namespace EppNet.Data
 
         public static Quaternion[] ReadQuaternionArray(this BytePayload payload)
         {
-            QuaternionResolver.Instance.Read(payload, out Quaternion[] output);
+            UnityQuaternionResolver.Instance.Read(payload, out Quaternion[] output);
             return output;
         }
 
     }
 
 }
+#endif
