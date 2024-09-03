@@ -71,6 +71,7 @@ namespace EppNet.Data
 
             Span<float> values = stackalloc float[NumComponents];
 
+
             if (input is Vector2 v2)
             {
                 values[0] = v2.X;
@@ -89,6 +90,37 @@ namespace EppNet.Data
                 values[2] = v4.Z;
                 values[3] = v4.W;
             }
+#if EPPNET_UNITY
+            else if (input is UnityEngine.Vector4 uv4)
+            {
+                values[0] = uv4.x;
+                values[1] = uv4.y;
+                values[2] = uv4.z;
+                values[3] = uv4.w;
+            }
+            else if (input is UnityEngine.Vector3 uv3)
+            {
+                values[0] = uv3.x;
+                values[1] = uv3.y;
+                values[2] = uv3.z;
+            }
+            else if (input is UnityEngine.Vector3Int uv3i)
+            {
+                values[0] = uv3i.x;
+                values[1] = uv3i.y;
+                values[2] = uv3i.z;
+            }
+            else if (input is UnityEngine.Vector2 uv2)
+            {
+                values[0] = uv2.x;
+                values[1] = uv2.y;   
+            }
+            else if (input is UnityEngine.Vector2Int uv2i)
+            {
+                values[0] = uv2i.x;
+                values[1] = uv2i.y;
+            }
+#endif
 
             // Type indices
             // 0 -> byte or sbyte
@@ -234,6 +266,37 @@ namespace EppNet.Data
                 floats[2] = v4.Z;
                 floats[3] = v4.W;
             }
+#if EPPNET_UNITY
+            else if (input is UnityEngine.Vector4 uv4)
+            {
+                floats[0] = uv4.x;
+                floats[1] = uv4.y;
+                floats[2] = uv4.z;
+                floats[3] = uv4.w;
+            }
+            else if (input is UnityEngine.Vector3 uv3)
+            {
+                floats[0] = uv3.x;
+                floats[1] = uv3.y;
+                floats[2] = uv3.z;
+            }
+            else if (input is UnityEngine.Vector3Int uv3i)
+            {
+                floats[0] = uv3i.x;
+                floats[1] = uv3i.y;
+                floats[2] = uv3i.z;
+            }
+            else if (input is UnityEngine.Vector2 uv2)
+            {
+                floats[0] = uv2.x;
+                floats[1] = uv2.y;   
+            }
+            else if (input is UnityEngine.Vector2Int uv2i)
+            {
+                floats[0] = uv2i.x;
+                floats[1] = uv2i.y;
+            }
+#endif
 
             HeaderData data = _Internal_CreateHeaderWithType(input, true, absolute);
             bool written = true;

@@ -74,6 +74,14 @@ namespace EppNet.Data
             _resolvers.Add(typeof(Vector3), Vector3Resolver.Instance);
             _resolvers.Add(typeof(Vector4), Vector4Resolver.Instance);
             _resolvers.Add(typeof(Guid), GuidResolver.Instance);
+
+#if EPPNET_UNITY
+            _resolvers.Add(typeof(UnityEngine.Vector4), UnityVector4Resolver.Instance);
+            _resolvers.Add(typeof(UnityEngine.Vector3), UnityVector3Resolver.Instance);
+            _resolvers.Add(typeof(UnityEngine.Vector3Int), UnityVector3IntResolver.Instance);
+            _resolvers.Add(typeof(UnityEngine.Vector2), UnityVector2Resolver.Instance);
+            _resolvers.Add(typeof(UnityEngine.Vector2Int), UnityVector2IntResolver.Instance);
+#endif
         }
 
         public static void AddResolver(Type type, IResolver resolver)
@@ -156,7 +164,7 @@ namespace EppNet.Data
             return a * (float) PrecisionReturnDecimalPlaces;
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// The encoding this payload uses when handling strings.
