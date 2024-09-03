@@ -61,7 +61,7 @@ namespace EppNet.Data.Unity
         /// - <see cref="Vector4.forward"/><br/>
         /// - <see cref="Vector4.one"/><br/><br/>
         /// 
-        /// Bandwidth cost: 1 byte to 13 bytes
+        /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
         /// <param name="payload">The BytePayload to write data to.</param>
         /// <param name="input">The Vector4 to transmit.</param>
@@ -78,7 +78,7 @@ namespace EppNet.Data.Unity
         /// See <see cref="Write(BytePayload, Vector4, bool)"/> for more information on 
         /// how each is written.<br/><br/>
         /// 
-        /// Bandwidth cost: 1 byte to N * 13 bytes where N is the number of array elements
+        /// Bandwidth cost: 1 byte to N * 17 bytes where N is the number of array elements
         /// </summary>
         /// <param name="payload">The BytePayload to write data to.</param>
         /// <param name="input">The Vector4 to transmit.</param>
@@ -95,7 +95,7 @@ namespace EppNet.Data.Unity
         /// See <see cref="Write(BytePayload, Vector4, bool)"/> for more information on 
         /// how each is written.<br/><br/>
         /// 
-        /// Bandwidth cost: 1 byte to N * 13 bytes where N is the number of array elements
+        /// Bandwidth cost: 1 byte to N * 17 bytes where N is the number of array elements
         /// </summary>
         /// <param name="payload">The BytePayload to write data to.</param>
         /// <param name="input">The Vector4 to transmit.</param>
@@ -128,7 +128,7 @@ namespace EppNet.Data.Unity
         /// - <see cref="Vector4.forward"/><br/>
         /// - <see cref="Vector4.one"/><br/><br/>
         /// 
-        /// Bandwidth cost: 1 byte to 13 bytes
+        /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
         /// <param name="payload">The BytePayload to write data to.</param>
         /// <param name="newVector">The new vector</param>
@@ -165,7 +165,7 @@ namespace EppNet.Data.Unity
         /// - <see cref="Vector4.forward"/><br/>
         /// - <see cref="Vector4.one"/><br/><br/>
         /// 
-        /// Bandwidth cost: 1 byte to 13 bytes
+        /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
         /// <param name="payload">The BytePayload to write data to.</param>
         /// <param name="input">The Vector4 to transmit.</param>
@@ -198,7 +198,7 @@ namespace EppNet.Data.Unity
         /// - <see cref="Vector4.forward"/><br/>
         /// - <see cref="Vector4.one"/><br/><br/>
         /// 
-        /// Bandwidth cost: 1 byte to 13 bytes
+        /// Bandwidth cost: 1 byte to 17 bytes
         /// </summary>
         /// <param name="payload">The BytePayload to write data to.</param>
         /// <param name="newVector">The new vector</param>
