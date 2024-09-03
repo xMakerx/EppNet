@@ -1,8 +1,11 @@
 ﻿///////////////////////////////////////////////////////
-/// Filename: ISnapshot.cs
+/// Filename: SnapshotBase.cs
 /// Date: July 22, 2024
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
+
+using EppNet.Node;
+using EppNet.Utilities;
 
 using System;
 
@@ -13,7 +16,7 @@ namespace EppNet.Snapshots
     /// Base class for snapshots; representations of something at a particular time
     /// </summary>
 
-    public abstract class SnapshotBase : IComparable, IEquatable<SnapshotBase>
+    public abstract class SnapshotBase : INodeDescendant, IComparable, IEquatable<SnapshotBase>, IComparable<SnapshotBase>
     {
 
         #region Static Access and Operators
@@ -27,16 +30,43 @@ namespace EppNet.Snapshots
 
         #endregion
 
-        public SequenceNumber Header { internal set; get; }
+        public SequenceNumber LocalSequence { get; }
 
-        protected SnapshotBase()
+        public long GlobalSequence { protected set; get; }
+
+        public TimeSpan Timestamp { get; }
+
+        public NetworkNode Node { get; }
+
+        /// <summary>
+        /// The next snapshot
+        /// </summary>
+        public SnapshotBase Next { internal set; get; }
+
+        /// <summary>
+        /// The previous snapshot
+        /// </summary>
+        public SnapshotBase Previous { internal set; get; }
+
+        protected SnapshotBase(NetworkNode node, TimeSpan timestamp, SequenceNumber localSequence)
         {
-            this.Header = default;
+            Guard.AgainstNull(node, nameof(node));
+            this.Node = node;
+            this.LocalSequence = localSequence;
+            this.Timestamp = timestamp;
         }
 
-        protected SnapshotBase(SequenceNumber header)
+        protected SnapshotBase(NetworkNode node, long globalSequence, SequenceNumber localSequence)
         {
-            this.Header = header;
+            Guard.AgainstNull(node, nameof(node));
+            this.Node = node;
+            this.GlobalSequence = globalSequence;
+            this.LocalSequence = localSequence;
+            this.Timestamp = node.Time;
+            
+            // Let's init our doubly "linked list"
+            this.Next = null;
+            this.Previous = null;
         }
 
         /// <summary>
@@ -52,13 +82,9 @@ namespace EppNet.Snapshots
         /// <returns>Time comparison</returns>
 
         public int CompareTo(SnapshotBase other)
-        {
-
-            if (other == null)
-                return 1;
-
-            return Header.CompareTo(other.Header);
-        }
+            => (other != null)
+            ? GlobalSequence.CompareTo(other.GlobalSequence)
+            : 1;
 
         /// <summary>
         /// See <see cref="ulong.CompareTo(ulong)"/><br/>
@@ -104,7 +130,7 @@ namespace EppNet.Snapshots
             if (other == null)
                 return false;
 
-            return other.Header == Header;
+            return other.LocalSequence == LocalSequence;
         }
 
         /// <summary>
@@ -112,7 +138,7 @@ namespace EppNet.Snapshots
         /// </summary>
         /// <returns>Hash code of our header</returns>
 
-        public override int GetHashCode() => Header.GetHashCode();
+        public override int GetHashCode() => LocalSequence.GetHashCode();
 
     }
 

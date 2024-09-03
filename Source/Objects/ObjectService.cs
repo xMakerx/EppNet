@@ -105,7 +105,9 @@ namespace EppNet.Objects
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
 
-        public EnumCommandResult TryCreateObject<T>(out ObjectSlot slot, long id = -1) where T : ISimUnit => TryCreateObject(typeof(T), out slot, id);
+        public EnumCommandResult TryCreateObject<T>(out ObjectSlot slot, long id = -1)
+            where T : ISimUnit
+            => TryCreateObject(typeof(T), out slot, id);
 
         public EnumCommandResult TryCreateObject(Type type, out ObjectSlot slot, long id = -1)
         {

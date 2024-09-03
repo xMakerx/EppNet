@@ -23,7 +23,7 @@ namespace EppNet.Snapshots
     /// Network properties and network methods with implemented getters (usually snapshot methods) are stored here
     /// </summary>
 
-    public class ObjectSnapshot : SnapshotBase
+    public class ObjectSnapshot : Snapshot
     {
 
         public readonly ObjectAgent Object;

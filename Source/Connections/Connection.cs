@@ -20,44 +20,6 @@ namespace EppNet.Connections
 {
 
     /// <summary>
-    /// This represents a connection to the server
-    /// </summary>
-    public class ServerConnection : Connection
-    {
-
-        public ServerConnection(BaseSocket socket, Peer peer) : base(socket, peer) { }
-    }
-
-    public class ClientConnection : Connection
-    {
-
-        public ClientConnection() { }
-
-        public ClientConnection(BaseSocket socket, Peer peer) : base(socket, peer) { }
-
-        /// <summary>
-        /// Forcibly closes the connection.
-        /// </summary>
-
-        public void Eject() => Eject(DisconnectReasons.Ejected);
-
-        /// <summary>
-        /// Forcibly closes the connection with the
-        /// specified reason.
-        /// </summary>
-        /// <param name="reason"></param>
-
-        public void Eject(DisconnectReason reason)
-        {
-            using DisconnectDatagram datagram = new(reason);
-            SendInstant(datagram);
-        }
-
-        public override bool IsServer() => false;
-
-    }
-
-    /// <summary>
     /// Yes, UDP doesn't have the concept of "connections" but
     /// for simplicity's sake we use the term to describe<br/> "known
     /// computers that have sent us datagrams" and keep who's
@@ -91,9 +53,15 @@ namespace EppNet.Connections
 
         public bool IsAuthenticated { internal set; get; }
 
+        /// <summary>
+        /// Is this connection up-to-date and receiving a consistent flow of
+        /// snapshots that
+        /// </summary>
+        public bool IsSynchronized { internal set; get; }
+
         private NetworkNode _node;
 
-        public Connection()
+        protected Connection()
         {
             this.Service = null;
             this.Socket = null;
@@ -106,7 +74,7 @@ namespace EppNet.Connections
             this._node = null;
         }
 
-        public Connection(BaseSocket socket, Peer peer) : this()
+        protected Connection(BaseSocket socket, Peer peer) : this()
             => _Internal_Setup(socket, peer);
 
         protected internal virtual void _Internal_Setup(BaseSocket socket, Peer peer)
@@ -160,15 +128,18 @@ namespace EppNet.Connections
         /// </summary>
         /// <param name="datagram"></param>
 
-        public bool SendInstant(IDatagram datagram) => Send(datagram, PacketFlags.Instant);
+        public bool SendInstant(IDatagram datagram)
+            => Send(datagram, PacketFlags.Instant);
 
         /// <summary>
         /// The server always receives ID 0.
         /// </summary>
         /// <returns></returns>
 
-        public virtual bool IsServer() => !IsFree() && ENet_ID == 0;
+        public virtual bool IsServer()
+            => !IsFree() && ENet_ID == 0;
 
-        public override string ToString() => $"Connection ID {ENet_ID} {ENet_Peer.IP}:{ENet_Peer.Port}";
+        public override string ToString()
+            => $"Connection ID {ENet_ID} {ENet_Peer.IP}:{ENet_Peer.Port}";
     }
 }

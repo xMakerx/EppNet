@@ -93,7 +93,8 @@ namespace EppNet.Services
             return true;
         }
 
-        public void Dispose() { Dispose(true); }
+        public void Dispose()
+            => Dispose(true);
 
         public void Dispose(bool disposing)
         {

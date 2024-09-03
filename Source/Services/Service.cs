@@ -12,14 +12,6 @@ using EppNet.Node;
 namespace EppNet.Services
 {
 
-    public enum ServiceState
-    {
-        Offline         = 0,
-        Starting        = 1,
-        Online          = 2,
-        ShuttingDown    = 3
-    }
-
     public abstract class Service : IService, INodeDescendant, ILoggable, IComparable, IComparable<Service>
     {
         public ILoggable Notify { get => this; }
@@ -29,6 +21,10 @@ namespace EppNet.Services
 
         public event Action<float> OnTick;
 
+        /// <summary>
+        /// The order in which the service is ticked<br/>
+        /// Higher sort orders are ticked first
+        /// </summary>
         public int SortOrder;
 
         public bool Started { private set; get; }
