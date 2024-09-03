@@ -6,8 +6,12 @@ name: .NET
 on:
   push:
     branches: [ "master" ]
+    paths-ignore:
+        - 'EppNet/EppNet-Unity/**'
   pull_request:
     branches: [ "master" ]
+    paths-ignore:
+        - 'EppNet/EppNet-Unity/**'
 
 jobs:
   build:
