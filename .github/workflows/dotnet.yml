@@ -7,11 +7,11 @@ on:
   push:
     branches: [ "master" ]
     paths-ignore:
-        - 'EppNet/EppNet-Unity/**'
+        - 'EppNet-Unity/**'
   pull_request:
     branches: [ "master" ]
     paths-ignore:
-        - 'EppNet/EppNet-Unity/**'
+        - 'EppNet-Unity/**'
 
 jobs:
   build:
