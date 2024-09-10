@@ -1,10 +1,8 @@
-﻿//////////////////////////////////////////////
-/// <summary>
+﻿///////////////////////////////////////////////////////
 /// Filename: Iterator.cs
-/// Date: July 28, 2024
+/// Date: September 10, 2024
 /// Author: Maverick Liberty
-/// </summary>
-//////////////////////////////////////////////
+///////////////////////////////////////////////////////
 
 using EppNet.Utilities;
 
@@ -50,7 +48,10 @@ namespace EppNet.Collections
         /// </summary>
         /// <returns></returns>
 
-        public T Current() => _elements[Index];
+        public T Current()
+            => (Index == -1)
+            ? default
+            : _elements[Index];
     }
 
     public static class IteratorExtensions
