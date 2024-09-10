@@ -135,6 +135,9 @@ namespace EppNet.Snapshots
             // Snapshot is too old
             if (min != null && min.Timestamp > snapshot.Timestamp)
                 return false;
+
+            // TODO: Finish
+            return true;
         }
 
         public override bool Start()

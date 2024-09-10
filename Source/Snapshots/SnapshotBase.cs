@@ -21,12 +21,18 @@ namespace EppNet.Snapshots
 
         #region Static Access and Operators
 
-        public static bool operator ==(SnapshotBase lhs, SnapshotBase rhs) => lhs?.Equals(rhs) == true;
-        public static bool operator !=(SnapshotBase lhs, SnapshotBase rhs) => lhs?.Equals(rhs) != true;
-        public static bool operator <(SnapshotBase lhs, SnapshotBase rhs) => lhs?.CompareTo(rhs) < 0;
-        public static bool operator >(SnapshotBase lhs, SnapshotBase rhs) => lhs?.CompareTo(rhs) > 0;
-        public static bool operator <=(SnapshotBase lhs, SnapshotBase rhs) => lhs?.CompareTo(rhs) <= 0;
-        public static bool operator >=(SnapshotBase lhs, SnapshotBase rhs) => lhs?.CompareTo(rhs) >= 0;
+        public static bool operator ==(SnapshotBase lhs, SnapshotBase rhs)
+            => lhs?.Equals(rhs) == true;
+        public static bool operator !=(SnapshotBase lhs, SnapshotBase rhs)
+            => lhs?.Equals(rhs) != true;
+        public static bool operator <(SnapshotBase lhs, SnapshotBase rhs)
+            => lhs?.CompareTo(rhs) < 0;
+        public static bool operator >(SnapshotBase lhs, SnapshotBase rhs)
+            => lhs?.CompareTo(rhs) > 0;
+        public static bool operator <=(SnapshotBase lhs, SnapshotBase rhs)
+            => lhs?.CompareTo(rhs) <= 0;
+        public static bool operator >=(SnapshotBase lhs, SnapshotBase rhs)
+            => lhs?.CompareTo(rhs) >= 0;
 
         #endregion
 
@@ -112,12 +118,9 @@ namespace EppNet.Snapshots
         /// <returns>Whether or not the header and timestamp</returns>
 
         public override bool Equals(object obj)
-        {
-            if (obj == null)
-                return false;
-
-            return (obj is SnapshotBase snapshot) && Equals(snapshot);
-        }
+            => obj is not null
+            && obj is SnapshotBase snapshot
+            && Equals(snapshot);
 
         /// <summary>
         /// Checks for equivalent headers
@@ -126,19 +129,16 @@ namespace EppNet.Snapshots
         /// <returns>Whether or not the headers are equal</returns>
 
         public bool Equals(SnapshotBase other)
-        {
-            if (other == null)
-                return false;
-
-            return other.LocalSequence == LocalSequence;
-        }
+            => other is not null
+            && other.LocalSequence == LocalSequence;
 
         /// <summary>
         /// The hash code of our header
         /// </summary>
         /// <returns>Hash code of our header</returns>
 
-        public override int GetHashCode() => LocalSequence.GetHashCode();
+        public override int GetHashCode()
+            => LocalSequence.GetHashCode();
 
     }
 

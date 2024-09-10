@@ -24,16 +24,9 @@ namespace EppNet.Connections
         /// </summary>
         public TimeSpan ServerTime { internal set; get; }
 
-        /// <summary>
-        /// Are we both up-to-date with the latest snapshots and have the necessary
-        /// buffer to run the simulation?
-        /// </summary>
-        public bool IsSynchronized { internal set; get; }
-
         public ServerConnection(BaseSocket socket, Peer peer) : base(socket, peer)
         {
             this.ServerTime = default;
-            this.IsSynchronized = false;
         }
     }
 }

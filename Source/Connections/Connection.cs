@@ -11,10 +11,12 @@ using EppNet.Data.Datagrams;
 using EppNet.Logging;
 using EppNet.Messaging;
 using EppNet.Node;
+using EppNet.Snapshots;
 using EppNet.Sockets;
 using EppNet.Utilities;
 
 using System;
+using System.Timers;
 
 namespace EppNet.Connections
 {
@@ -30,7 +32,7 @@ namespace EppNet.Connections
     {
 
         public ILoggable Notify { get => this; }
-        public NetworkNode Node { get => _node; }
+        public NetworkNode Node { internal set; get; }
 
         /// <summary>
         /// The socket this connection originates from.
@@ -38,6 +40,8 @@ namespace EppNet.Connections
         public BaseSocket Socket { internal set; get; }
         public ConnectionService Service { internal set; get; }
         public ChannelService ChannelService { internal set; get; }
+
+        public SnapshotServiceBase SnapshotService { internal set; get; }
 
         public Peer ENet_Peer { internal set; get; }
 
@@ -49,7 +53,7 @@ namespace EppNet.Connections
         /// <summary>
         /// When this connection was established.
         /// </summary>
-        public TimeSpan EstablishedMs { internal set; get; }
+        public TimeSpan Established { internal set; get; }
 
         public bool IsAuthenticated { internal set; get; }
 
@@ -59,19 +63,30 @@ namespace EppNet.Connections
         /// </summary>
         public bool IsSynchronized { internal set; get; }
 
-        private NetworkNode _node;
+        public DesyncEvent LastDesyncEvent { internal set; get; }
+
+        /// <summary>
+        /// The last time we received a snapshot from this connection
+        /// </summary>
+        public TimeSpan LastReceivedSnapshot { internal set; get; }
+
+        public Timer SnapshotCheckTimer { protected set; get; }
 
         protected Connection()
         {
             this.Service = null;
             this.Socket = null;
+            this.Node = null;
+            this.Service = null;
+            this.ChannelService = null;
+
             this.ENet_Peer = default;
             this.ENet_ID = default;
-            this.EstablishedMs = default;
+            this.Established = LastReceivedSnapshot = default;
             this.IsAuthenticated = false;
+            this.SnapshotCheckTimer = null;
             this.Page = null;
             this.ID = -1;
-            this._node = null;
         }
 
         protected Connection(BaseSocket socket, Peer peer) : this()
@@ -81,23 +96,37 @@ namespace EppNet.Connections
         {
             Guard.AgainstNull(socket);
 
-            this._node = socket.Node;
-            this.Service = _node.Services.GetService<ConnectionService>();
-            this.ChannelService = _node.Services.GetService<ChannelService>();
+            if (Socket == null)
+            {
+                // We only need to set this once.
+                this.Socket = socket;
+                this.Node = socket.Node;
+                this.Service = Node.Services.GetService<ConnectionService>();
+                this.ChannelService = Node.Services.GetService<ChannelService>();
+                this.SnapshotService = Node.Services.GetService<SnapshotServiceBase>();
+            }
 
-            this.Socket = socket;
             this.ENet_Peer = peer;
             this.ENet_ID = peer.ID;
-            this.EstablishedMs = socket.Node.Time;
-            this.IsAuthenticated = false;
+            this.Established = socket.Node.Time;
+            this.IsAuthenticated = IsSynchronized = false;
+
+            if (SnapshotService != null)
+            {
+                // We're interested in the snapshot timer
+                this.SnapshotCheckTimer = new(SnapshotService.SnapshotInterval * 1000d);
+                this.SnapshotCheckTimer.AutoReset = true;
+                //this.SnapshotCheckTimer.Elapsed += 
+            }
         }
 
         public override void Dispose()
         {
             this.ENet_Peer = default;
             this.ENet_ID = default;
-            this.EstablishedMs = default;
-            this.IsAuthenticated = false;
+            this.Established = LastReceivedSnapshot = default;
+            this.IsAuthenticated = IsSynchronized = false;
+            this.LastDesyncEvent = null;
             base.Dispose();
         }
 

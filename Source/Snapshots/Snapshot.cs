@@ -10,6 +10,8 @@ namespace EppNet.Snapshots
     public class Snapshot : SnapshotBase
     {
 
+        internal Snapshot(Snapshot parent) : base(parent.Node, parent.GlobalSequence, parent.LocalSequence) { }
+
         internal Snapshot(SnapshotService service, long globalSequenceNumber, SequenceNumber seqNumber)
             : base(service.Node, globalSequenceNumber, seqNumber)
         {

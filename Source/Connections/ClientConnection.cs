@@ -13,7 +13,7 @@ namespace EppNet.Connections
     public class ClientConnection : Connection
     {
 
-        internal ClientConnection() { }
+        public ClientConnection() { }
 
         internal ClientConnection(BaseSocket socket, Peer peer) : base(socket, peer) { }
 

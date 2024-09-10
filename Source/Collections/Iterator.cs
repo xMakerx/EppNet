@@ -6,76 +6,58 @@
 /// </summary>
 //////////////////////////////////////////////
 
-using System;
+using EppNet.Utilities;
+
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace EppNet.Collections
 {
 
-    public interface IIterator<out T>
+    public ref struct Iterator<T>
     {
-        /// <summary>
-        /// Checks if we have something next in the iterator
-        /// </summary>
-        /// <returns></returns>
-        public bool HasNext();
 
-        /// <summary>
-        /// Increments the internal index to the next one.
-        /// </summary>
-        /// <returns></returns>
-        public T Next();
+        public int Index { private set; get; }
 
-        /// <summary>
-        /// Fetches the current object
-        /// </summary>
-        /// <returns></returns>
-        public T Current();
-    }
+        private ImmutableArray<T> _elements;
 
-    public sealed class Iterator<T> : IIterator<T>
-    {
-        public int Index { get => _index; }
-
-        private readonly IEnumerable<T> _enumerable;
-        private List<T> _toIterate;
-
-        private int _index;
-
-        public Iterator([NotNull] IEnumerable<T> enumerable)
+        public Iterator([NotNull] IEnumerable<T> collection)
         {
-            if (enumerable == null)
-                throw new ArgumentNullException(nameof(enumerable));
-
-            this._enumerable = enumerable;
-            this._toIterate = new List<T>(_enumerable);
-            this._index = -1;
+            Guard.AgainstNull(collection);
+            this.Index = -1;
+            this._elements = collection.ToImmutableArray();
         }
 
         /// <summary>
-        /// Checks if we have something next in the iterator
-        /// </summary>
-        /// <returns></returns>
-        public bool HasNext() => (_index + 1) < _toIterate.Count;
-
-        /// <summary>
         /// Increments the internal index to the next one.
         /// </summary>
         /// <returns></returns>
-        public T Next() => _toIterate[++_index];
+
+        public T Next()
+            => _elements[++Index];
+
+        /// <summary>
+        /// Checks if we have something next in the iterator
+        /// </summary>
+        /// <returns></returns>
+
+        public bool HasNext()
+            => (Index + 1) < _elements.Length;
 
         /// <summary>
         /// Fetches the current object
         /// </summary>
         /// <returns></returns>
-        public T Current() => _index == -1 ? default : _toIterate[_index];
+
+        public T Current() => _elements[Index];
     }
 
     public static class IteratorExtensions
     {
 
-        public static Iterator<T> Iterator<T>(this IEnumerable<T> enumerable) => new Iterator<T>(enumerable);
+        public static Iterator<T> Iterator<T>(this IEnumerable<T> enumerable)
+            => new Iterator<T>(enumerable);
 
     }
 
