@@ -4,8 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Core;
-
 using System;
 
 namespace EppNet.Exceptions

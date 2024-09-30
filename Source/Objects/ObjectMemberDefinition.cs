@@ -5,7 +5,6 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Attributes;
-using EppNet.Core;
 using EppNet.Data;
 using EppNet.Sim;
 

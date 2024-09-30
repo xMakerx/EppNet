@@ -4,7 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Core;
 using EppNet.Sim;
 
 using System;

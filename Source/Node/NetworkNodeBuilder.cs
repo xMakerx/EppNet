@@ -4,7 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Core;
 using EppNet.Exceptions;
 using EppNet.Services;
 using EppNet.Sockets;
