@@ -6,7 +6,7 @@
 using ENet;
 
 using EppNet.Attributes;
-using EppNet.Core.Settings;
+using EppNet.Settings;
 using EppNet.Data;
 using EppNet.Data.Datagrams;
 using EppNet.Exceptions;
