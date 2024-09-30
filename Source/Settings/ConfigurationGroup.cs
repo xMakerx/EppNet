@@ -10,7 +10,7 @@ using System.Text.Json;
 
 using EppNet.Logging;
 
-namespace EppNet.Core.Settings
+namespace EppNet.Settings
 {
     public class ConfigurationGroup : Writeable, ILoggable
     {
@@ -28,6 +28,11 @@ namespace EppNet.Core.Settings
             this._items = new();
         }
 
+        public ConfigurationGroup(Configuration config, string key) : this(key)
+        {
+            this.Configuration = config;
+        }
+
         public bool Add(Writeable item)
         {
             // To add an item to this group, the item must:
@@ -42,6 +47,7 @@ namespace EppNet.Core.Settings
                 return false;
 
             _items.Add(item);
+            item.Configuration = this.Configuration;
             return true;
         }
 

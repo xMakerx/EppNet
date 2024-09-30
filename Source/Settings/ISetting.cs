@@ -4,7 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-namespace EppNet.Core.Settings
+namespace EppNet.Settings
 {
 
     public interface ISetting<TValue>

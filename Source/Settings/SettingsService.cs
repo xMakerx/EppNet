@@ -8,7 +8,7 @@ using System;
 
 using EppNet.Services;
 
-namespace EppNet.Core.Settings
+namespace EppNet.Settings
 {
 
     public class SettingsService : Service

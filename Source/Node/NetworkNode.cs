@@ -6,11 +6,11 @@
 using ENet;
 
 using EppNet.Attributes;
+using EppNet.Core.Settings;
 using EppNet.Data;
 using EppNet.Data.Datagrams;
 using EppNet.Exceptions;
 using EppNet.Logging;
-using EppNet.Messaging;
 using EppNet.Registers;
 using EppNet.Services;
 using EppNet.Sim;
@@ -21,6 +21,7 @@ using EppNet.Utilities;
 using Serilog;
 
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Node
@@ -41,6 +42,7 @@ namespace EppNet.Node
         public readonly Distribution Distro;
 
         public ExceptionStrategy ExceptionStrategy;
+        public bool Started { private set; get; }
 
         /// <summary>
         /// Fetches the <see cref="ServiceManager"/> associated with this node
@@ -93,13 +95,14 @@ namespace EppNet.Node
 
         }
 
+        public Configuration Configuration { get; }
+
         internal ServiceManager _serviceMgr;
         internal BaseSocket _socket;
 
         internal readonly int _index;
 
         private RuntimeFileMetadata _logMetadata;
-        private bool _started;
 
         internal NetworkNode(string name, Distribution distro, ExceptionStrategy exceptStrat, BaseSocket socket, ServiceManager serviceManager)
         {
@@ -111,11 +114,11 @@ namespace EppNet.Node
             this.UUID = Guid.NewGuid();
             this.Distro = distro;
             this.ExceptionStrategy = exceptStrat;
+            this.Started = false;
 
             this._serviceMgr = serviceManager ?? new(this);
             this._socket = socket;
             this._logMetadata = null;
-            this._started = false;
 
             Serilog.Debugging.SelfLog.Enable(Console.Error);
             Log.Logger = new LoggerConfiguration().WriteTo.Console().MinimumLevel.Verbose().CreateLogger();
@@ -124,6 +127,8 @@ namespace EppNet.Node
             // Let's try to register this
             if (!NetworkNodeManager._Internal_TryRegisterNode(this, out _index))
                 throw new InvalidOperationException("Node has already been added!");
+
+            this.Configuration = new(this);
         }
 
         public NetworkNode(Distribution distro) : this(string.Empty, distro, ExceptionStrategy.ThrowAll, null, null) { }
@@ -212,7 +217,7 @@ namespace EppNet.Node
                 {
                     // Start our services
                     Services.Start();
-                    _started = true;
+                    Started = true;
 
                     Console.Beep();
                     Notify.Debug("Started!");
@@ -236,7 +241,7 @@ namespace EppNet.Node
 
         public bool Poll(int timeoutMs = 0)
         {
-            if (!_started)
+            if (!Started)
             {
                 Notify.Error("Tried to tick without calling #TryStart()!");
                 return false;
@@ -254,7 +259,7 @@ namespace EppNet.Node
 
         public bool Tick(float delta)
         {
-            if (!_started)
+            if (!Started)
             {
                 Notify.Error("Tried to tick without calling #TryStart()!");
                 return false;
@@ -275,7 +280,7 @@ namespace EppNet.Node
 
         public bool TryStop(bool finalizer)
         {
-            if (!_started)
+            if (!Started)
                 return false;
 
             if (finalizer)
@@ -288,7 +293,7 @@ namespace EppNet.Node
             Console.Beep();
             Socket.Dispose(!finalizer);
             Services.Stop();
-            _started = false;
+            Started = false;
 
             Notify.Debug("Stopped!");
             

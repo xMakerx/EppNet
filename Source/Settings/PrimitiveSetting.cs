@@ -9,7 +9,7 @@ using EppNet.Logging;
 using System;
 using System.Text.Json;
 
-namespace EppNet.Core.Settings
+namespace EppNet.Settings
 {
     public class PrimitiveSetting<TValue> : Writeable, ILoggable, ISetting<TValue> where TValue : struct, IComparable,
         IFormattable, IConvertible, IComparable<TValue>, IEquatable<TValue>

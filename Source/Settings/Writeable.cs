@@ -6,11 +6,13 @@
 
 using System.Text.Json;
 
-namespace EppNet.Core.Settings
+namespace EppNet.Settings
 {
 
-    public abstract class Writeable
+    public abstract class Writeable : IConfigurationDescendant
     {
+
+        public Configuration Configuration { internal set; get; }
 
         /// <summary>
         /// The name of this writeable
@@ -39,23 +41,12 @@ namespace EppNet.Core.Settings
         }
 
         protected bool _writesToFile;
-        public Writeable Parent
-        {
-            internal set
-            {
-                if (value != this)
-                    _parent = value;
-            }
-
-            get => _parent;
-        }
-
-        private Writeable _parent;
+        public Writeable Parent { internal set; get; }
 
         protected Writeable(string key)
         {
             this.Key = key;
-            this._parent = null;
+            this.Parent = null;
             this._writesToFile = true;
         }
 
