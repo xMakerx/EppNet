@@ -6,13 +6,13 @@
 using ENet;
 
 using EppNet.Attributes;
-using EppNet.Settings;
 using EppNet.Data;
 using EppNet.Data.Datagrams;
 using EppNet.Exceptions;
 using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Services;
+using EppNet.Settings;
 using EppNet.Sim;
 using EppNet.Sockets;
 using EppNet.Time;
@@ -21,7 +21,6 @@ using EppNet.Utilities;
 using Serilog;
 
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Node
@@ -234,7 +233,7 @@ namespace EppNet.Node
         }
 
         /// <summary>
-        /// Polls our socket
+        /// Polls our socket for new network events
         /// </summary>
         /// <param name="timeoutMs"></param>
         /// <returns></returns>
@@ -243,7 +242,7 @@ namespace EppNet.Node
         {
             if (!Started)
             {
-                Notify.Error("Tried to tick without calling #TryStart()!");
+                Notify.Error("Tried to poll without calling #TryStart()!");
                 return false;
             }
 
@@ -252,7 +251,8 @@ namespace EppNet.Node
         }
 
         /// <summary>
-        /// Ticks our clock and all our services
+        /// Ticks for configuration changes, ticks the socket, and ticks all
+        /// services
         /// </summary>
         /// <param name="delta"></param>
         /// <returns></returns>
@@ -265,12 +265,19 @@ namespace EppNet.Node
                 return false;
             }
 
+            if (Configuration.Dirty)
+            {
+                Configuration.WriteAsync();
+                Configuration.Dirty = false;
+            }
+
             Socket.Tick(delta);
             Services.Tick(delta);
             return true;
         }
 
-        public bool TryStop() => TryStop(false);
+        public bool TryStop()
+            => TryStop(false);
 
         /// <summary>
         /// Tries to stop this NetworkNode
@@ -294,6 +301,10 @@ namespace EppNet.Node
             Socket.Dispose(!finalizer);
             Services.Stop();
             Started = false;
+
+            // Let's ensure we write the configuration fully before we halt
+            if (Configuration.AsyncWriteTask != null)
+                Configuration.AsyncWriteTask.Wait();
 
             Notify.Debug("Stopped!");
             

@@ -206,7 +206,7 @@ namespace EppNet.Sockets
 
         public virtual void OnPacketReceived(Peer peer, Packet packet, byte channelId)
         {
-            //_packetDeserializer.HandlePacket(peer, packet, channelId);
+            _packetDeserializer?.HandlePacket(peer, packet, channelId);
         }
 
         public virtual void Tick(float delta)
@@ -331,7 +331,7 @@ namespace EppNet.Sockets
 
         public void Dispose(bool disposing)
         {
-            _packetDeserializer.Cancel();
+            _packetDeserializer?.Cancel();
             Clock?.Dispose();
 
             if (!IsServer())
@@ -346,16 +346,20 @@ namespace EppNet.Sockets
             _enet_peer = null;
         }
 
-        public void Dispose() => Dispose(true);
+        public void Dispose()
+            => Dispose(true);
 
         /// <summary>
         /// If this socket represents a server
         /// </summary>
         /// <returns></returns>
-        public bool IsServer() => _type == SocketType.Server;
-        public bool IsOpen() => _enet_host != null;
+        public bool IsServer()
+            => _type == SocketType.Server;
+        public bool IsOpen()
+            => _enet_host != null;
 
-        public virtual bool CanConnect(Peer peer) => IsOpen();
+        public virtual bool CanConnect(Peer peer)
+            => IsOpen();
 
         internal void _Internal_SetupFor([NotNull] NetworkNode node)
         {
@@ -374,7 +378,6 @@ namespace EppNet.Sockets
             // Let's set Node to use this
             Node._Internal_SetSocket(this);
         }
-
 
         /// <summary>
         /// Validates that all necessary dependencies have been created. If not,

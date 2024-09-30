@@ -18,14 +18,12 @@ namespace EppNet.Settings
 
         public bool IsRoot => string.IsNullOrEmpty(Key);
 
-        public List<Writeable> Items { get => _items; }
-
-        protected List<Writeable> _items;
+        public List<Writeable> Items { get; }
 
         public ConfigurationGroup(string key) : base(key)
         {
             this.WritesToFile = true;
-            this._items = new();
+            this.Items = new();
         }
 
         public ConfigurationGroup(Configuration config, string key) : this(key)
@@ -43,10 +41,10 @@ namespace EppNet.Settings
             if (item == null || item.Parent != null || item == this)
                 return false;
 
-            if (_items.Contains(item))
+            if (Items.Contains(item))
                 return false;
 
-            _items.Add(item);
+            Items.Add(item);
             item.Configuration = this.Configuration;
             return true;
         }
@@ -59,8 +57,12 @@ namespace EppNet.Settings
 
         public bool Remove(Writeable item)
         {
-            bool removed = _items.Remove(item);
+            bool removed = Items.Remove(item);
             item.Parent = null;
+
+            if (Configuration != null)
+                Configuration.Dirty = true;
+
             return removed;
         }
 
@@ -70,15 +72,8 @@ namespace EppNet.Settings
 
         public void Clear()
         {
-            int count = Items.Count;
-
             while (Items.Count > 0)
                 Remove(Items[0]);
-
-            if (count != Items.Count)
-                // We've cleared out some items.
-                // TODO: Push update to settings server
-                return;
         }
 
         public override Writeable Clone()

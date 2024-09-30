@@ -12,6 +12,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace EppNet.Settings
 {
@@ -110,6 +111,12 @@ namespace EppNet.Settings
             Indented = true
         };
 
+        /// <summary>
+        /// If dirty, we need to rewrite this config to file.
+        /// </summary>
+        public bool Dirty { internal set; get; }
+        public Task AsyncWriteTask { private set; get; }
+
         // Internal strings to hold configuration file data.
         internal string _configPath, _configFilename;
 
@@ -124,6 +131,9 @@ namespace EppNet.Settings
                 this.ConfigurationFilename = $"{nameof(Node.Distro)}.json";
             else
                 this.ConfigurationFilename = $"{Node.Name}.json";
+
+            this.Dirty = false;
+            this.AsyncWriteTask = null;
         }
 
         public bool Add(Writeable item)
@@ -131,7 +141,6 @@ namespace EppNet.Settings
 
         public void Write()
         {
-
             using FileStream stream = File.OpenWrite(ConfigurationFullPath);
             using Utf8JsonWriter writer = new(stream, FileOptions);
 
@@ -139,6 +148,14 @@ namespace EppNet.Settings
             MainGroup.Write(writer);
             writer.WriteEndObject();
             writer.Flush();
+        }
+
+        public async void WriteAsync()
+        {
+            AsyncWriteTask = Task.Run(Write);
+            await AsyncWriteTask;
+
+            AsyncWriteTask = null;
         }
 
     }

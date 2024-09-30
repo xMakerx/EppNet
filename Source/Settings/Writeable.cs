@@ -32,8 +32,12 @@ namespace EppNet.Settings
             {
                 if (value != _writesToFile)
                 {
-                    // TODO: Push update to settings server
+
                     _writesToFile = value;
+
+                    // Let's ensure our configuration is marked dirty
+                    if (Configuration != null)
+                        Configuration.Dirty = true;
                 }
             }
 
