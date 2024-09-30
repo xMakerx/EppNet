@@ -15,8 +15,17 @@ namespace EppNet.Time
     public static class TimeExtensions
     {
 
+        /// <summary>
+        /// Fetches the current monotonic time from the ENet library in milliseconds
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static TimeSpan Time(this INodeDescendant obj) => obj.Node.Time;
+        public static TimeSpan MonoTime()
+            => TimeSpan.FromMilliseconds(ENet.Library.Time);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static TimeSpan Time(this INodeDescendant obj)
+            => obj.Node.Time;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static TimeSpan DetermineCurrentTime(params object[] objects)

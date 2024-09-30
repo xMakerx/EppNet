@@ -21,6 +21,7 @@ using EppNet.Utilities;
 using Serilog;
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Node
@@ -163,10 +164,11 @@ namespace EppNet.Node
             // Let's ensure our expression trees are ready.
             DatagramRegister dgRegister = DatagramRegister.Get();
             ObjectRegister objRegister = ObjectRegister.Get();
-            Timestamp start = Timestamp.FromMonoNow();
+            Stopwatch stopwatch = null;
 
             if (!dgRegister.IsCompiled())
             {
+                stopwatch = Stopwatch.StartNew();
                 Notify.Verbose("Compiling Datagram expression trees... Please wait.");
 
                 CompilationResult result = dgRegister.Compile();
@@ -177,13 +179,13 @@ namespace EppNet.Node
                     throw result.Error;
                 }
 
-                Notify.Info(new TemplatedMessage("Successfully compiled Datagram expression trees in {time} ms", (Timestamp.FromMonoNow() - start).Value));
+                Notify.Info(new TemplatedMessage("Successfully compiled Datagram expression trees in {time} ms", stopwatch.ElapsedMilliseconds));
             }
 
-            start = Timestamp.FromMonoNow();
+
             if (!objRegister.IsCompiled())
             {
-
+                stopwatch?.Restart();
                 Notify.Verbose("Looking up objects w/NetworkObjectAttribute...");
                 AttributeFetcher.AddType<NetworkObjectAttribute>(type =>
                 {
@@ -205,7 +207,7 @@ namespace EppNet.Node
                     throw result.Error;
                 }
 
-                Notify.Info(new TemplatedMessage("Successfully compiled Object expression trees in {time} ms", (Timestamp.FromMonoNow() - start).Value));
+                Notify.Info(new TemplatedMessage("Successfully compiled Object expression trees in {time} ms", stopwatch.ElapsedMilliseconds));
             }
 
             // Try to create our socket

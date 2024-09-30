@@ -29,52 +29,6 @@ namespace EppNet.Sim
         protected static Simulation _instance = null;
         public static Simulation Get() => _instance;
 
-        /// <summary>
-        /// Fetches the monotonic time as a <see cref="Timestamp"/> or returns 0 if ENet hasn't been initialized.
-        /// Monotonic time is the time since this device was powered on and is maintained on the kernel
-        /// </summary>
-
-        public static Timestamp MonotonicTimestamp
-        {
-            get
-            {
-                if (_instance != null && _instance._initialized)
-                    _monotonicTimestamp.Set(MonotonicTime);
-
-                return _monotonicTimestamp;
-            }
-        }
-
-        private static Timestamp _monotonicTimestamp = new Timestamp(TimestampType.Milliseconds, true, 0L);
-
-        /// <summary>
-        /// Shorthand for <see cref="MonotonicTimestamp"/>
-        /// </summary>
-        public static Timestamp MonotoTs => MonotonicTimestamp;
-
-        /// <summary>
-        /// Shorthand for <see cref="MonotonicTime"/>
-        /// </summary>
-        public static uint MonoTime => MonotonicTime;
-
-        /// <summary>
-        /// Fetches the monotonic time or returns 0 if ENet hasn't been initialized.
-        /// Monotonic time is the time since this device was powered on and is maintained on the kernel
-        /// </summary>
-
-        public static uint MonotonicTime
-        {
-            get
-            {
-                uint t = 0;
-
-                if (_instance != null && _instance._initialized)
-                    t = ENetLib.Time;
-
-                return t;
-            }
-        }
-
         public static bool StopRequested
         {
             set

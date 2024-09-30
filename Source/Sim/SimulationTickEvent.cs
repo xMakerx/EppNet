@@ -6,20 +6,22 @@
 
 using EppNet.Time;
 
+using System;
+
 namespace EppNet.Sim
 {
     /// <summary>
     /// Event pushed on every simulator tick.
     /// This is not destroyed, it's simply reused and should be highly mutable.
     /// </summary>
-    public class SimulationTickEvent
+    public class SimulationTickEvent : ITimestamped
     {
 
         /// <summary>
         /// The sequence ID within the disruptor.
         /// </summary>
         public int ID { private set; get; }
-        public Timestamp Time { private set; get; }
+        public TimeSpan Time { private set; get; }
 
         /// <summary>
         /// These events are reused so we use this to initialize our
@@ -28,10 +30,10 @@ namespace EppNet.Sim
         /// <param name="sequenceId"></param>
         /// <param name="time"></param>
 
-        public void Initialize(int sequenceId, Timestamp timestamp)
+        public void Initialize(int sequenceId, TimeSpan ts)
         {
             this.ID = sequenceId;
-            this.Time = timestamp;
+            this.Time = ts;
         }
 
     }

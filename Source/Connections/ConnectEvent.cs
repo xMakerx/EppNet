@@ -6,10 +6,12 @@
 
 using EppNet.Time;
 
+using System;
+
 namespace EppNet.Connections
 {
 
-    public readonly struct ConnectEvent
+    public readonly struct ConnectEvent : ITimestamped
     {
 
         public readonly Connection Connection;
@@ -17,12 +19,12 @@ namespace EppNet.Connections
         /// <summary>
         /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
         /// </summary>
-        public readonly Timestamp Timestamp;
+        public readonly TimeSpan Time { get; }
 
         public ConnectEvent(Connection connection)
         {
             this.Connection = connection;
-            this.Timestamp = Timestamp.FromMonoNow();
+            this.Time = TimeExtensions.MonoTime();
         }
 
     }

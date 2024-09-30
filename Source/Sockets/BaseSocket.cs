@@ -151,8 +151,8 @@ namespace EppNet.Sockets
             get => _maxClients;
         }
 
-        public Timestamp CreateTimeMono;
-        public Timestamp LastPollMono;
+        public TimeSpan CreateTimeMono;
+        public TimeSpan LastPollMono;
 
         /// <summary>
         /// Used on client connections as a quick way to get the server, AND<br/>
@@ -179,8 +179,8 @@ namespace EppNet.Sockets
 
         protected BaseSocket(SocketType type)
         {
-            this.LastPollMono = new Timestamp(TimestampType.Milliseconds, true, 0L);
-            this.CreateTimeMono = new Timestamp(TimestampType.Milliseconds, true, 0L);
+            this.LastPollMono = TimeSpan.Zero;
+            this.CreateTimeMono = TimeSpan.Zero;
 
             // ENet library inits
             this._enet_host = null;
@@ -232,7 +232,7 @@ namespace EppNet.Sockets
                         break;
 
                     polled = true;
-                    LastPollMono.Value = Library.Time;
+                    LastPollMono = TimeExtensions.MonoTime();
                 }
 
                 switch (_enet_event.Type)
@@ -317,7 +317,7 @@ namespace EppNet.Sockets
                 // Let's begin our clock!
                 Clock.Start();
 
-                CreateTimeMono.Value = Library.Time;
+                CreateTimeMono = TimeExtensions.MonoTime();
                 Notify.Debug("Successfully created the Socket!");
             }
             catch (Exception ex)
