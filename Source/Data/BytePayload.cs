@@ -66,6 +66,7 @@ namespace EppNet.Data
             _resolvers.Add(typeof(ulong), ULongResolver.Instance);
             _resolvers.Add(typeof(long), LongResolver.Instance);
             _resolvers.Add(typeof(float), FloatResolver.Instance);
+            _resolvers.Add(typeof(TimeSpan), TimeSpanResolver.Instance);
             _resolvers.Add(typeof(Color), ColorResolver.Instance);
             _resolvers.Add(typeof(Str8), String8Resolver.Instance);
             _resolvers.Add(typeof(Str16), String16Resolver.Instance);

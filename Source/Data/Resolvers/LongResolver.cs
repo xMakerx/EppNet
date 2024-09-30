@@ -21,7 +21,9 @@ namespace EppNet.Data
         {
             Span<byte> buffer = stackalloc byte[Size];
             int read = payload.Stream.Read(buffer);
-            return BinaryPrimitives.TryReadInt64LittleEndian(buffer, out output) ? ReadResult.Success : ReadResult.Failed;
+
+            return BinaryPrimitives.TryReadInt64LittleEndian(buffer, out output)
+                ? ReadResult.Success : ReadResult.Failed;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
