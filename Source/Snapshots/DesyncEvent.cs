@@ -64,7 +64,7 @@ namespace EppNet.Snapshots
         /// </summary>
         /// <returns></returns>
         public bool IsActive()
-            => EventEnd == null;
+            => !EventEnd.HasValue;
 
     }
 

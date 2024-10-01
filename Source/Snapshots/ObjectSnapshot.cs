@@ -7,7 +7,6 @@
 using EppNet.Commands;
 using EppNet.Logging;
 using EppNet.Objects;
-using EppNet.Time;
 using EppNet.Utilities;
 
 using System;
