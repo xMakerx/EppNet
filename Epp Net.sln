@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Source\Tests\Tests.csproj", "{596BBBF5-0810-4692-8A0C-30C6A847294A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EppNet-Unity", "EppNet-Unity\EppNet-Unity.csproj", "{63EDD7D0-1FB9-477F-B84E-31BED44C3C8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EppNet-Unity", "EppNet-Unity\EppNet-Unity.csproj", "{63EDD7D0-1FB9-477F-B84E-31BED44C3C8A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EppNet-SourceGen", "EppNet-SourceGen\EppNet-SourceGen.csproj", "{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +48,14 @@ Global
 		{63EDD7D0-1FB9-477F-B84E-31BED44C3C8A}.ExportRelease|Any CPU.Build.0 = Release|Any CPU
 		{63EDD7D0-1FB9-477F-B84E-31BED44C3C8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63EDD7D0-1FB9-477F-B84E-31BED44C3C8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.ExportRelease|Any CPU.ActiveCfg = Release|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.ExportRelease|Any CPU.Build.0 = Release|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAF4D6EB-847B-479E-BC00-1344DCD1ED6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,12 +4,15 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class String8Resolver : Resolver<Str8>
     {
 

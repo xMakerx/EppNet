@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System;
 using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
@@ -11,6 +13,7 @@ using System.Runtime.CompilerServices;
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class String16Resolver : Resolver<Str16>
     {
 

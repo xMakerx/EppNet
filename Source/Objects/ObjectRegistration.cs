@@ -236,7 +236,7 @@ namespace EppNet.Objects
 
                 Attribute[] attributes = Attribute.GetCustomAttributes(member, false);
 
-                foreach (Attribute attribute in attributes)
+                foreach (Attribute attribute in Attribute.GetCustomAttributes(member, false))
                 {
 
                     if (attribute is NetworkMemberAttribute netAttr)
@@ -274,7 +274,6 @@ namespace EppNet.Objects
                                 if (methodName.StartsWith("set"))
                                 {
                                     // Let's try to find the companion getter
-
                                     StringBuilder builder = new("get");
                                     builder.Append(methodName.AsSpan(3));
 

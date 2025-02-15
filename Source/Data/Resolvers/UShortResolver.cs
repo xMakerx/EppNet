@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System;
 using System.Buffers.Binary;
 using System.Collections;
@@ -12,6 +14,8 @@ using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
+
+    [NetworkTypeResolver]
 
     public class UShortResolver : Resolver<ushort>
     {

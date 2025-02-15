@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -12,6 +14,7 @@ using System.Runtime.CompilerServices;
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class ColorResolver : Resolver<Color>
     {
 

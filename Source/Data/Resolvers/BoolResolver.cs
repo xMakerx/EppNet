@@ -4,13 +4,15 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using System;
+using EppNet.Attributes;
+
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class BoolResolver : Resolver<bool>
     {
 

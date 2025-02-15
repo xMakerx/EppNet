@@ -26,7 +26,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, byte> _byte2Byte = _Internal_ByteToByte;
+        private static readonly Func<byte, byte> _byte2Byte = _Internal_ByteToByte;
 
         private static byte _Internal_SbyteToByte(sbyte input)
         {
@@ -34,7 +34,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, byte> _sbyte2Byte = _Internal_SbyteToByte;
+        private static readonly Func<sbyte, byte> _sbyte2Byte = _Internal_SbyteToByte;
 
         private static byte _Internal_UshortToByte(ushort input)
         {
@@ -42,7 +42,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, byte> _ushort2Byte = _Internal_UshortToByte;
+        private static readonly Func<ushort, byte> _ushort2Byte = _Internal_UshortToByte;
 
         private static byte _Internal_ShortToByte(short input)
         {
@@ -50,7 +50,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, byte> _short2Byte = _Internal_ShortToByte;
+        private static readonly Func<short, byte> _short2Byte = _Internal_ShortToByte;
 
         private static byte _Internal_UintToByte(uint input)
         {
@@ -58,7 +58,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, byte> _uint2Byte = _Internal_UintToByte;
+        private static readonly Func<uint, byte> _uint2Byte = _Internal_UintToByte;
 
         private static byte _Internal_IntToByte(int input)
         {
@@ -66,7 +66,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, byte> _int2Byte = _Internal_IntToByte;
+        private static readonly Func<int, byte> _int2Byte = _Internal_IntToByte;
 
         private static byte _Internal_UlongToByte(ulong input)
         {
@@ -74,7 +74,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, byte> _ulong2Byte = _Internal_UlongToByte;
+        private static readonly Func<ulong, byte> _ulong2Byte = _Internal_UlongToByte;
 
         private static byte _Internal_LongToByte(long input)
         {
@@ -82,7 +82,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, byte> _long2Byte = _Internal_LongToByte;
+        private static readonly Func<long, byte> _long2Byte = _Internal_LongToByte;
 
         private static byte _Internal_FloatToByte(float input)
         {
@@ -90,7 +90,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, byte> _float2Byte = _Internal_FloatToByte;
+        private static readonly Func<float, byte> _float2Byte = _Internal_FloatToByte;
 
         private static byte _Internal_DoubleToByte(double input)
         {
@@ -98,7 +98,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, byte> _double2Byte = _Internal_DoubleToByte;
+        private static readonly Func<double, byte> _double2Byte = _Internal_DoubleToByte;
         #endregion
 
         #region Sbyte Conversions
@@ -108,7 +108,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, sbyte> _byte2Sbyte = _Internal_ByteToSbyte;
+        private static readonly Func<byte, sbyte> _byte2Sbyte = _Internal_ByteToSbyte;
 
         private static sbyte _Internal_SbyteToSbyte(sbyte input)
         {
@@ -116,7 +116,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, sbyte> _sbyte2Sbyte = _Internal_SbyteToSbyte;
+        private static readonly Func<sbyte, sbyte> _sbyte2Sbyte = _Internal_SbyteToSbyte;
 
         private static sbyte _Internal_UshortToSbyte(ushort input)
         {
@@ -124,7 +124,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, sbyte> _ushort2Sbyte = _Internal_UshortToSbyte;
+        private static readonly Func<ushort, sbyte> _ushort2Sbyte = _Internal_UshortToSbyte;
 
         private static sbyte _Internal_ShortToSbyte(short input)
         {
@@ -132,7 +132,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, sbyte> _short2Sbyte = _Internal_ShortToSbyte;
+        private static readonly Func<short, sbyte> _short2Sbyte = _Internal_ShortToSbyte;
 
         private static sbyte _Internal_UintToSbyte(uint input)
         {
@@ -140,7 +140,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, sbyte> _uint2Sbyte = _Internal_UintToSbyte;
+        private static readonly Func<uint, sbyte> _uint2Sbyte = _Internal_UintToSbyte;
 
         private static sbyte _Internal_IntToSbyte(int input)
         {
@@ -148,7 +148,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, sbyte> _int2Sbyte = _Internal_IntToSbyte;
+        private static readonly Func<int, sbyte> _int2Sbyte = _Internal_IntToSbyte;
 
         private static sbyte _Internal_UlongToSbyte(ulong input)
         {
@@ -156,7 +156,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, sbyte> _ulong2Sbyte = _Internal_UlongToSbyte;
+        private static readonly Func<ulong, sbyte> _ulong2Sbyte = _Internal_UlongToSbyte;
 
         private static sbyte _Internal_LongToSbyte(long input)
         {
@@ -164,7 +164,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, sbyte> _long2Sbyte = _Internal_LongToSbyte;
+        private static readonly Func<long, sbyte> _long2Sbyte = _Internal_LongToSbyte;
 
         private static sbyte _Internal_FloatToSbyte(float input)
         {
@@ -172,7 +172,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, sbyte> _float2Sbyte = _Internal_FloatToSbyte;
+        private static readonly Func<float, sbyte> _float2Sbyte = _Internal_FloatToSbyte;
 
         private static sbyte _Internal_DoubleToSbyte(double input)
         {
@@ -180,7 +180,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, sbyte> _double2Sbyte = _Internal_DoubleToSbyte;
+        private static readonly Func<double, sbyte> _double2Sbyte = _Internal_DoubleToSbyte;
         #endregion
 
         #region Ushort Conversions
@@ -190,7 +190,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, ushort> _byte2Ushort = _Internal_ByteToUshort;
+        private static readonly Func<byte, ushort> _byte2Ushort = _Internal_ByteToUshort;
 
         private static ushort _Internal_SbyteToUshort(sbyte input)
         {
@@ -198,7 +198,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, ushort> _sbyte2Ushort = _Internal_SbyteToUshort;
+        private static readonly Func<sbyte, ushort> _sbyte2Ushort = _Internal_SbyteToUshort;
 
         private static ushort _Internal_UshortToUshort(ushort input)
         {
@@ -206,7 +206,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, ushort> _ushort2Ushort = _Internal_UshortToUshort;
+        private static readonly Func<ushort, ushort> _ushort2Ushort = _Internal_UshortToUshort;
 
         private static ushort _Internal_ShortToUshort(short input)
         {
@@ -214,7 +214,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, ushort> _short2Ushort = _Internal_ShortToUshort;
+        private static readonly Func<short, ushort> _short2Ushort = _Internal_ShortToUshort;
 
         private static ushort _Internal_UintToUshort(uint input)
         {
@@ -222,7 +222,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, ushort> _uint2Ushort = _Internal_UintToUshort;
+        private static readonly Func<uint, ushort> _uint2Ushort = _Internal_UintToUshort;
 
         private static ushort _Internal_IntToUshort(int input)
         {
@@ -230,7 +230,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, ushort> _int2Ushort = _Internal_IntToUshort;
+        private static readonly Func<int, ushort> _int2Ushort = _Internal_IntToUshort;
 
         private static ushort _Internal_UlongToUshort(ulong input)
         {
@@ -238,7 +238,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, ushort> _ulong2Ushort = _Internal_UlongToUshort;
+        private static readonly Func<ulong, ushort> _ulong2Ushort = _Internal_UlongToUshort;
 
         private static ushort _Internal_LongToUshort(long input)
         {
@@ -246,7 +246,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, ushort> _long2Ushort = _Internal_LongToUshort;
+        private static readonly Func<long, ushort> _long2Ushort = _Internal_LongToUshort;
 
         private static ushort _Internal_FloatToUshort(float input)
         {
@@ -254,7 +254,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, ushort> _float2Ushort = _Internal_FloatToUshort;
+        private static readonly Func<float, ushort> _float2Ushort = _Internal_FloatToUshort;
 
         private static ushort _Internal_DoubleToUshort(double input)
         {
@@ -262,7 +262,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, ushort> _double2Ushort = _Internal_DoubleToUshort;
+        private static readonly Func<double, ushort> _double2Ushort = _Internal_DoubleToUshort;
         #endregion
 
         #region Short Conversions
@@ -272,7 +272,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, short> _byte2Short = _Internal_ByteToShort;
+        private static readonly Func<byte, short> _byte2Short = _Internal_ByteToShort;
 
         private static short _Internal_SbyteToShort(sbyte input)
         {
@@ -280,7 +280,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, short> _sbyte2Short = _Internal_SbyteToShort;
+        private static readonly Func<sbyte, short> _sbyte2Short = _Internal_SbyteToShort;
 
         private static short _Internal_UshortToShort(ushort input)
         {
@@ -288,7 +288,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, short> _ushort2Short = _Internal_UshortToShort;
+        private static readonly Func<ushort, short> _ushort2Short = _Internal_UshortToShort;
 
         private static short _Internal_ShortToShort(short input)
         {
@@ -296,7 +296,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, short> _short2Short = _Internal_ShortToShort;
+        private static readonly Func<short, short> _short2Short = _Internal_ShortToShort;
 
         private static short _Internal_UintToShort(uint input)
         {
@@ -304,7 +304,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, short> _uint2Short = _Internal_UintToShort;
+        private static readonly Func<uint, short> _uint2Short = _Internal_UintToShort;
 
         private static short _Internal_IntToShort(int input)
         {
@@ -312,7 +312,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, short> _int2Short = _Internal_IntToShort;
+        private static readonly Func<int, short> _int2Short = _Internal_IntToShort;
 
         private static short _Internal_UlongToShort(ulong input)
         {
@@ -320,7 +320,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, short> _ulong2Short = _Internal_UlongToShort;
+        private static readonly Func<ulong, short> _ulong2Short = _Internal_UlongToShort;
 
         private static short _Internal_LongToShort(long input)
         {
@@ -328,7 +328,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, short> _long2Short = _Internal_LongToShort;
+        private static readonly Func<long, short> _long2Short = _Internal_LongToShort;
 
         private static short _Internal_FloatToShort(float input)
         {
@@ -336,7 +336,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, short> _float2Short = _Internal_FloatToShort;
+        private static readonly Func<float, short> _float2Short = _Internal_FloatToShort;
 
         private static short _Internal_DoubleToShort(double input)
         {
@@ -344,7 +344,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, short> _double2Short = _Internal_DoubleToShort;
+        private static readonly Func<double, short> _double2Short = _Internal_DoubleToShort;
         #endregion
 
         #region Uint Conversions
@@ -354,7 +354,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, uint> _byte2Uint = _Internal_ByteToUint;
+        private static readonly Func<byte, uint> _byte2Uint = _Internal_ByteToUint;
 
         private static uint _Internal_SbyteToUint(sbyte input)
         {
@@ -362,7 +362,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, uint> _sbyte2Uint = _Internal_SbyteToUint;
+        private static readonly Func<sbyte, uint> _sbyte2Uint = _Internal_SbyteToUint;
 
         private static uint _Internal_UshortToUint(ushort input)
         {
@@ -370,7 +370,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, uint> _ushort2Uint = _Internal_UshortToUint;
+        private static readonly Func<ushort, uint> _ushort2Uint = _Internal_UshortToUint;
 
         private static uint _Internal_ShortToUint(short input)
         {
@@ -378,7 +378,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, uint> _short2Uint = _Internal_ShortToUint;
+        private static readonly Func<short, uint> _short2Uint = _Internal_ShortToUint;
 
         private static uint _Internal_UintToUint(uint input)
         {
@@ -386,7 +386,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, uint> _uint2Uint = _Internal_UintToUint;
+        private static readonly Func<uint, uint> _uint2Uint = _Internal_UintToUint;
 
         private static uint _Internal_IntToUint(int input)
         {
@@ -394,7 +394,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, uint> _int2Uint = _Internal_IntToUint;
+        private static readonly Func<int, uint> _int2Uint = _Internal_IntToUint;
 
         private static uint _Internal_UlongToUint(ulong input)
         {
@@ -402,7 +402,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, uint> _ulong2Uint = _Internal_UlongToUint;
+        private static readonly Func<ulong, uint> _ulong2Uint = _Internal_UlongToUint;
 
         private static uint _Internal_LongToUint(long input)
         {
@@ -410,7 +410,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, uint> _long2Uint = _Internal_LongToUint;
+        private static readonly Func<long, uint> _long2Uint = _Internal_LongToUint;
 
         private static uint _Internal_FloatToUint(float input)
         {
@@ -418,7 +418,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, uint> _float2Uint = _Internal_FloatToUint;
+        private static readonly Func<float, uint> _float2Uint = _Internal_FloatToUint;
 
         private static uint _Internal_DoubleToUint(double input)
         {
@@ -426,7 +426,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, uint> _double2Uint = _Internal_DoubleToUint;
+        private static readonly Func<double, uint> _double2Uint = _Internal_DoubleToUint;
         #endregion
 
         #region Int Conversions
@@ -436,7 +436,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, int> _byte2Int = _Internal_ByteToInt;
+        private static readonly Func<byte, int> _byte2Int = _Internal_ByteToInt;
 
         private static int _Internal_SbyteToInt(sbyte input)
         {
@@ -444,7 +444,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, int> _sbyte2Int = _Internal_SbyteToInt;
+        private static readonly Func<sbyte, int> _sbyte2Int = _Internal_SbyteToInt;
 
         private static int _Internal_UshortToInt(ushort input)
         {
@@ -452,7 +452,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, int> _ushort2Int = _Internal_UshortToInt;
+        private static readonly Func<ushort, int> _ushort2Int = _Internal_UshortToInt;
 
         private static int _Internal_ShortToInt(short input)
         {
@@ -460,7 +460,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, int> _short2Int = _Internal_ShortToInt;
+        private static readonly Func<short, int> _short2Int = _Internal_ShortToInt;
 
         private static int _Internal_UintToInt(uint input)
         {
@@ -468,7 +468,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, int> _uint2Int = _Internal_UintToInt;
+        private static readonly Func<uint, int> _uint2Int = _Internal_UintToInt;
 
         private static int _Internal_IntToInt(int input)
         {
@@ -476,7 +476,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, int> _int2Int = _Internal_IntToInt;
+        private static readonly Func<int, int> _int2Int = _Internal_IntToInt;
 
         private static int _Internal_UlongToInt(ulong input)
         {
@@ -484,7 +484,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, int> _ulong2Int = _Internal_UlongToInt;
+        private static readonly Func<ulong, int> _ulong2Int = _Internal_UlongToInt;
 
         private static int _Internal_LongToInt(long input)
         {
@@ -492,7 +492,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, int> _long2Int = _Internal_LongToInt;
+        private static readonly Func<long, int> _long2Int = _Internal_LongToInt;
 
         private static int _Internal_FloatToInt(float input)
         {
@@ -500,7 +500,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, int> _float2Int = _Internal_FloatToInt;
+        private static readonly Func<float, int> _float2Int = _Internal_FloatToInt;
 
         private static int _Internal_DoubleToInt(double input)
         {
@@ -508,7 +508,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, int> _double2Int = _Internal_DoubleToInt;
+        private static readonly Func<double, int> _double2Int = _Internal_DoubleToInt;
         #endregion
 
         #region Ulong Conversions
@@ -518,7 +518,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, ulong> _byte2Ulong = _Internal_ByteToUlong;
+        private static readonly Func<byte, ulong> _byte2Ulong = _Internal_ByteToUlong;
 
         private static ulong _Internal_SbyteToUlong(sbyte input)
         {
@@ -526,7 +526,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, ulong> _sbyte2Ulong = _Internal_SbyteToUlong;
+        private static readonly Func<sbyte, ulong> _sbyte2Ulong = _Internal_SbyteToUlong;
 
         private static ulong _Internal_UshortToUlong(ushort input)
         {
@@ -534,7 +534,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, ulong> _ushort2Ulong = _Internal_UshortToUlong;
+        private static readonly Func<ushort, ulong> _ushort2Ulong = _Internal_UshortToUlong;
 
         private static ulong _Internal_ShortToUlong(short input)
         {
@@ -542,7 +542,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, ulong> _short2Ulong = _Internal_ShortToUlong;
+        private static readonly Func<short, ulong> _short2Ulong = _Internal_ShortToUlong;
 
         private static ulong _Internal_UintToUlong(uint input)
         {
@@ -550,7 +550,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, ulong> _uint2Ulong = _Internal_UintToUlong;
+        private static readonly Func<uint, ulong> _uint2Ulong = _Internal_UintToUlong;
 
         private static ulong _Internal_IntToUlong(int input)
         {
@@ -558,7 +558,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, ulong> _int2Ulong = _Internal_IntToUlong;
+        private static readonly Func<int, ulong> _int2Ulong = _Internal_IntToUlong;
 
         private static ulong _Internal_UlongToUlong(ulong input)
         {
@@ -566,7 +566,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, ulong> _ulong2Ulong = _Internal_UlongToUlong;
+        private static readonly Func<ulong, ulong> _ulong2Ulong = _Internal_UlongToUlong;
 
         private static ulong _Internal_LongToUlong(long input)
         {
@@ -574,7 +574,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, ulong> _long2Ulong = _Internal_LongToUlong;
+        private static readonly Func<long, ulong> _long2Ulong = _Internal_LongToUlong;
 
         private static ulong _Internal_FloatToUlong(float input)
         {
@@ -582,7 +582,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, ulong> _float2Ulong = _Internal_FloatToUlong;
+        private static readonly Func<float, ulong> _float2Ulong = _Internal_FloatToUlong;
 
         private static ulong _Internal_DoubleToUlong(double input)
         {
@@ -590,7 +590,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, ulong> _double2Ulong = _Internal_DoubleToUlong;
+        private static readonly Func<double, ulong> _double2Ulong = _Internal_DoubleToUlong;
         #endregion
 
         #region Long Conversions
@@ -600,7 +600,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, long> _byte2Long = _Internal_ByteToLong;
+        private static readonly Func<byte, long> _byte2Long = _Internal_ByteToLong;
 
         private static long _Internal_SbyteToLong(sbyte input)
         {
@@ -608,7 +608,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, long> _sbyte2Long = _Internal_SbyteToLong;
+        private static readonly Func<sbyte, long> _sbyte2Long = _Internal_SbyteToLong;
 
         private static long _Internal_UshortToLong(ushort input)
         {
@@ -616,7 +616,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, long> _ushort2Long = _Internal_UshortToLong;
+        private static readonly Func<ushort, long> _ushort2Long = _Internal_UshortToLong;
 
         private static long _Internal_ShortToLong(short input)
         {
@@ -624,7 +624,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, long> _short2Long = _Internal_ShortToLong;
+        private static readonly Func<short, long> _short2Long = _Internal_ShortToLong;
 
         private static long _Internal_UintToLong(uint input)
         {
@@ -632,7 +632,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, long> _uint2Long = _Internal_UintToLong;
+        private static readonly Func<uint, long> _uint2Long = _Internal_UintToLong;
 
         private static long _Internal_IntToLong(int input)
         {
@@ -640,7 +640,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, long> _int2Long = _Internal_IntToLong;
+        private static readonly Func<int, long> _int2Long = _Internal_IntToLong;
 
         private static long _Internal_UlongToLong(ulong input)
         {
@@ -648,7 +648,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, long> _ulong2Long = _Internal_UlongToLong;
+        private static readonly Func<ulong, long> _ulong2Long = _Internal_UlongToLong;
 
         private static long _Internal_LongToLong(long input)
         {
@@ -656,7 +656,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, long> _long2Long = _Internal_LongToLong;
+        private static readonly Func<long, long> _long2Long = _Internal_LongToLong;
 
         private static long _Internal_FloatToLong(float input)
         {
@@ -664,7 +664,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, long> _float2Long = _Internal_FloatToLong;
+        private static readonly Func<float, long> _float2Long = _Internal_FloatToLong;
 
         private static long _Internal_DoubleToLong(double input)
         {
@@ -672,7 +672,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, long> _double2Long = _Internal_DoubleToLong;
+        private static readonly Func<double, long> _double2Long = _Internal_DoubleToLong;
         #endregion
 
         #region Float Conversions
@@ -682,7 +682,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, float> _byte2Float = _Internal_ByteToFloat;
+        private static readonly Func<byte, float> _byte2Float = _Internal_ByteToFloat;
 
         private static float _Internal_SbyteToFloat(sbyte input)
         {
@@ -690,7 +690,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, float> _sbyte2Float = _Internal_SbyteToFloat;
+        private static readonly Func<sbyte, float> _sbyte2Float = _Internal_SbyteToFloat;
 
         private static float _Internal_UshortToFloat(ushort input)
         {
@@ -698,7 +698,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, float> _ushort2Float = _Internal_UshortToFloat;
+        private static readonly Func<ushort, float> _ushort2Float = _Internal_UshortToFloat;
 
         private static float _Internal_ShortToFloat(short input)
         {
@@ -706,7 +706,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, float> _short2Float = _Internal_ShortToFloat;
+        private static readonly Func<short, float> _short2Float = _Internal_ShortToFloat;
 
         private static float _Internal_UintToFloat(uint input)
         {
@@ -714,7 +714,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, float> _uint2Float = _Internal_UintToFloat;
+        private static readonly Func<uint, float> _uint2Float = _Internal_UintToFloat;
 
         private static float _Internal_IntToFloat(int input)
         {
@@ -722,7 +722,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, float> _int2Float = _Internal_IntToFloat;
+        private static readonly Func<int, float> _int2Float = _Internal_IntToFloat;
 
         private static float _Internal_UlongToFloat(ulong input)
         {
@@ -730,7 +730,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, float> _ulong2Float = _Internal_UlongToFloat;
+        private static readonly Func<ulong, float> _ulong2Float = _Internal_UlongToFloat;
 
         private static float _Internal_LongToFloat(long input)
         {
@@ -738,7 +738,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, float> _long2Float = _Internal_LongToFloat;
+        private static readonly Func<long, float> _long2Float = _Internal_LongToFloat;
 
         private static float _Internal_FloatToFloat(float input)
         {
@@ -746,7 +746,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, float> _float2Float = _Internal_FloatToFloat;
+        private static readonly Func<float, float> _float2Float = _Internal_FloatToFloat;
 
         private static float _Internal_DoubleToFloat(double input)
         {
@@ -754,7 +754,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, float> _double2Float = _Internal_DoubleToFloat;
+        private static readonly Func<double, float> _double2Float = _Internal_DoubleToFloat;
         #endregion
 
         #region Double Conversions
@@ -764,7 +764,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<byte, double> _byte2Double = _Internal_ByteToDouble;
+        private static readonly Func<byte, double> _byte2Double = _Internal_ByteToDouble;
 
         private static double _Internal_SbyteToDouble(sbyte input)
         {
@@ -772,7 +772,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<sbyte, double> _sbyte2Double = _Internal_SbyteToDouble;
+        private static readonly Func<sbyte, double> _sbyte2Double = _Internal_SbyteToDouble;
 
         private static double _Internal_UshortToDouble(ushort input)
         {
@@ -780,7 +780,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ushort, double> _ushort2Double = _Internal_UshortToDouble;
+        private static readonly Func<ushort, double> _ushort2Double = _Internal_UshortToDouble;
 
         private static double _Internal_ShortToDouble(short input)
         {
@@ -788,7 +788,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<short, double> _short2Double = _Internal_ShortToDouble;
+        private static readonly Func<short, double> _short2Double = _Internal_ShortToDouble;
 
         private static double _Internal_UintToDouble(uint input)
         {
@@ -796,7 +796,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<uint, double> _uint2Double = _Internal_UintToDouble;
+        private static readonly Func<uint, double> _uint2Double = _Internal_UintToDouble;
 
         private static double _Internal_IntToDouble(int input)
         {
@@ -804,7 +804,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<int, double> _int2Double = _Internal_IntToDouble;
+        private static readonly Func<int, double> _int2Double = _Internal_IntToDouble;
 
         private static double _Internal_UlongToDouble(ulong input)
         {
@@ -812,7 +812,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<ulong, double> _ulong2Double = _Internal_UlongToDouble;
+        private static readonly Func<ulong, double> _ulong2Double = _Internal_UlongToDouble;
 
         private static double _Internal_LongToDouble(long input)
         {
@@ -820,7 +820,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<long, double> _long2Double = _Internal_LongToDouble;
+        private static readonly Func<long, double> _long2Double = _Internal_LongToDouble;
 
         private static double _Internal_FloatToDouble(float input)
         {
@@ -828,7 +828,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<float, double> _float2Double = _Internal_FloatToDouble;
+        private static readonly Func<float, double> _float2Double = _Internal_FloatToDouble;
 
         private static double _Internal_DoubleToDouble(double input)
         {
@@ -836,7 +836,7 @@ namespace EppNet.Utilities
         }
 
 
-        private static Func<double, double> _double2Double = _Internal_DoubleToDouble;
+        private static readonly Func<double, double> _double2Double = _Internal_DoubleToDouble;
         #endregion
 
 

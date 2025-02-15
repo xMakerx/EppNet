@@ -4,11 +4,14 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using System;
+using EppNet.Attributes;
+
 using System.Numerics;
 
 namespace EppNet.Data
 {
+
+    [NetworkTypeResolver]
 
     public class Vector4Resolver : VectorResolverBase<Vector4>
     {

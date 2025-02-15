@@ -43,9 +43,9 @@ namespace EppNet.Objects
 
         private ObjectMemberDefinition(MemberInfo memberInfo, NetworkMemberAttribute netAttr, MethodInfo method, MethodInfo getterMethod = null)
         {
+            this.Name = memberInfo.Name;
             this.ClassType = memberInfo.DeclaringType;
             this.MemberInfo = memberInfo;
-            this.Name = memberInfo.Name;
             this.Attribute = netAttr;
             this.Flags = netAttr.Flags;
             this.Index = -1;
@@ -96,14 +96,20 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="instance"></param>
         /// <param name="args"></param>
-        public void Invoke(ISimUnit instance, params object[] args) => Activator.Invoke(instance, args);
-        public void Invoke(ObjectAgent instance, params object[] args) => Activator.Invoke(instance.UserObject, args);
+        public void Invoke(ISimUnit instance, params object[] args)
+            => Activator.Invoke(instance, args);
+        public void Invoke(ObjectAgent instance, params object[] args)
+            => Activator.Invoke(instance.UserObject, args);
 
-        public object InvokeGetter(ISimUnit instance) => GetterActivator?.Invoke(instance);
-        public object InvokeGetter(ObjectAgent instance) => GetterActivator?.Invoke(instance.UserObject);
+        public object InvokeGetter(ISimUnit instance)
+            => GetterActivator?.Invoke(instance);
+        public object InvokeGetter(ObjectAgent instance)
+            => GetterActivator?.Invoke(instance.UserObject);
 
-        public bool IsMethod() => MemberInfo.MemberType == MemberTypes.Method;
-        public bool IsProperty() => MemberInfo.MemberType == MemberTypes.Property;
+        public bool IsMethod()
+            => MemberInfo.MemberType == MemberTypes.Method;
+        public bool IsProperty()
+            => MemberInfo.MemberType == MemberTypes.Property;
 
     }
 

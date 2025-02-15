@@ -107,8 +107,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteBool()
         {
-            byte[] bufferIn = null;
-            bool input = true;
+            byte[] bufferIn;
+            const bool input = true;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -123,8 +123,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteByte()
         {
-            byte[] bufferIn = null;
-            byte input = 2;
+            byte[] bufferIn;
+            const byte input = 2;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -139,8 +139,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteSByte()
         {
-            byte[] bufferIn = null;
-            sbyte input = -4;
+            byte[] bufferIn;
+            const sbyte input = -4;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -155,8 +155,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteShort()
         {
-            byte[] bufferIn = null;
-            short input = 8;
+            byte[] bufferIn;
+            const short input = 8;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -171,7 +171,7 @@ namespace EppNet.Tests
         [TestMethod]
         public void WriteTwoShorts()
         {
-            byte[] bufferIn = null;
+            byte[] bufferIn;
             using (BytePayload payloadOut = new BytePayload())
             {
                 payloadOut.WriteShort(7);
@@ -189,8 +189,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteUShort()
         {
-            byte[] bufferIn = null;
-            ushort input = 14;
+            byte[] bufferIn;
+            const ushort input = 14;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -205,8 +205,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteULong()
         {
-            byte[] bufferIn = null;
-            ulong input = 99998;
+            byte[] bufferIn;
+            const ulong input = 99998;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -221,8 +221,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteLong()
         {
-            byte[] bufferIn = null;
-            long input = 888888;
+            byte[] bufferIn;
+            const long input = 888888;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -237,8 +237,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteUInt()
         {
-            byte[] bufferIn = null;
-            uint input = 7;
+            byte[] bufferIn;
+            const uint input = 7;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -253,8 +253,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteInt()
         {
-            byte[] bufferIn = null;
-            int input = -30;
+            byte[] bufferIn;
+            const int input = -30;
 
             using (BytePayload payloadOut = new BytePayload())
             {
@@ -269,8 +269,8 @@ namespace EppNet.Tests
         [TestMethod]
         public void ReadAndWriteFloat()
         {
-            byte[] bufferIn = null;
-            float input = 3.14159f;
+            byte[] bufferIn;
+            const float input = 3.14159f;
 
             BytePayload.FloatPrecision = 4;
 

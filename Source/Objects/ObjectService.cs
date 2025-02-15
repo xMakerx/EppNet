@@ -271,7 +271,7 @@ namespace EppNet.Objects
 
                 if (customGenerator)
                     // Object has a specified custom generator
-                    unit = registration.ObjectAttribute.Creator.Invoke();
+                    unit = registration.ObjectAttribute.Creator.Invoke() as ISimUnit;
                 else
                     unit = registration.NewInstance() as ISimUnit;
 

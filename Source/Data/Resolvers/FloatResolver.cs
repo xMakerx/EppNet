@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
 using EppNet.Utilities;
 
 using System;
@@ -13,6 +14,7 @@ using System.Runtime.CompilerServices;
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class FloatResolver : Resolver<float>
     {
 

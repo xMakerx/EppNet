@@ -4,6 +4,7 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Events;
 using EppNet.Time;
 
 using System;
@@ -11,18 +12,15 @@ using System;
 namespace EppNet.Objects
 {
 
-    public readonly struct ObjectCreatedEvent
+    public abstract class ObjectEvent : EventBase<ObjectSlot>
     {
 
-        public readonly ObjectSlot Slot;
-        public readonly TimeSpan Timestamp;
+        public ObjectEvent(ObjectSlot slot, ObjectService service) : base(service.Node, slot) { }
+    }
 
-        public ObjectCreatedEvent(ObjectService service, ObjectSlot slot)
-        {
-            this.Slot = slot;
-            this.Timestamp = service.Time();
-        }
-
+    public sealed class ObjectCreatedEvent : ObjectEvent
+    {
+        public ObjectCreatedEvent(ObjectSlot slot, ObjectService service) : base(slot, service) { }
     }
 
     public readonly struct ObjectDeletedEvent

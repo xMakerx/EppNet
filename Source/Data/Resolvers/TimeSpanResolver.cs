@@ -4,12 +4,15 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System;
 using System.Buffers.Binary;
 
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class TimeSpanResolver : Resolver<TimeSpan>
     {
         public static readonly TimeSpanResolver Instance = new();

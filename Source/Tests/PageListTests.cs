@@ -23,10 +23,10 @@ namespace EppNet.Tests
 
             objs.TryAllocate(125L, out ObjectSlot slot);
 
-            Assert.IsTrue(slot.ID == 125, $"Did not allocate the proper slot! Slot: {slot.ID}");
-            Assert.IsTrue(objs.PageIndexWithAvailability == 0, "Did not set the first page as available");
-            Assert.IsTrue(objs.Pages.Count == 1, "More than 1 page allocated!");
-            Assert.IsTrue(objs.Pages[0].AvailableIndex == 0, "Index 0 is not available?");
+            Assert.AreEqual(125, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
+            Assert.AreEqual(0, objs.PageIndexWithAvailability, "Did not set the first page as available");
+            Assert.AreEqual(1, objs.Pages.Count, "More than 1 page allocated!");
+            Assert.AreEqual(0, objs.Pages[0].AvailableIndex, "Index 0 is not available?");
 
             Console.WriteLine(objs.Pages[0].GetBitString());
         }
@@ -39,18 +39,18 @@ namespace EppNet.Tests
 
             objs.TryAllocate(id, out ObjectSlot slot);
 
-            Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
-            Assert.IsTrue(objs.PageIndexWithAvailability == 0, "Did not set the first page as available");
-            Assert.IsTrue(objs.Pages.Count == 1, "More than 1 page allocated!");
-            Assert.IsTrue(objs.Pages[0].AvailableIndex == 0, "Index 0 is not available?");
+            Assert.AreEqual(id, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
+            Assert.AreEqual(0, objs.PageIndexWithAvailability, "Did not set the first page as available");
+            Assert.AreEqual(1, objs.Pages.Count, "More than 1 page allocated!");
+            Assert.AreEqual(0, objs.Pages[0].AvailableIndex, "Index 0 is not available?");
 
             Console.WriteLine(objs.Pages[0].GetBitString());
 
             objs.DoOnActive((ObjectSlot a) =>
             {
                 Console.WriteLine($"Hello {a.ID}!");
-                Assert.IsTrue(a != null, "Wrong slot!");
-                Assert.IsTrue(a.ID == id, "Invalid slot id!");
+                Assert.IsNotNull(a, "Wrong slot!");
+                Assert.AreEqual(id, a.ID, "Invalid slot id!");
             });
         }
 
@@ -62,13 +62,13 @@ namespace EppNet.Tests
             for (int i = 0; i < objs.ItemsPerPage / 2; i++)
             {
                 objs.TryAllocate(i, out ObjectSlot slot);
-                Assert.IsTrue(slot.ID == i, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                Assert.AreEqual(i, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
             }
 
             Page<ObjectSlot> p1 = objs.Pages[0];
             int shouldBeAvailable = (objs.ItemsPerPage / 2);
-            Assert.IsTrue(!p1.Empty, "Page should be half full!");
-            Assert.IsTrue(p1.AvailableIndex == shouldBeAvailable, $"Available Index should be {shouldBeAvailable}");
+            Assert.IsFalse(p1.Empty, "Page should be half full!");
+            Assert.AreEqual(shouldBeAvailable, p1.AvailableIndex, $"Available Index should be {shouldBeAvailable}");
             Console.WriteLine(p1.GetBitString());
         }
 
@@ -78,7 +78,7 @@ namespace EppNet.Tests
             PageList<ObjectSlot> objs = new(128);
             int allocations = objs.ItemsPerPage / 4;
 
-            Random rand = new Random();
+            Random rand = new();
 
             for (int i = 0; i < allocations; i++)
             {
@@ -89,14 +89,14 @@ namespace EppNet.Tests
                 } while (!objs.IsAvailable(id));
 
                 objs.TryAllocate(id, out ObjectSlot slot);
-                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                Assert.AreEqual(id, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
             }
 
             Page<ObjectSlot> p1 = objs.Pages[0];
             Console.WriteLine(p1.AvailableIndex);
             Console.WriteLine(p1.GetBitString());
-            Assert.IsTrue(!p1.Empty, "Page should not be empty!");
-            Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full, so an index should be available!");
+            Assert.IsFalse(p1.Empty, "Page should not be empty!");
+            Assert.AreNotEqual(-1, p1.AvailableIndex, "Page shouldn't be full, so an index should be available!");
         }
 
         [TestMethod]
@@ -116,14 +116,14 @@ namespace EppNet.Tests
                 } while (!objs.IsAvailable(id));
 
                 objs.TryAllocate(id, out ObjectSlot slot);
-                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                Assert.AreEqual(id, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
             }
 
             Page<ObjectSlot> p1 = objs.Pages[0];
             Console.WriteLine(p1.AvailableIndex);
             Console.WriteLine(p1.GetBitString());
-            Assert.IsTrue(!p1.Empty, "Page should be full!");
-            Assert.IsTrue(p1.AvailableIndex == -1, "Page should be full! An index is available!");
+            Assert.IsFalse(p1.Empty, "Page should be full!");
+            Assert.AreEqual(-1, p1.AvailableIndex, "Page should be full! An index is available!");
         }
 
         [TestMethod]
@@ -153,7 +153,7 @@ namespace EppNet.Tests
 
                     if (didAllocate)
                     {
-                        Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                        Assert.AreEqual(id, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
                         allocated++;
                     }
                     else
@@ -166,13 +166,13 @@ namespace EppNet.Tests
             }
 
             if (failures >= allocations * 3)
-                Assert.IsFalse(true, $"Failed to allocate {failures} times. Something is seriously wrong!");
+                Assert.Fail($"Failed to allocate {failures} times. Something is seriously wrong!");
 
             Page<ObjectSlot> p1 = objs.Pages[0];
             Console.WriteLine(p1.AvailableIndex);
             Console.WriteLine(p1.GetBitString());
-            Assert.IsTrue(!p1.Empty, "Page should be full!");
-            Assert.IsTrue(p1.AvailableIndex == -1, "Page should be full! An index is available!");
+            Assert.IsFalse(p1.Empty, "Page should be full!");
+            Assert.AreEqual(-1, p1.AvailableIndex, "Page should be full! An index is available!");
 
             for (int i = 0; i < toClear; i++)
             {
@@ -184,13 +184,13 @@ namespace EppNet.Tests
 
                 ObjectSlot slot = objs.Get(id);
                 objs.TryFree(slot);
-                Assert.IsTrue(slot.ID == id, $"Did not allocate the proper slot! Slot: {slot.ID}");
+                Assert.AreEqual(id, slot.ID, $"Did not allocate the proper slot! Slot: {slot.ID}");
             }
 
             Console.WriteLine(p1.AvailableIndex);
             Console.WriteLine(p1.GetBitString());
-            Assert.IsTrue(!p1.Empty, "Page shouldn't be empty but not full!");
-            Assert.IsTrue(p1.AvailableIndex != -1, "Page shouldn't be full! An index isn't available!");
+            Assert.IsFalse(p1.Empty, "Page shouldn't be empty but not full!");
+            Assert.AreNotEqual(-1, p1.AvailableIndex, "Page shouldn't be full! An index isn't available!");
         }
 
     }

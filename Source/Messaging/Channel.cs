@@ -88,17 +88,30 @@ namespace EppNet.Messaging
         public void ReceiveOrQueue(IDatagram datagram)
         {
             if (datagram == null)
-                // Nothing to do.
+            {
+                // We received a null datagram! This shouldn't happen. Let the node know about it.
+                Service.Node.HandleException(new ArgumentNullException($"Channel ID {Id} received a null datagram!"));
                 return;
+            }
 
             if (Flags.HasFlag(ChannelFlags.ProcessImmediately))
+            {
+                // Let's process this datagram immediately
                 Receive(datagram);
+            }
             else if (datagram.Collectible)
             {
+                // Let's enqueue this datagram for reception later on.
                 lock (_bufferLock)
                     _buffer.Enqueue(datagram);
             }
         }
+
+        /// <summary>
+        /// Receives the specified <see cref="IDatagram"/> <br/>
+        /// NOTE: Dispose() is called at the end of this method!
+        /// </summary>
+        /// <param name="datagram"></param>
 
         public void Receive(IDatagram datagram)
         {
@@ -109,6 +122,11 @@ namespace EppNet.Messaging
             // All done
             datagram.Dispose();
         }
+
+        /// <summary>
+        /// Clears out the buffer (queue) and receives every datagram.<br/>
+        /// See <see cref="Receive(IDatagram)"/> for more information.
+        /// </summary>
 
         public void ReceiveQueue()
         {
@@ -125,14 +143,31 @@ namespace EppNet.Messaging
                 Receive(datagrams[i]);
         }
 
+        /// <summary>
+        /// Clears the buffered (queued) datagrams.
+        /// </summary>
+
         public void Clear()
         {
-            if (_buffer == null)
-                // Nothing to clear
-                return;
+            if (_buffer != null)
+            {
+                int datagramsDropped = 0;
+                // Locks the buffer and clears it.
+                lock (_bufferLock)
+                {
+                    // Since each datagram won't be handled as expected, let's dispose of them properly.
+                    datagramsDropped = _buffer.Count;
 
-            lock (_bufferLock)
-                _buffer.Clear();
+                    // Let's dispose of each datagram
+                    foreach (IDatagram datagram in _buffer)
+                        datagram.Dispose();
+
+                    _buffer.Clear();
+                }
+
+                if (datagramsDropped > 0)
+                    this.Warning($"Cleared buffer of {datagramsDropped} Datagrams.");
+            }
         }
 
         public bool SendTo(Peer peer, byte[] bytes, PacketFlags flags)
@@ -172,6 +207,10 @@ namespace EppNet.Messaging
         /// <param name="flag"></param>
         /// <returns></returns>
         public bool HasFlag(ChannelFlags flag) => Flags.HasFlag(flag);
+
+        /// <summary>
+        /// Atomically resets all channel statistics back to 0.
+        /// </summary>
 
         public void ResetStatistics()
         {

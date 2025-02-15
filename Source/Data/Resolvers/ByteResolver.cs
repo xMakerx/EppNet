@@ -4,11 +4,14 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System.Runtime.CompilerServices;
 
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class ByteResolver : Resolver<byte>
     {
 

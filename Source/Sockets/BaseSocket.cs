@@ -209,10 +209,7 @@ namespace EppNet.Sockets
             _packetDeserializer?.HandlePacket(peer, packet, channelId);
         }
 
-        public virtual void Tick(float delta)
-        {
-            
-        }
+        public virtual void Tick(float delta) { }
 
         public virtual void Poll(int timeoutMs = 0)
         {

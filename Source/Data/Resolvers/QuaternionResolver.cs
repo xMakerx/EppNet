@@ -4,11 +4,14 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Attributes;
+
 using System.Numerics;
 
 namespace EppNet.Data
 {
 
+    [NetworkTypeResolver]
     public class QuaternionResolver : QuaternionResolverBase<Quaternion>
     {
 
