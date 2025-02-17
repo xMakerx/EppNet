@@ -12,7 +12,7 @@ using System;
 namespace EppNet.Objects
 {
 
-    public class ObjectSlot : Pageable, IEquatable<ObjectSlot>, ICommandTarget
+    public struct ObjectSlot : IPageable, IEquatable<ObjectSlot>, ICommandTarget, IDisposable
     {
         #region Operators
 
@@ -40,29 +40,25 @@ namespace EppNet.Objects
             };
         }
 
-        public static bool operator ==(ObjectSlot left, ObjectSlot right) => left?.Equals(right) == true;
-        public static bool operator !=(ObjectSlot left, ObjectSlot right) => left?.Equals(right) != true;
+        public static bool operator ==(ObjectSlot left, ObjectSlot right)
+            => left.Equals(right);
+        public static bool operator !=(ObjectSlot left, ObjectSlot right)
+            => !left.Equals(right);
 
         #endregion
+
+        public long ID { set; get; }
+
+        public IPage Page { set; get; }
+
+        public bool Allocated { set; get; }
 
         /// <summary>
         /// The state associated with the <see cref="ObjectAgent"/> in this slot.
         /// </summary>
-        public EnumObjectState State
+        public readonly EnumObjectState State
         {
-
-            internal set
-            {
-                if (value != _state)
-                {
-                    if (Object != null)
-                        Object.State.Set(value);
-                    else
-                        _state = value;
-                }
-            }
-
-            get => (Object != null ? Object.State.Value : _state);
+            get => Object != null ? Object.State.Value : EnumObjectState.Unknown;
         }
 
         /// <summary>
@@ -70,30 +66,20 @@ namespace EppNet.Objects
         /// </summary>
         public INetworkObject_Impl Object;
 
-        private EnumObjectState _state;
-
-        /// <summary>
-        /// Instantiates a new default <see cref="ObjectSlot"/> with ID -1, <see cref="EnumObjectState.Unknown"/>,
-        /// and a null <see cref="ObjectAgent"/>.
-        /// </summary>
-
-        public ObjectSlot()
+        public ObjectSlot(IPage page, long id, INetworkObject_Impl @object)
         {
-            this.Page = null;
-            this.ID = -1L;
-            this._state = EnumObjectState.Unknown;
-            this.Object = null;
+            this.Page = page;
+            this.ID = id;
+            this.Object = @object;
+            this.Allocated = false;
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
             if (Object is not null && Object is IDisposable disposable)
                 disposable.Dispose();
             
             Object = null;
-
-            _state = EnumObjectState.Unknown;
-            base.Dispose();
         }
 
         /// <summary>
@@ -103,13 +89,9 @@ namespace EppNet.Objects
         /// <param name="obj"></param>
         /// <returns>The specified object is an ObjectSlot that shares our ID</returns>
 
-        public override bool Equals(object obj)
-        {
-            if (obj is ObjectSlot otherObjSlot)
-                return otherObjSlot.ID == ID && otherObjSlot.Object == Object;
-
-            return false;
-        }
+        public readonly override bool Equals(object obj)
+            => obj is ObjectSlot slot &&
+            Equals(slot);
 
         /// <summary>
         /// Checks if the other <see cref="ObjectSlot"/> is in the equivalent slot;<br/>
@@ -117,14 +99,18 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="other"></param>
         /// <returns>Whether or not the provided ObjectSlot has an equivalent ID</returns>
-        public bool Equals(ObjectSlot other) => other?.ID == ID && other?.Object == Object;
+        public readonly bool Equals(ObjectSlot other)
+            => other.ID == ID &&
+            other.Object == Object;
 
         /// <summary>
         /// Fetches the hash code associated with our ID.
         /// </summary>
         /// <returns>ID#GetHashCode()</returns>
 
-        public override int GetHashCode() => ID.GetHashCode();
+        public readonly override int GetHashCode()
+            => ID.GetHashCode() ^ 
+            (Object != null ? Object.GetHashCode() : 1);
     }
 
 }

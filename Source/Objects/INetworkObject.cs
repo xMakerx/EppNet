@@ -31,7 +31,7 @@ namespace EppNet.Objects
     /// <summary>
     /// "Implementation" of INetworkObject 
     /// </summary>
-    public interface INetworkObject_Impl : INodeDescendant, ILoggable
+    public interface INetworkObject_Impl : INodeDescendant, ILoggable, IEquatable<INetworkObject_Impl>
     {
         public ObjectService Service { get; }
         public InternalProperty<EnumObjectState> State { get; }
@@ -50,6 +50,17 @@ namespace EppNet.Objects
         public Action<ChildAddedEvent> OnChildAdded { get; }
         public Action<ChildRemovedEvent> OnChildRemoved { get; }
 
+        public InternalProperty<long> TicksUntilDeletion { get; }
+
+        /// <summary>
+        /// Whether or not deletion is requested for this object
+        /// </summary>
+        public bool IsDeleteRequested => TicksUntilDeletion.Value > 0;
+
+        public new bool Equals(INetworkObject_Impl other)
+            => other is not null &&
+            other.ID == ID &&
+            other.Service == Service;
     }
 
     public static class NetworkObjectExtensions
@@ -59,6 +70,10 @@ namespace EppNet.Objects
             where TSelf : class, INetworkObject_Impl
             where TOther : class, INetworkObject_Impl
         {
+
+            // Ensure nodes match
+            if (other != null && other.Node != netObj.Node)
+                return EnumCommandResult.NodeMismatch;
 
             // Ensure we're not already parented to the specified parent
             if (netObj.Parent == other)
@@ -143,7 +158,9 @@ namespace EppNet.Objects
         public static bool HasChild<TSelf, TOther>(this TSelf netObj, [NotNull] TOther child)
             where TSelf : class, INetworkObject_Impl
             where TOther : class, INetworkObject_Impl
-            => child is not null && netObj.Children.Value.Contains(child);
+            => child is not null && 
+            child.Node == netObj.Node &&
+            netObj.Children.Value.Contains(child);
 
         public static int ClearChildren<TSelf>(this TSelf netObj)
             where TSelf : class, INetworkObject_Impl
@@ -182,6 +199,10 @@ namespace EppNet.Objects
             if (netObj.IsNotNull(child, message: "Cannot add a null child!"))
                 return EnumCommandResult.BadArgument;
 
+            // Ensure the nodes match
+            if (child.Node != netObj.Node)
+                return EnumCommandResult.NodeMismatch;
+
             // Ensure this network object has been generated
             if (netObj.State.Value > EnumObjectState.Generated)
                 return EnumCommandResult.InvalidState;
@@ -213,6 +234,10 @@ namespace EppNet.Objects
         {
             if (netObj.IsNotNull(child, message: "Cannot remove a null child!"))
                 return EnumCommandResult.BadArgument;
+
+            // Ensure the nodes match
+            if (child.Node != netObj.Node)
+                return EnumCommandResult.NodeMismatch;
 
             bool removed = netObj.Children.Value.Remove(child);
 

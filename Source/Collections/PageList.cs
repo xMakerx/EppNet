@@ -18,7 +18,7 @@ using System.Threading;
 namespace EppNet.Collections
 {
 
-    public class PageList<T> : IDisposable where T : Pageable, new()
+    public class PageList<T> : IDisposable where T : struct, IPageable
     {
         public readonly int ItemsPerPage;
         public Action<T> OnAllocate;
@@ -168,23 +168,25 @@ namespace EppNet.Collections
 
         }
 
-        public bool TryFree(T toFree)
+        public bool TryFree(ref T toFree)
         {
             Page<T> page = toFree.Page as Page<T>;
-            return page.TryFree(toFree);
+            return page.TryFree(ref toFree);
         }
 
         public bool TryFree(ulong id)
         {
             if (TryGetById(id, out T item))
-                return TryFree(item);
+                return TryFree(ref item);
 
             return false;
         }
 
-        public bool TryFree(long id) => TryFree((ulong)id);
+        public bool TryFree(long id)
+            => TryFree((ulong)id);
 
-        public bool IsAvailable(long id) => IsAvailable((ulong)id);
+        public bool IsAvailable(long id)
+            => IsAvailable((ulong)id);
 
         public bool IsAvailable(ulong id)
         {
@@ -252,28 +254,17 @@ namespace EppNet.Collections
 
     public interface IPageable : IDisposable
     {
-        public bool IsFree();
-        public IPage GetPage();
+
+        public IPage Page { set; get; }
+        public long ID { set; get; }
+
+        public bool Allocated { set; get; }
+
+        public bool IsFree()
+            => !Allocated;
     }
 
-    public abstract class Pageable : IPageable
-    {
-
-        public IPage Page { internal set; get; }
-        public long ID { internal set; get; }
-        public bool Allocated { internal set; get; }
-
-        public virtual void Dispose()
-        {
-            this.Allocated = false;
-        }
-
-        public bool IsFree() => !Allocated;
-        public IPage GetPage() => Page;
-
-    }
-
-    public class Page<T> : IPage where T : Pageable, new()
+    public class Page<T> : IPage where T : struct, IPageable
     {
 
         internal const int _primSize = 64;
@@ -297,7 +288,9 @@ namespace EppNet.Collections
         private readonly T[] _data;
         private readonly ulong[] _allocated;
         private readonly ReaderWriterLockSlim _lock;
-        public T this[int index] => _data[index];
+
+        public ref T this[int index]
+            => ref _data[index];
 
         internal Page([NotNull] PageList<T> list, int index)
         {
@@ -315,7 +308,8 @@ namespace EppNet.Collections
 
             for (int i = 0; i < Size; i++)
             {
-                _data[i] = new()
+                ref T item = ref _data[i];
+                item = new T()
                 {
                     Page = this,
                     ID = StartIndex + i
@@ -351,8 +345,7 @@ namespace EppNet.Collections
 
                         // This bit is active
                         int index = StartIndex + (i * _primSize) + bit;
-                        T item = this[index];
-                        action.Invoke(item);
+                        action.Invoke(this[index]);
                     }
                 }
 
@@ -362,10 +355,11 @@ namespace EppNet.Collections
         public void ClearAll()
         {
             for (int i = 0; i < Size; i++)
-                TryFree(this[i]);
+                TryFree(ref this[i]);
         }
 
-        public bool TryAllocate(long id, out T allocated) => TryAllocate((ulong)id, out allocated);
+        public bool TryAllocate(long id, out T allocated)
+            => TryAllocate((ulong)id, out allocated);
 
         public bool TryAllocate(ulong id, out T allocated)
         {
@@ -375,7 +369,8 @@ namespace EppNet.Collections
             if (index >= Size || index < 0)
                 return false;
 
-            bool available = this[index].IsFree();
+            ref T item = ref this[index];
+            bool available = item.IsFree();
 
             if (available)
                 _Internal_DoAllocate(index, out allocated);
@@ -396,7 +391,7 @@ namespace EppNet.Collections
             return true;
         }
 
-        public bool TryFree(T item)
+        public bool TryFree(ref T item)
         {
 
             if (item.IsFree())
@@ -418,8 +413,10 @@ namespace EppNet.Collections
             return true;
         }
 
-        public bool TryFree(int id) => TryFree((ulong)id);
-        public bool TryFree(long id) => TryFree((ulong)id);
+        public bool TryFree(int id)
+            => TryFree((ulong)id);
+        public bool TryFree(long id)
+            => TryFree((ulong)id);
 
         public bool TryFree(ulong id)
         {
@@ -428,8 +425,7 @@ namespace EppNet.Collections
             if (index < 0 || index >= Size)
                 return false;
 
-            T item = this[index];
-            return TryFree(item);
+            return TryFree(ref this[index]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -455,7 +451,8 @@ namespace EppNet.Collections
             finally { _lock.ExitReadLock(); }
         }
 
-        public int GetIndex() => Index;
+        public int GetIndex()
+            => Index;
 
         public string GetBitString()
         {

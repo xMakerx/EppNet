@@ -4,14 +4,12 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Sim;
-
 using System.Numerics;
 
 namespace EppNet.Zones
 {
 
-    public interface IZone : ISimUnit, ISimViewer
+    public interface IZone
     {
 
         public Vector2 GetCenter() => (GetMinBounds() + GetMaxBounds()) / 2f;

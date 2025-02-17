@@ -20,6 +20,8 @@ namespace EppNet.Data
     public readonly struct Timestamp : IComparable, IComparable<Timestamp>, IEquatable<Timestamp>
     {
 
+        public static readonly Timestamp Zero = new(TimeSpan.Zero, TimeSpan.Zero);
+
         /// <summary>
         /// The time displayed on the network clock
         /// </summary>

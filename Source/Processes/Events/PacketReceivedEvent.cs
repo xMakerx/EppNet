@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Connections;
+using EppNet.Data;
 using EppNet.Data.Datagrams;
 using EppNet.Sockets;
 using EppNet.Time;
@@ -25,7 +26,7 @@ namespace EppNet.Processes.Events
 
         public bool Disposed { internal set; get; }
 
-        public TimeSpan Time { internal set; get; }
+        public Timestamp Timestamp { internal set; get; }
 
         public IDatagram Datagram { internal set; get; }
         public bool ShouldContinue { set; get; }
@@ -34,7 +35,7 @@ namespace EppNet.Processes.Events
         {
             this.Sender = null;
             this.ChannelID = 0;
-            this.Time = TimeSpan.Zero;
+            this.Timestamp = Timestamp.Zero;
         }
 
         public void Initialize(Connection conn, byte[] data, byte channelID)
@@ -42,7 +43,7 @@ namespace EppNet.Processes.Events
             this.Sender = conn;
             this.Data = data;
             this.ChannelID = channelID;
-            this.Time = conn.Time();
+            this.Timestamp = new(conn.Time());
         }
 
         public void Initialize()
@@ -56,7 +57,7 @@ namespace EppNet.Processes.Events
             this.Sender = null;
             this.Data = null;
             this.ChannelID = 0;
-            this.Time = TimeSpan.Zero;
+            this.Timestamp = Timestamp.Zero;
             this.Disposed = true;
         }
 

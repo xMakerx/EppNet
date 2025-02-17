@@ -4,9 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
 using EppNet.Time;
-
-using System;
 
 namespace EppNet.Connections
 {
@@ -15,16 +14,12 @@ namespace EppNet.Connections
     {
 
         public readonly Connection Connection;
-
-        /// <summary>
-        /// Timestamp is the same as <see cref="Network.MonotonicTimestamp"/>
-        /// </summary>
-        public readonly TimeSpan Time { get; }
+        public readonly Timestamp Timestamp { get; }
 
         public ConnectEvent(Connection connection)
         {
             this.Connection = connection;
-            this.Time = TimeExtensions.MonoTime();
+            this.Timestamp = new(connection.Time());
         }
 
     }
