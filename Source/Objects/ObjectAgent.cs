@@ -123,7 +123,7 @@ namespace EppNet.Objects
                 return ReparentTo(null);
 
             else if (Service.TryGetById(id, out ObjectSlot parentSlot))
-                return ReparentTo(parentSlot.Agent);
+                return ReparentTo(parentSlot.Object);
 
             return EnumCommandResult.NotFound;
         }

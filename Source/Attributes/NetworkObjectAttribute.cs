@@ -4,8 +4,6 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
-using EppNet.Sim;
-
 using System;
 
 namespace EppNet.Attributes
@@ -22,14 +20,16 @@ namespace EppNet.Attributes
     {
 
         /// <summary>
-        /// Specify a creator method for generating a new instance of this object.
+        /// Specify a creator method for generating a new instance of this object.<br/>
+        /// This should specify the name of an accessible static method that returns the type<br/>
+        /// decorated by this attribute
         /// </summary>
-        public Func<ISimUnit> Creator;
+        public string Creator;
 
         /// <summary>
         /// Specify a destructor method for ensuring the object is cleaned up properly.
         /// </summary>
-        public Action Destructor;
+        public string Destructor;
 
         /// <summary>
         /// Whether or not instances of this object are global. (Not tied to a particular zone)
@@ -40,8 +40,8 @@ namespace EppNet.Attributes
 
         public NetworkObjectAttribute()
         {
-            this.Creator = null;
-            this.Destructor = null;
+            this.Creator = string.Empty;
+            this.Destructor = string.Empty;
             this.Global = false;
             this.Dist = Distribution.Shared;
         }

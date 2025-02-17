@@ -58,10 +58,10 @@ namespace EppNet.Objects
 
         public ISimUnit GetSimUnitFor(ObjectSlot slot)
         {
-            ISimUnit unit = slot.Agent?.UserObject;
+            ISimUnit unit = slot.Object?.UserObject;
 
             if (unit == null && _objects.TryGetById(slot.ID, out ObjectSlot found))
-                unit = found.Agent?.UserObject;
+                unit = found.Object?.UserObject;
 
             return unit;
         }
@@ -85,7 +85,7 @@ namespace EppNet.Objects
             ObjectAgent agent = null;
 
             if (_objects.TryGetById(id, out ObjectSlot slot))
-                agent = slot.Agent;
+                agent = slot.Object;
 
             return agent;
         }
@@ -96,7 +96,7 @@ namespace EppNet.Objects
                 return null;
 
             ObjectSlot slot = GetSlotFor(unit);
-            return slot.Agent;
+            return slot.Object;
         }
 
         /// <summary>
@@ -147,12 +147,12 @@ namespace EppNet.Objects
                 {
                     // TODO: ObjectManagerService: Add better way to control how many ticks until deletion
                     slot.State = EnumObjectState.PendingDelete;
-                    slot.Agent.TicksUntilDeletion = (int) ticksUntilDeletion;
+                    slot.Object.TicksUntilDeletion = (int) ticksUntilDeletion;
                     _deleteLater.Add(slot);
 
                     // Running OnDeleteRequested user-code shouldn't brick the object manager.
                     // Call it wrapped in a try-catch to manage issues.
-                    _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDeleteRequested);
+                    _Internal_SafeUserCodeCall(slot.Object, EnumUserCodeType.OnDeleteRequested);
                     return EnumCommandResult.Ok;
                 }
 
@@ -203,14 +203,14 @@ namespace EppNet.Objects
             foreach (ObjectSlot slot in _deleteLater)
             {
 
-                if (slot.Agent == null)
+                if (slot.Object == null)
                 {
                     Notify.Debug(new TemplatedMessage("Tried to process deletion of Object ID {id} with NULL ObjectAgent?", slot.ID));
                     clearThisTick.Add(slot);
                     continue;
                 }
 
-                if (--slot.Agent.TicksUntilDeletion < 1)
+                if (--slot.Object.TicksUntilDeletion < 1)
                     clearThisTick.Add(slot);
             }
 
@@ -265,7 +265,7 @@ namespace EppNet.Objects
             }
 
             bool customGenerator = registration.ObjectAttribute.Creator != null;
-
+             
             try
             {
 
@@ -296,7 +296,7 @@ namespace EppNet.Objects
                 id = slot.ID;
                 agent = new(this, registration, unit, id);
 
-                slot.Agent = agent;
+                slot.Object = agent;
                 slot.State = EnumObjectState.WaitingForState;
 
                 // Raise our event that a new object was created
@@ -394,15 +394,15 @@ namespace EppNet.Objects
             slot.State = EnumObjectState.Deleted;
 
             // Let's reset ticks left until deletion (if agent is valid)
-            if (slot.Agent != null)
-                slot.Agent.TicksUntilDeletion = -1;
+            if (slot.Object != null)
+                slot.Object.TicksUntilDeletion = -1;
 
             // Raise our event that an object was deleted
             OnObjectDeleted?.Invoke(new(this, slot));
 
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong
-            _Internal_SafeUserCodeCall(slot.Agent, EnumUserCodeType.OnDelete);
+            _Internal_SafeUserCodeCall(slot.Object, EnumUserCodeType.OnDelete);
 
             // Remove from our delete later collection
             // This doesn't dictate the value of success because there will

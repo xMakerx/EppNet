@@ -62,7 +62,7 @@ namespace EppNet.SourceGen
                     namespace {{model.FullNamespace}}
                     {
 
-                        public partial class {{model.Name}} : ILoggable, INodeDescendant
+                        public partial class {{model.Name}} : {{NetworkObjectInternalInterfaceName}}
                         {
                     
                             public ILoggable Notify { get => this; }

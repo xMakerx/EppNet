@@ -13,7 +13,6 @@ using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Services;
 using EppNet.Settings;
-using EppNet.Sim;
 using EppNet.Sockets;
 using EppNet.Utilities;
 
@@ -79,19 +78,35 @@ namespace EppNet.Node
 
         }
 
+        /// <summary>
+        /// Fetches the Network Time as shown on the Network Clock<br/>
+        /// Returns 0 if the socket is not running
+        /// </summary>
+
         public TimeSpan Time
         {
 
             get
             {
-                TimeSpan monoTime = TimeSpan.FromMilliseconds(ENet.Library.Time);
-
                 if (Socket != null && Socket.Clock != null)
                     return Socket.Clock.Time;
 
-                return monoTime;
+                return TimeSpan.Zero;
             }
 
+        }
+
+        /// <summary>
+        /// A structure with the current network and monotonic times
+        /// </summary>
+
+        public Timestamp Timestamp
+        {
+            get
+            {
+                TimeSpan netTime = Time;
+                return new(netTime);
+            }
         }
 
         public Configuration Configuration { get; }
@@ -304,8 +319,7 @@ namespace EppNet.Node
             Started = false;
 
             // Let's ensure we write the configuration fully before we halt
-            if (Configuration.AsyncWriteTask != null)
-                Configuration.AsyncWriteTask.Wait();
+            Configuration.AsyncWriteTask?.Wait();
 
             Notify.Debug("Stopped!");
             

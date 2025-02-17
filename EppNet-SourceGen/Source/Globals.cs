@@ -25,6 +25,7 @@ namespace EppNet.SourceGen
         public const string AttrPath = "EppNet.Attributes.";
 
         public const string NetworkObjectInterfaceName = "INetworkObject";
+        public const string NetworkObjectInternalInterfaceName = "INetworkObject_Impl";
 
         public const string TypeResolverName = "Resolver";
         public const string TypeResolverGenericName = TypeResolverName + "<T>";

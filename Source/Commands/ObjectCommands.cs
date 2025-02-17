@@ -62,14 +62,14 @@ namespace EppNet.Commands
             if (!context.FetchObjectResult.IsOk())
                 return context.FetchObjectResult;
 
-            ObjectRegistration registration = context.Slot.Agent.Metadata;
+            ObjectRegistration registration = context.Slot.Object.Metadata;
             ObjectMemberDefinition mDef = IsProperty ? registration.GetProperty(Index) : registration.GetMethod(Index);
 
             if (mDef != null)
             {
                 try
                 {
-                    mDef.Invoke(context.Slot.Agent.UserObject, Arguments);
+                    mDef.Invoke(context.Slot.Object.UserObject, Arguments);
                     return EnumCommandResult.Ok;
                 }
                 catch (Exception e)
@@ -113,7 +113,7 @@ namespace EppNet.Commands
             if (!context.FetchObjectResult.IsOk())
                 return context.FetchObjectResult;
 
-            return context.Slot.Agent.ReparentTo(ParentID);
+            return context.Slot.Object.ReparentTo(ParentID);
         }
 
         public override void Dispose()

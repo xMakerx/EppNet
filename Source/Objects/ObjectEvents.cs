@@ -5,9 +5,7 @@
 ///////////////////////////////////////////////////////
 
 using EppNet.Events;
-using EppNet.Time;
-
-using System;
+using EppNet.Node;
 
 namespace EppNet.Objects
 {
@@ -15,7 +13,7 @@ namespace EppNet.Objects
     public abstract class ObjectEvent : EventBase<ObjectSlot>
     {
 
-        public ObjectEvent(ObjectSlot slot, ObjectService service) : base(service.Node, slot) { }
+        public ObjectEvent(ObjectSlot slot, ObjectService service) : base(service.Node, slot, service) { }
     }
 
     public sealed class ObjectCreatedEvent : ObjectEvent
@@ -23,74 +21,53 @@ namespace EppNet.Objects
         public ObjectCreatedEvent(ObjectSlot slot, ObjectService service) : base(slot, service) { }
     }
 
-    public readonly struct ObjectDeletedEvent
+    public sealed class ObjectDeletedEvent : ObjectEvent
     {
-        public readonly ObjectSlot Slot;
-        public readonly TimeSpan Timestamp;
-
-        public ObjectDeletedEvent(ObjectService service, ObjectSlot slot)
-        {
-            this.Slot = slot;
-            this.Timestamp = service.Time();
-        }
+        public ObjectDeletedEvent(ObjectSlot slot, ObjectService service) : base(slot, service) { }
     }
 
-    public readonly struct StateChangedEvent
+    public sealed class StateChangedEvent : EventBase<(EnumObjectState, EnumObjectState)>
     {
-        public readonly EnumObjectState NewState;
-        public readonly EnumObjectState OldState;
+        public EnumObjectState State { get => Subject.Item1; }
+        public EnumObjectState OldState { get => Subject.Item2; }
 
-        public readonly TimeSpan Timestamp;
+        public StateChangedEvent(INodeDescendant nDesc, EnumObjectState newState, EnumObjectState oldState, object sender) :
+            base(nDesc.Node, (newState, oldState), sender)
+        { }
 
-        public StateChangedEvent(ObjectAgent agent, EnumObjectState newState, EnumObjectState oldState)
-        {
-            this.NewState = newState;
-            this.OldState = oldState;
-            this.Timestamp = TimeExtensions.DetermineCurrentTime(agent);
-        }
-
+        public StateChangedEvent(INodeDescendant nDesc, EnumObjectState newState, EnumObjectState oldState) :
+            base(nDesc.Node, (newState, oldState), null)
+        { }
     }
 
-    public readonly struct ParentChangedEvent
+    public sealed class ParentChangedEvent : EventBase<(INetworkObject_Impl, INetworkObject_Impl)>
     {
-        public readonly ObjectAgent NewParent;
-        public readonly ObjectAgent OldParent;
-        public readonly TimeSpan Timestamp;
+        public INetworkObject_Impl Parent { get => Subject.Item1; }
+        public INetworkObject_Impl OldParent { get => Subject.Item2; }
 
-        public ParentChangedEvent(ObjectAgent newParent, ObjectAgent oldParent)
-        {
-            this.NewParent = newParent;
-            this.OldParent = oldParent;
-            this.Timestamp = TimeExtensions.DetermineCurrentTime(newParent, oldParent);
-        }
+        public ParentChangedEvent(INodeDescendant nDesc, INetworkObject_Impl newParent, INetworkObject_Impl oldParent, object sender) :
+            base(nDesc.Node, (newParent, oldParent), sender)
+        { }
     }
 
-    public readonly struct ChildAddedEvent
+    public sealed class ChildAddedEvent : EventBase<INetworkObject_Impl>
     {
 
-        public readonly ObjectAgent Object;
-        public readonly TimeSpan Timestamp;
+        public INetworkObject_Impl Child { get => Subject; }
 
-        public ChildAddedEvent(ObjectAgent @object)
-        {
-            this.Object = @object;
-            this.Timestamp = TimeExtensions.DetermineCurrentTime(@object);
-        }
-
+        public ChildAddedEvent(INodeDescendant nDesc, INetworkObject_Impl child, object sender) :
+            base(nDesc.Node, child, sender)
+        { }
     }
 
-    public readonly struct ChildRemovedEvent
+    public sealed class ChildRemovedEvent : EventBase<INetworkObject_Impl>
     {
 
-        public readonly ObjectAgent Object;
-        public readonly TimeSpan Timestamp;
+        public INetworkObject_Impl Child { get => Subject; }
 
-        public ChildRemovedEvent(ObjectAgent @object)
-        {
-            this.Object = @object;
-            this.Timestamp = TimeExtensions.DetermineCurrentTime(@object);
-        }
-
+        public ChildRemovedEvent(INodeDescendant nDesc, INetworkObject_Impl child, object sender) :
+            base(nDesc.Node, child, sender)
+        { }
     }
 
 }

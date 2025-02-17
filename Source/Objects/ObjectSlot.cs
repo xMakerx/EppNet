@@ -55,20 +55,20 @@ namespace EppNet.Objects
             {
                 if (value != _state)
                 {
-                    if (Agent != null)
-                        Agent.State = value;
+                    if (Object != null)
+                        Object.State.Set(value);
                     else
                         _state = value;
                 }
             }
 
-            get => (Agent != null ? Agent.State : _state);
+            get => (Object != null ? Object.State.Value : _state);
         }
 
         /// <summary>
         /// A pointer to the <see cref="ObjectAgent"/> i.e. controller for the user object.
         /// </summary>
-        public ObjectAgent Agent;
+        public INetworkObject_Impl Object;
 
         private EnumObjectState _state;
 
@@ -82,13 +82,15 @@ namespace EppNet.Objects
             this.Page = null;
             this.ID = -1L;
             this._state = EnumObjectState.Unknown;
-            this.Agent = null;
+            this.Object = null;
         }
 
         public override void Dispose()
         {
-            Agent?.Dispose();
-            Agent = null;
+            if (Object is not null && Object is IDisposable disposable)
+                disposable.Dispose();
+            
+            Object = null;
 
             _state = EnumObjectState.Unknown;
             base.Dispose();
@@ -104,7 +106,7 @@ namespace EppNet.Objects
         public override bool Equals(object obj)
         {
             if (obj is ObjectSlot otherObjSlot)
-                return otherObjSlot.ID == ID && otherObjSlot.Agent == Agent;
+                return otherObjSlot.ID == ID && otherObjSlot.Object == Object;
 
             return false;
         }
@@ -115,7 +117,7 @@ namespace EppNet.Objects
         /// </summary>
         /// <param name="other"></param>
         /// <returns>Whether or not the provided ObjectSlot has an equivalent ID</returns>
-        public bool Equals(ObjectSlot other) => other?.ID == ID && other?.Agent == Agent;
+        public bool Equals(ObjectSlot other) => other?.ID == ID && other?.Object == Object;
 
         /// <summary>
         /// Fetches the hash code associated with our ID.

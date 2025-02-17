@@ -4,6 +4,8 @@
 /// Author: Maverick Liberty
 ///////////////////////////////////////////////////////
 
+using EppNet.Data;
+
 using System;
 
 namespace EppNet.Time
@@ -12,7 +14,7 @@ namespace EppNet.Time
     public interface ITimestamped
     {
 
-        TimeSpan Time { get; } 
+        Timestamp Timestamp { get; }
 
     }
 
