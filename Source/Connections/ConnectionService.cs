@@ -54,7 +54,7 @@ namespace EppNet.Connections
                 if (result >= 4)
                     itemsPerPage = 256;
 
-                _connections = new PageList<ClientConnection>(itemsPerPage);
+                _connections = new PageList<ConnectionSlot>(itemsPerPage);
             }
             else
                 _connections = new OrderedDictionary<ulong, Connection>();
@@ -82,7 +82,7 @@ namespace EppNet.Connections
 
         public override void Dispose(bool disposing)
         {
-            if (_connections is PageList<ClientConnection> pageList)
+            if (_connections is PageList<ConnectionSlot> pageList)
                 pageList.Dispose();
         }
 
@@ -91,16 +91,20 @@ namespace EppNet.Connections
         public void EjectAll(DisconnectReason reason)
         {
 
-            Action<ClientConnection> action = (ClientConnection c) =>
+            Action<ConnectionSlot> action = (ConnectionSlot slot) =>
             {
-                Notify.Debug($"Forcibly ejected {c}...");
-                c.Eject(reason);
-                OnConnectionLost?.Invoke(new(c, reason));
+                if (slot.Connection is ClientConnection c)
+                {
+                    Notify.Debug($"Forcibly ejected {c}...");
+                    c.Eject(reason);
+                    OnConnectionLost?.Invoke(new(c, reason));
+                }
+
             };
 
             if (_socket.MaxClients > 64)
             {
-                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
+                PageList<ConnectionSlot> pList = _connections as PageList<ConnectionSlot>;
                 pList.DoOnActive(action);
                 pList.Clear();
                 pList.PurgeEmptyPages();
@@ -108,8 +112,13 @@ namespace EppNet.Connections
             else
             {
                 OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
+                
                 foreach (ClientConnection c in dict.Values)
-                    action.Invoke(c);
+                {
+                    Notify.Debug($"Forcibly ejected {c}...");
+                    c.Eject(reason);
+                    OnConnectionLost?.Invoke(new(c, reason));
+                }
 
                 dict.Clear();
             }
@@ -118,17 +127,17 @@ namespace EppNet.Connections
         public bool HandleConnectionEstablished(Peer enetPeer)
         {
 
-            ClientConnection conn;
+            ClientConnection conn = new(Node.Socket, enetPeer);
             bool added;
 
             if (_socket.MaxClients > 64)
             {
-                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
-                added = pList.TryAllocate(enetPeer.ID, out conn);
+                PageList<ConnectionSlot> pList = _connections as PageList<ConnectionSlot>;
+                added = pList.TryAllocate(enetPeer.ID, out ConnectionSlot slot);
+                slot.Connection = conn;
             }
             else
             {
-                conn = new(Node.Socket, enetPeer);
                 OrderedDictionary<ulong, ClientConnection> dict = _connections as OrderedDictionary<ulong, ClientConnection>;
                 dict.Add(enetPeer.ID, conn);
                 added = true;
@@ -158,10 +167,11 @@ namespace EppNet.Connections
 
             if (_socket.MaxClients > 64)
             {
-                PageList<ClientConnection> pList = _connections as PageList<ClientConnection>;
-                pList.TryGetById(enetPeer.ID, out conn);
+                PageList<ConnectionSlot> pList = _connections as PageList<ConnectionSlot>;
+                pList.TryGetById(enetPeer.ID, out ConnectionSlot slot);
+                conn = (ClientConnection) slot.Connection;
                 action.Invoke(conn);
-                removed = pList.TryFree(conn);
+                removed = pList.TryFree(ref slot);
             }
             else
             {
@@ -181,8 +191,9 @@ namespace EppNet.Connections
 
             if (_socket.MaxClients > 64)
             {
-                PageList<ClientConnection> pList = (PageList<ClientConnection>)_connections;
-                pList.TryGetById(id, out conn);
+                PageList<ConnectionSlot> pList = (PageList<ConnectionSlot>)_connections;
+                pList.TryGetById(id, out ConnectionSlot slot);
+                conn = (ClientConnection) slot.Connection;
             }
             else
             {

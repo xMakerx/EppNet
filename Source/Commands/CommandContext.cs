@@ -71,7 +71,7 @@ namespace EppNet.Commands
         protected EnumCommandResult _Internal_LookupObject(long id, out ObjectSlot slot)
         {
             ObjectService service = Node.Services.GetService<ObjectService>();
-            slot = null;
+            slot = default;
 
             if (!this.IsNotNull(arg: service, tmpMsg: new("Object Service could not be found!"), fatal: true))
                 return EnumCommandResult.NoService;

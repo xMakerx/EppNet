@@ -6,7 +6,6 @@
 
 using ENet;
 
-using EppNet.Collections;
 using EppNet.Data.Datagrams;
 using EppNet.Logging;
 using EppNet.Messaging;
@@ -28,7 +27,7 @@ namespace EppNet.Connections
     /// who organized.
     /// </summary>
 
-    public abstract class Connection : Pageable, INodeDescendant, ILoggable
+    public abstract class Connection : INodeDescendant, ILoggable, IDisposable
     {
 
         public ILoggable Notify { get => this; }
@@ -85,8 +84,6 @@ namespace EppNet.Connections
             this.Established = LastReceivedSnapshot = default;
             this.IsAuthenticated = false;
             this.SnapshotCheckTimer = null;
-            this.Page = null;
-            this.ID = -1;
         }
 
         protected Connection(BaseSocket socket, Peer peer) : this()
@@ -120,14 +117,13 @@ namespace EppNet.Connections
             }
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
             this.ENet_Peer = default;
             this.ENet_ID = default;
             this.Established = LastReceivedSnapshot = default;
             this.IsAuthenticated = IsSynchronized = false;
             this.LastDesyncEvent = null;
-            base.Dispose();
         }
 
         public bool Send(byte[] bytes, byte channelId, PacketFlags flags) 
@@ -166,7 +162,7 @@ namespace EppNet.Connections
         /// <returns></returns>
 
         public virtual bool IsServer()
-            => !IsFree() && ENet_ID == 0;
+            => ENet_ID == 0;
 
         public override string ToString()
             => $"Connection ID {ENet_ID} {ENet_Peer.IP}:{ENet_Peer.Port}";

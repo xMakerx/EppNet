@@ -100,7 +100,8 @@ namespace EppNet.Objects
         /// <param name="other"></param>
         /// <returns>Whether or not the provided ObjectSlot has an equivalent ID</returns>
         public readonly bool Equals(ObjectSlot other)
-            => other.ID == ID &&
+            => other.Page == Page &&
+            other.ID == ID &&
             other.Object == Object;
 
         /// <summary>
@@ -110,6 +111,7 @@ namespace EppNet.Objects
 
         public readonly override int GetHashCode()
             => ID.GetHashCode() ^ 
+            Page.GetHashCode() ^
             (Object != null ? Object.GetHashCode() : 1);
     }
 
