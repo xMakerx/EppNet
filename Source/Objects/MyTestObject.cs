@@ -1,4 +1,7 @@
 ﻿using EppNet.Attributes;
+using EppNet.Data;
+
+using System.Collections.Generic;
 
 namespace EppNet.Objects
 {
@@ -8,9 +11,20 @@ namespace EppNet.Objects
     {
         public long ID { set; get; }
 
-        public void Hello()
+        [NetworkMethod]
+        public void Hello(int a)
         {
+
         }
+
+        [NetworkMethod]
+        public void Method(Distribution a) { }
+    }
+
+    public static class LOL
+    {
+        [NetworkMethod]
+        public static void Method() { }
     }
 
 }

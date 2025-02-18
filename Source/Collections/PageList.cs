@@ -30,7 +30,8 @@ namespace EppNet.Collections
         public int PageIndexWithAvailability { get => _pageIndexWithAvailability; }
 
         internal int _pageIndexWithAvailability;
-        private ReaderWriterLockSlim _lock;
+
+        private readonly ReaderWriterLockSlim _lock;
 
         public PageList(int itemsPerPage)
         {

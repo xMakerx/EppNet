@@ -35,13 +35,10 @@ namespace EppNet.SourceGen.Models
     /// <summary>
     /// Stores information about a particular network type resolver
     /// </summary>
-    public readonly struct NetworkObjectModel(ISymbol symbol) : IEquatable<NetworkObjectModel>
+    public readonly struct NetworkObjectModel(ISymbol symbol, EquatableList<NetworkMethodModel> methods) : IEquatable<NetworkObjectModel>
     {
         public string Name { get; } = symbol.Name;
 
-        /// <summary>
-        /// Most resolvers will derive from <see cref="Globals.DataPath"/>
-        /// </summary>
         public string Namespace { get; } = symbol.ContainingNamespace.Name;
 
         public string FullNamespace
@@ -53,13 +50,19 @@ namespace EppNet.SourceGen.Models
             }
         }
 
+        public string FullyQualifiedName { get; } = $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
+
+        public EquatableList<NetworkMethodModel> Methods { get; } = methods;
+
         public override bool Equals(object obj) =>
             obj is NetworkObjectModel model &&
             Equals(model);
 
         public bool Equals(NetworkObjectModel other) =>
             Name == other.Name &&
-            Namespace == other.Namespace;
+            Namespace == other.Namespace &&
+            FullNamespace == other.FullNamespace &&
+            Methods == other.Methods;
 
         public override string ToString() =>
             $"{Name}";

@@ -31,12 +31,12 @@ namespace EppNet.SourceGen.Models
         /// <summary>
         /// Most resolvers will derive from <see cref="Globals.DataPath"/>
         /// </summary>
-        public string Namespace { get; } = symbol.ContainingNamespace.Name;
+        public string Namespace { get; } = symbol.ContainingNamespace.ToDisplayString();
 
         /// <summary>
         /// The fully qualified name of the type this resolver resolves.
         /// </summary>
-        public string ResolvedTypeFullName { get; } = typeSymbol.ContainingNamespace.Name + "." + typeSymbol.Name;
+        public string ResolvedTypeFullName { get; } = typeSymbol.ContainingNamespace.ToDisplayString() + "." + typeSymbol.Name;
 
         public override bool Equals(object obj) =>
             obj is ResolverModel model &&

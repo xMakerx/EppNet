@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
@@ -47,6 +48,9 @@ namespace EppNet.SourceGen
         public const string NetObjectAttr = "NetworkObject";
         public const string NetObjectAttrFullName = AttrPath + NetObjectAttr + Attribute;
 
+        public const string NetMethodAttr = "NetworkMethod";
+        public const string NetMethodAttrFullName = AttrPath + NetMethodAttr + Attribute;
+
         //////////////////////////////////////////////
         /// Descriptors
         ////////////////////////////////////////////// 
@@ -57,7 +61,7 @@ namespace EppNet.SourceGen
         public static DiagnosticDescriptor DescDebug = new(
             id: "EPN001",
             title: "Analyzer Debug",
-            messageFormat: "{0}",
+            messageFormat: "E++Net: {0}",
             category: "SourceGenerator",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
@@ -65,7 +69,7 @@ namespace EppNet.SourceGen
         public static DiagnosticDescriptor DescError = new(
             id: "EPN002",
             title: "Analyzer Error",
-            messageFormat: "{0}",
+            messageFormat: "E++Net: {0}",
             category: "SourceGenerator",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -76,7 +80,7 @@ namespace EppNet.SourceGen
         public static DiagnosticDescriptor DescTypeResolverError = new(
             id: "EPN003",
             title: "Network Type Resolver Error",
-            messageFormat: "{0}",
+            messageFormat: "E++Net: {0}",
             category: "SourceGenerator",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -87,7 +91,15 @@ namespace EppNet.SourceGen
         public static DiagnosticDescriptor DescNetObjError = new(
             id: "EPN004",
             title: "Network Object Error",
-            messageFormat: "{0}",
+            messageFormat: "E++Net: {0}",
+            category: "SourceGenerator",
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
+        public static DiagnosticDescriptor DescNetMethodError = new(
+            id: "EPN005",
+            title: "Network Method Error",
+            messageFormat: "E++Net: {0}",
             category: "SourceGenerator",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -106,7 +118,132 @@ namespace EppNet.SourceGen
             return false;
         }
 
-        public static (NetworkObjectModel?, NetworkObjectAnalysisError) LocateNetObject(SyntaxNode node, SemanticModel semModel, CancellationToken cancelToken = default)
+        public static bool HasAttribute(MethodDeclarationSyntax methodNode, string attrName)
+        {
+            foreach (var attrList in methodNode.AttributeLists)
+            {
+                foreach (var attr in attrList.Attributes)
+                {
+                    if (attr.Name.ToString() == attrName)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static (NetworkMethodModel?, NetworkMethodAnalysisError, ParameterSyntax, TypeSyntax) LocateNetMethod(SyntaxNode node, SemanticModel semModel, 
+            IDictionary<string, string> resolverDict,
+            IDictionary<string, NetworkObjectModel?> objDict, CancellationToken cancelToken = default)
+        {
+
+            // We want to:
+            // 1) Ensure the method is accessible (public)
+            // 2) Ensure the method is part of a class decorated with a NetworkObject attribute
+            // 3) Ensure the parameter types have a network resolver
+
+            NetworkMethodModel? model = null;
+            NetworkMethodAnalysisError error = NetworkMethodAnalysisError.None;
+
+            cancelToken.ThrowIfCancellationRequested();
+
+            if (cancelToken.IsCancellationRequested || node is not MethodDeclarationSyntax methodNode)
+                return (model, NetworkMethodAnalysisError.NotMethod, null, null);
+
+            IMethodSymbol symbol = semModel.GetDeclaredSymbol(methodNode);
+
+            if (symbol == null)
+                return (model, NetworkMethodAnalysisError.NotMethod, null, null);
+
+            // Step 1: Ensure the method is accessible
+            if (!methodNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword)))
+                error = NetworkMethodAnalysisError.Inaccessible;
+
+            // Step 2: Ensure the method is part of a class decorated with a NetworkObject attribute
+            ClassDeclarationSyntax classNode = methodNode.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+
+            if (classNode != null && !HasAttribute(classNode, NetObjectAttr))
+                error |= NetworkMethodAnalysisError.NotNetworkObjectClass;
+
+            // Step 3: Ensure the parameters types have a network resolver
+            List<string> typeNames = new();
+
+            foreach (ParameterSyntax paramNode in methodNode.ParameterList.Parameters)
+            {
+                TypeSyntax type = paramNode.Type;
+                ITypeSymbol typeSymbol = semModel.GetTypeInfo(type).Type;
+
+                if (typeSymbol == null)
+                    continue;
+
+                if (type is GenericNameSyntax genericName)
+                {
+                    // Fully qualified base type name
+                    string baseTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{genericName.Identifier.Text}";
+                    //typeNames.Add(baseTypeName);
+
+                    // Get generic argument type names
+                    foreach (var typeArg in genericName.TypeArgumentList.Arguments)
+                    {
+                        var typeArgSymbol = semModel.GetTypeInfo(typeArg).Type;
+                        if (typeArgSymbol != null)
+                        {
+                            string argTypeName = $"{typeArgSymbol.ContainingNamespace.ToDisplayString()}.{typeArgSymbol.Name}";
+                            typeNames.Add(argTypeName); 
+                        }
+                        else
+                        {
+                            typeNames.Add(typeArg.ToString()); // Fallback to raw syntax name
+                        }
+                    }
+                }
+                else
+                {
+                    string fullTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
+                    typeNames.Add(fullTypeName);
+                }
+
+                foreach (string name in typeNames)
+                {
+                    if (!resolverDict.ContainsKey(name))
+                        return (model, error | NetworkMethodAnalysisError.MissingResolver, paramNode, type);
+                }
+
+            }
+
+            model = new NetworkMethodModel(symbol, typeNames.ToArray());
+
+            INamedTypeSymbol classSymbol = semModel.GetDeclaredSymbol(classNode);
+            string className = $"{classSymbol.ContainingNamespace.ToDisplayString()}.{classSymbol.Name}";
+
+            if (!objDict.TryGetValue(className, out NetworkObjectModel? netModel))
+                error |= NetworkMethodAnalysisError.NotNetworkObjectClass;
+            else
+            {
+                NetworkObjectModel objModel = netModel.Value;
+                bool added = false;
+
+                for (int i = 0; i < objModel.Methods.Count; i++)
+                {
+                    NetworkMethodModel methodModel = objModel.Methods[i];
+
+                    if (methodModel.Equals(model))
+                    {
+                        objModel.Methods[i] = model.Value;
+                        added = true;
+                        break;
+                    }
+                }
+
+                if (!added)
+                    objModel.Methods.Add(model.Value);
+            }
+
+            return (model, error, null, null);
+        }
+
+        public static (NetworkObjectModel?, NetworkObjectAnalysisError) LocateNetObject(SyntaxNode node, SemanticModel semModel,
+            CancellationToken cancelToken = default)
         {
             // We want to:
             // 1) Ensure the class inherits from INetworkObject
@@ -126,13 +263,15 @@ namespace EppNet.SourceGen
 
             // Step 1: Ensure class is partial
             if (!classNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-                return (model, NetworkObjectAnalysisError.NotPartial);
+                error |= NetworkObjectAnalysisError.NotPartial;
 
             // Step 2: Ensure class inherits from INetworkObject
-            if (!symbol.AllInterfaces.Any(s => s.Name == "INetworkObject"))
-                return (model, NetworkObjectAnalysisError.LacksInheritance);
+            if (!symbol.AllInterfaces.Any(s => s.Name == NetworkObjectInterfaceName))
+                error |= NetworkObjectAnalysisError.LacksInheritance;
 
-            model = new(symbol);
+            if (error == NetworkObjectAnalysisError.None)
+                model = new(symbol, []);
+
             return (model, error);
         }
         
@@ -164,7 +303,7 @@ namespace EppNet.SourceGen
 
             // If we didn't locate it, return an error'd out ResolverModel
             if (singletonSymbol == null)
-                error |= ResolverAnalysisError.LacksSingleton;
+                error = ResolverAnalysisError.LacksSingleton;
 
             // Step 2: Ensure class inherits from Resolver<T>
             INamedTypeSymbol baseTypeSymbol = symbol.BaseType;
@@ -178,10 +317,7 @@ namespace EppNet.SourceGen
                     {
                         // Great! We located it!
                         ITypeSymbol genericType = baseTypeSymbol.TypeArguments[0];
-
-                        // We return a null model if we have some kind of error
-                        if (error == ResolverAnalysisError.None)
-                            model = new ResolverModel(symbol, genericType);
+                        model = new ResolverModel(symbol, genericType);
                         break;
                     }
                 }

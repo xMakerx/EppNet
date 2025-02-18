@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using System;
 using System.Collections.Immutable;
 
+/*
 namespace EppNet.Source.Analysis
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -63,3 +64,4 @@ namespace EppNet.Source.Analysis
     }
 
 }
+*/
