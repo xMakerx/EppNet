@@ -1,5 +1,5 @@
 ﻿/////////////////////////////////////////////
-/// Filename: ResolverAnalysis.cs
+/// Filename: NetworkObjectAnalysis.cs
 /// Date: February 9, 2025
 /// Authors: Maverick Liberty
 //////////////////////////////////////////////

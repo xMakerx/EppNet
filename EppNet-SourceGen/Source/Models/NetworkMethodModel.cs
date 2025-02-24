@@ -37,7 +37,7 @@ namespace EppNet.SourceGen.Models
         MissingResolver = 1 << 4
     }
 
-    public readonly struct NetworkMethodModel(ISymbol symbol, string[] parameterTypes) : IEquatable<NetworkMethodModel>
+    public readonly struct NetworkMethodModel(ISymbol symbol, EquatableList<NetworkParameterTypeModel> parameters) : IEquatable<NetworkMethodModel>
     {
 
         public string Name { get; } = symbol.Name;
@@ -53,7 +53,7 @@ namespace EppNet.SourceGen.Models
             }
         }
 
-        public string[] ParameterTypes { get; } = parameterTypes;
+        public EquatableList<NetworkParameterTypeModel> Parameters { get; } = parameters;
 
         public override bool Equals(object obj)
             => obj is NetworkMethodModel model &&
@@ -62,13 +62,15 @@ namespace EppNet.SourceGen.Models
         public bool Equals(NetworkMethodModel other) =>
             Name == other.Name &&
             Namespace == other.Namespace &&
-            ParameterTypes.Equals(other.ParameterTypes);
+            Parameters == other.Parameters;
 
         public override string ToString()
         {
             StringBuilder builder = new($"{Name}(");
 
-            for (int i = 0; i < ParameterTypes.Length; i++)
+            /*foreach ()
+
+            for (int i = 0; i < Parameters.Length; i++)
             {
                 string type = ParameterTypes[i];
                 builder.Append(type);
@@ -77,14 +79,14 @@ namespace EppNet.SourceGen.Models
                     builder.Append(", ");
             }
 
-            builder.Append(")");
+            builder.Append(")");*/
             return builder.ToString();
         }
 
         public override int GetHashCode() =>
             Name.GetHashCode() ^
             Namespace.GetHashCode() ^
-            ParameterTypes.GetHashCode();
+            Parameters.GetHashCode();
 
         public static bool operator ==(NetworkMethodModel left, NetworkMethodModel right) =>
             left.Equals(right);

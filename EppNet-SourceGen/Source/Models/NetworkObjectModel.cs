@@ -65,9 +65,13 @@ namespace EppNet.SourceGen.Models
             Methods == other.Methods;
 
         public override string ToString() =>
-            $"{Name}";
+            $"{FullyQualifiedName} Methods: {Methods.Count}";
 
-        public override int GetHashCode() => Name.GetHashCode() ^ Namespace.GetHashCode();
+        public override int GetHashCode() =>
+            Name.GetHashCode() ^
+            Namespace.GetHashCode() ^
+            FullyQualifiedName.GetHashCode() ^
+            Methods.GetHashCode();
 
         public static bool operator ==(NetworkObjectModel left, NetworkObjectModel right) => left.Equals(right);
         public static bool operator !=(NetworkObjectModel left, NetworkObjectModel right) => !left.Equals(right);

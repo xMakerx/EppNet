@@ -51,6 +51,15 @@ namespace EppNet.SourceGen
         public const string NetMethodAttr = "NetworkMethod";
         public const string NetMethodAttrFullName = AttrPath + NetMethodAttr + Attribute;
 
+        public static readonly string[] SupportedTypes =
+        [
+            "System.Collections.Generic.List",
+            "System.Collections.Generic.HashSet",
+            "System.Collections.Generic.SortedSet",
+            "System.Collections.Generic.Dictionary",
+            "System.Collections.Generic.LinkedList"
+        ];
+
         //////////////////////////////////////////////
         /// Descriptors
         ////////////////////////////////////////////// 
@@ -131,6 +140,102 @@ namespace EppNet.SourceGen
 
             return false;
         }
+        
+
+        // Checks if the specified type name is valid
+        // (IsValid, IsNetObject)
+        public static (bool, bool) IsValidTypeName(string typeName, IDictionary<string, string> resolverDict,
+            IDictionary<string, NetworkObjectModel?> objDict)
+        {
+
+            if (SupportedTypes.Contains(typeName))
+                return (true, false);
+
+            if (resolverDict.ContainsKey(typeName))
+                return (true, false);
+
+            if (objDict.ContainsKey(typeName))
+                return (true, true);
+
+            return (false, false);
+        }
+
+        public static NetworkParameterTypeModel? ExamineType(TypeSyntax type, SemanticModel semModel,
+            IDictionary<string, string> resolverDict,
+            IDictionary<string, NetworkObjectModel?> objDict, CancellationToken cancelToken = default)
+        {
+            // We want to:
+            // 1) Examine the type to see if it's supported.
+            // - 1a: If it's a generic name, ensure the base type name is valid.
+            // -     Enums, Dictionary, List, HashSet, SortedSet, and LinkedList are valid
+            // 2) Check if the type has a resolver.
+            NetworkParameterTypeModel? model = null;
+            ITypeSymbol typeSymbol = semModel.GetTypeInfo(type, cancelToken).Type;
+
+            cancelToken.ThrowIfCancellationRequested();
+
+            if (typeSymbol == null)
+                return model;
+
+            if (typeSymbol.TypeKind == TypeKind.Enum)
+            {
+                // This is an enum type. These always have an integral underlying type
+                ITypeSymbol underlyingType = ((INamedTypeSymbol)typeSymbol).EnumUnderlyingType;
+                string underlyingTypeName = underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                model = new NetworkParameterTypeModel(typeSymbol, null, underlyingType: underlyingTypeName);
+                return model;
+            }
+
+            if (type is ArrayTypeSyntax arrayType)
+                return ExamineType(arrayType.ElementType, semModel, resolverDict, objDict, cancelToken);
+
+            if (type is GenericNameSyntax genericName)
+            {
+                string baseTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{genericName.Identifier.Text}";
+                (bool isValidType, bool isNetObj) = IsValidTypeName(baseTypeName, resolverDict, objDict);
+
+                EquatableList<NetworkParameterTypeModel> subtypes = new();
+                foreach (TypeSyntax typeArg in genericName.TypeArgumentList.Arguments)
+                {
+                    var result = ExamineType(typeArg, semModel, resolverDict, objDict, cancelToken);
+
+                    // Let's ensure the result is valid
+                    if (result == null)
+                        return null;
+
+                    subtypes.Add(result.Value);
+                }
+
+                model = new NetworkParameterTypeModel(typeSymbol, subtypes, null, isNetObject: isNetObj);
+            }
+            else if (type is TupleTypeSyntax tuple)
+            {
+                EquatableList<NetworkParameterTypeModel> subtypes = new();
+                foreach (TupleElementSyntax tupleArg in tuple.Elements)
+                {
+                    TypeSyntax typeArg = tupleArg.Type;
+                    var result = ExamineType(typeArg, semModel, resolverDict, objDict, cancelToken);
+
+                    // Let's ensure the result is valid
+                    if (result == null)
+                        return null;
+
+                    subtypes.Add(result.Value);
+                }
+
+                model = new NetworkParameterTypeModel(typeSymbol, subtypes, null, isNetObject: false);
+            }
+            else
+            {
+                string fullTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
+                (bool isValidType, bool isNetObj) = IsValidTypeName(fullTypeName, resolverDict, objDict);
+
+                if (isValidType)
+                    model = new NetworkParameterTypeModel(typeSymbol, null, isNetObject: isNetObj);
+            }
+
+            return model;
+        }
 
         public static (NetworkMethodModel?, NetworkMethodAnalysisError, ParameterSyntax, TypeSyntax) LocateNetMethod(SyntaxNode node, SemanticModel semModel, 
             IDictionary<string, string> resolverDict,
@@ -168,50 +273,24 @@ namespace EppNet.SourceGen
             // Step 3: Ensure the parameters types have a network resolver
             List<string> typeNames = new();
 
+            EquatableList<NetworkParameterTypeModel> parameters = new();
+
             foreach (ParameterSyntax paramNode in methodNode.ParameterList.Parameters)
             {
                 TypeSyntax type = paramNode.Type;
-                ITypeSymbol typeSymbol = semModel.GetTypeInfo(type).Type;
 
-                if (typeSymbol == null)
-                    continue;
+                NetworkParameterTypeModel? typeModel = ExamineType(type, semModel, resolverDict, objDict, cancelToken);
 
-                if (type is GenericNameSyntax genericName)
+                if (!typeModel.HasValue)
                 {
-                    // Fully qualified base type name
-                    string baseTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{genericName.Identifier.Text}";
-                    //typeNames.Add(baseTypeName);
-
-                    // Get generic argument type names
-                    foreach (var typeArg in genericName.TypeArgumentList.Arguments)
-                    {
-                        var typeArgSymbol = semModel.GetTypeInfo(typeArg).Type;
-                        if (typeArgSymbol != null)
-                        {
-                            string argTypeName = $"{typeArgSymbol.ContainingNamespace.ToDisplayString()}.{typeArgSymbol.Name}";
-                            typeNames.Add(argTypeName); 
-                        }
-                        else
-                        {
-                            typeNames.Add(typeArg.ToString()); // Fallback to raw syntax name
-                        }
-                    }
-                }
-                else
-                {
-                    string fullTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
-                    typeNames.Add(fullTypeName);
+                    // Type is invalid.
+                    return (model, error | NetworkMethodAnalysisError.MissingResolver, paramNode, type);
                 }
 
-                foreach (string name in typeNames)
-                {
-                    if (!resolverDict.ContainsKey(name))
-                        return (model, error | NetworkMethodAnalysisError.MissingResolver, paramNode, type);
-                }
-
+                parameters.Add(typeModel.Value);
             }
 
-            model = new NetworkMethodModel(symbol, typeNames.ToArray());
+            model = new NetworkMethodModel(symbol, parameters);
 
             INamedTypeSymbol classSymbol = semModel.GetDeclaredSymbol(classNode);
             string className = $"{classSymbol.ContainingNamespace.ToDisplayString()}.{classSymbol.Name}";
