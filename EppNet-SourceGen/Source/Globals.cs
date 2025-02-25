@@ -276,8 +276,6 @@ namespace EppNet.SourceGen
                 error |= NetworkMethodAnalysisError.NotNetworkObjectClass;
 
             // Step 3: Ensure the parameters types have a network resolver
-            List<string> typeNames = new();
-
             EquatableList<NetworkParameterTypeModel> parameters = new();
 
             foreach (ParameterSyntax paramNode in methodNode.ParameterList.Parameters)
@@ -417,11 +415,7 @@ namespace EppNet.SourceGen
 
             return (model, error);
         }
-      
-        public static bool IsMatchingType(ITypeSymbol a, INamedTypeSymbol b) =>
-            SymbolEqualityComparer.IncludeNullability.Equals(a, b) ||
-            SymbolEqualityComparer.Default.Equals(a, b) ||
-            a.ToDisplayString() == b.ToDisplayString();
+
     }
 
 
