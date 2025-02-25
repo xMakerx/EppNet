@@ -160,7 +160,7 @@ namespace EppNet.SourceGen
             return (false, false);
         }
 
-        public static NetworkParameterTypeModel? ExamineType(TypeSyntax type, SemanticModel semModel,
+        public static (NetworkParameterTypeModel?, TypeSyntax) ExamineType(TypeSyntax type, SemanticModel semModel,
             IDictionary<string, string> resolverDict,
             IDictionary<string, NetworkObjectModel?> objDict, CancellationToken cancelToken = default)
         {
@@ -175,7 +175,7 @@ namespace EppNet.SourceGen
             cancelToken.ThrowIfCancellationRequested();
 
             if (typeSymbol == null)
-                return model;
+                return (model, null);
 
             if (typeSymbol.TypeKind == TypeKind.Enum)
             {
@@ -183,7 +183,7 @@ namespace EppNet.SourceGen
                 ITypeSymbol underlyingType = ((INamedTypeSymbol)typeSymbol).EnumUnderlyingType;
                 string underlyingTypeName = underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 model = new NetworkParameterTypeModel(typeSymbol, null, underlyingType: underlyingTypeName);
-                return model;
+                return (model, null);
             }
 
             if (type is ArrayTypeSyntax arrayType)
@@ -194,16 +194,19 @@ namespace EppNet.SourceGen
                 string baseTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{genericName.Identifier.Text}";
                 (bool isValidType, bool isNetObj) = IsValidTypeName(baseTypeName, resolverDict, objDict);
 
+                if (!isValidType)
+                    return (model, type);
+
                 EquatableList<NetworkParameterTypeModel> subtypes = new();
                 foreach (TypeSyntax typeArg in genericName.TypeArgumentList.Arguments)
                 {
                     var result = ExamineType(typeArg, semModel, resolverDict, objDict, cancelToken);
 
                     // Let's ensure the result is valid
-                    if (result == null)
-                        return null;
+                    if (result.Item1 == null)
+                        return (model, result.Item2);
 
-                    subtypes.Add(result.Value);
+                    subtypes.Add(result.Item1.Value);
                 }
 
                 model = new NetworkParameterTypeModel(typeSymbol, subtypes, null, isNetObject: isNetObj);
@@ -217,10 +220,10 @@ namespace EppNet.SourceGen
                     var result = ExamineType(typeArg, semModel, resolverDict, objDict, cancelToken);
 
                     // Let's ensure the result is valid
-                    if (result == null)
-                        return null;
+                    if (result.Item1 == null)
+                        return (model, result.Item2);
 
-                    subtypes.Add(result.Value);
+                    subtypes.Add(result.Item1.Value);
                 }
 
                 model = new NetworkParameterTypeModel(typeSymbol, subtypes, null, isNetObject: false);
@@ -230,11 +233,13 @@ namespace EppNet.SourceGen
                 string fullTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
                 (bool isValidType, bool isNetObj) = IsValidTypeName(fullTypeName, resolverDict, objDict);
 
-                if (isValidType)
-                    model = new NetworkParameterTypeModel(typeSymbol, null, isNetObject: isNetObj);
+                if (!isValidType)
+                    return (model, type);
+
+                model = new NetworkParameterTypeModel(typeSymbol, null, isNetObject: isNetObj);
             }
 
-            return model;
+            return (model, null);
         }
 
         public static (NetworkMethodModel?, NetworkMethodAnalysisError, ParameterSyntax, TypeSyntax) LocateNetMethod(SyntaxNode node, SemanticModel semModel, 
@@ -279,12 +284,12 @@ namespace EppNet.SourceGen
             {
                 TypeSyntax type = paramNode.Type;
 
-                NetworkParameterTypeModel? typeModel = ExamineType(type, semModel, resolverDict, objDict, cancelToken);
+                (NetworkParameterTypeModel? typeModel, TypeSyntax typeArg) = ExamineType(type, semModel, resolverDict, objDict, cancelToken);
 
                 if (!typeModel.HasValue)
                 {
                     // Type is invalid.
-                    return (model, error | NetworkMethodAnalysisError.MissingResolver, paramNode, type);
+                    return (model, error | NetworkMethodAnalysisError.MissingResolver, paramNode, typeArg);
                 }
 
                 parameters.Add(typeModel.Value);
