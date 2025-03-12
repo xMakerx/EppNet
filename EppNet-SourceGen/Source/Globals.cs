@@ -161,7 +161,7 @@ namespace EppNet.SourceGen
         {
             if (SupportedTypes.Contains(typeName))
                 return (true, false);
-            else if (resolverDict != null && resolverDict.ContainsKey(typeName))
+            else if (resolverDict?.ContainsKey(typeName) == true)
                 return (true, false);
             else
             {
@@ -175,23 +175,9 @@ namespace EppNet.SourceGen
 
                 SyntaxReference synRef = typeSymbol.DeclaringSyntaxReferences.FirstOrDefault();
 
-                // Invalid if null
-                if (synRef == null)
-                    return (false, false);
-
-                if (synRef.GetSyntax() is ClassDeclarationSyntax classNode)
-                {
-                    // Let's not go very far and only check for the net object attribute
-                    if (HasAttribute(classNode, NetObjectAttr))
-                        return (true, true);
-
-                    if (resolverDict == null && HasAttribute(classNode, NetTypeResolverAttr))
-                    {
-                        // This could very well be a valid resolver
-                        if (TryCreateResolver(typeSyntax, semModel, cancelToken).Item1.HasValue)
-                            return (true, false);
-                    }
-                }
+                if (synRef != null && synRef.GetSyntax() is ClassDeclarationSyntax classNode &&
+                    HasAttribute(classNode, NetObjectAttr))
+                    return (true, true);
             }
 
             return (false, false);
@@ -306,7 +292,7 @@ namespace EppNet.SourceGen
             return (distType, attrData);
         }
 
-        public static (NetworkObjectModel?, List<AnalysisError>) TryCreateNetObject(CSharpSyntaxNode node, SemanticModel semModel,
+        public static (NetworkObjectModel?, List<AnalysisDiagnostic>) TryCreateNetObject(CSharpSyntaxNode node, SemanticModel semModel,
             IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
             // We want to:
@@ -316,29 +302,29 @@ namespace EppNet.SourceGen
             // 4) Try to create models of located network methods
 
             NetworkObjectModel? model = null;
-            List<AnalysisError> errors = [];
+            List<AnalysisDiagnostic> errors = [];
 
             cancelToken.ThrowIfCancellationRequested();
 
             if (node is not ClassDeclarationSyntax classNode)
-                errors.Add(new AnalysisError(DescNetObjError, node, "Network Objects must be classes!"));
+                errors.Add(new AnalysisDiagnostic(DescNetObjError, node, "Network Objects must be classes!"));
             else
             {
                 INamedTypeSymbol symbol = semModel.GetDeclaredSymbol(classNode);
 
                 if (symbol == null)
                 {
-                    errors.Add(new AnalysisError(DescNetObjError, node, "Network Objects must be classes!"));
+                    errors.Add(new AnalysisDiagnostic(DescNetObjError, node, "Network Objects must be classes!"));
                     return (model, errors);
                 }
 
                 // Step 1: Ensure class is partial
                 if (!classNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-                    errors.Add(new AnalysisError(DescNetObjError, node, "Network Objects must be partial classes!"));
+                    errors.Add(new AnalysisDiagnostic(DescNetObjError, node, "Network Objects must be partial classes!"));
 
                 // Step 2: Ensure class derives from INetworkObject
                 if (!symbol.AllInterfaces.Any(s => s.Name == NetworkObjectInterfaceName))
-                    errors.Add(new AnalysisError(DescNetObjError, node, $"Network Objects must inherit from {NetworkObjectInterfaceName}!"));
+                    errors.Add(new AnalysisDiagnostic(DescNetObjError, node, $"Network Objects must inherit from {NetworkObjectInterfaceName}!"));
 
                 (int, AttributeData) distData = GetDistribution(symbol);
                 int distType = distData.Item1;
@@ -364,7 +350,7 @@ namespace EppNet.SourceGen
                         AttributeSyntax context = distData.Item2.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
 
                         if (!(tDistType == 0 || (tDistType == distType)))
-                            errors.Add(new AnalysisError(DescNetObjError, context, $"Distribution type is incompatible with base class \"{baseClassName}\"!"));
+                            errors.Add(new AnalysisDiagnostic(DescNetObjError, context, $"Distribution type is incompatible with base class \"{baseClassName}\"!"));
 
                         tSymbol = tSymbol.BaseType;
                         continue;
@@ -376,7 +362,7 @@ namespace EppNet.SourceGen
                 }
 
                 // Step 4: Let's locate network methods
-                (EquatableDictionary<string, EquatableList<NetworkMethodModel>> myMethods, List<AnalysisError> methodErrors) = 
+                (EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>> myMethods, List<AnalysisDiagnostic> methodErrors) = 
                     TryAndLocateNetMethods(classNode, semModel, resolverDict, cancelToken);
 
                 errors.AddRange(methodErrors);
@@ -388,7 +374,7 @@ namespace EppNet.SourceGen
             return (model, errors);
         }
 
-        public static (NetworkMethodModel?, List<AnalysisError>) TryCreateNetMethod(MethodDeclarationSyntax methodNode, 
+        public static (NetworkMethodModel?, List<AnalysisDiagnostic>) TryCreateNetMethod(MethodDeclarationSyntax methodNode, 
             SemanticModel semModel, IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
             cancelToken.ThrowIfCancellationRequested();
@@ -398,11 +384,11 @@ namespace EppNet.SourceGen
             if (methodNode == null || !HasAttribute(methodNode, NetMethodAttr))
                 return (null, null);
 
-            List<AnalysisError> errors = [];
+            List<AnalysisDiagnostic> errors = [];
             IMethodSymbol symbol = semModel.GetDeclaredSymbol(methodNode);
 
             if (symbol == null)
-                return (null, [new AnalysisError(DescNetMethodError, methodNode, "Failed to resolve symbol information.")]);
+                return (null, [new AnalysisDiagnostic(DescNetMethodError, methodNode, "Failed to resolve symbol information.")]);
 
             // Step 1: Ensure the method is accessible and doesn't have invalid modifiers
             bool accessible = false;
@@ -429,7 +415,7 @@ namespace EppNet.SourceGen
             }
 
             if (!accessible || invalidTokenLocations != null)
-                errors.Add(new AnalysisError(DescNetMethodError, methodNode,
+                errors.Add(new AnalysisDiagnostic(DescNetMethodError, methodNode,
                     "Methods must be public, non-abstract, and synchronous!",
                     invalidTokenLocations));
 
@@ -451,7 +437,7 @@ namespace EppNet.SourceGen
                     ITypeSymbol typeSymbol = semModel.GetTypeInfo(typeArg, cancelToken).Type;
                     string typeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
 
-                    errors.Add(new AnalysisError(DescNetMethodError, typeArg, 
+                    errors.Add(new AnalysisDiagnostic(DescNetMethodError, typeArg, 
                         $"\"{typeName}\" is not a valid network type or network object. Do you have a resolver?", methodNode.GetLocation()));
                 }
                 else
@@ -469,49 +455,49 @@ namespace EppNet.SourceGen
             return (model, errors);
         }
 
-        public static (EquatableDictionary<string, EquatableList<NetworkMethodModel>>, List<AnalysisError>) TryAndLocateNetMethods(ClassDeclarationSyntax classNode, 
+        public static (EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>>, List<AnalysisDiagnostic>) TryAndLocateNetMethods(ClassDeclarationSyntax classNode, 
             SemanticModel semModel, IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
 
             cancelToken.ThrowIfCancellationRequested();
 
-            EquatableDictionary<string, EquatableList<NetworkMethodModel>> methodsDict = new();
-            List<AnalysisError> allErrors = [];
+            EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>> methodsDict = new();
+            List<AnalysisDiagnostic> allDiags = [];
 
             foreach (MethodDeclarationSyntax methodNode in classNode.Members.OfType<MethodDeclarationSyntax>())
             {
-                (NetworkMethodModel? model, List<AnalysisError> errors) =
+                (NetworkMethodModel? model, List<AnalysisDiagnostic> diags) =
                     TryCreateNetMethod(methodNode, semModel, resolverDict, cancelToken);
 
                 if (model.HasValue)
                 {
                     string methodName = methodNode.Identifier.Text;
-                    if (methodsDict.TryGetValue(methodName, out EquatableList<NetworkMethodModel> list))
+                    if (methodsDict.TryGetValue(methodName, out EquatableHashSet<NetworkMethodModel> list))
                         list.Add(model.Value);
                     else
                         methodsDict[methodName] = [model.Value];
                 }
 
-                allErrors.AddRange(errors);
+                allDiags.AddRange(diags);
             }
 
-            return (methodsDict, allErrors);
+            return (methodsDict, allDiags);
         }
         
-        public static (ResolverModel?, List<AnalysisError>) TryCreateResolver(CSharpSyntaxNode node, SemanticModel semModel, 
+        public static (ResolverModel?, List<AnalysisDiagnostic>) TryCreateResolver(CSharpSyntaxNode node, SemanticModel semModel, 
             CancellationToken cancelToken = default)
         {
             // We want to:
             // 1) Ensure the class inherits from Resolver<T>
             // 2) Ensure the class has a public singleton symbol defined at the top
             ResolverModel? model = null;
-            List<AnalysisError> errors = [];
+            List<AnalysisDiagnostic> errors = [];
 
             cancelToken.ThrowIfCancellationRequested();
 
             if (node is not ClassDeclarationSyntax classNode)
             {
-                errors.Add(new AnalysisError(DescTypeResolverError, node, "Network Resolvers must be classes!"));
+                errors.Add(new AnalysisDiagnostic(DescTypeResolverError, node, "Network Resolvers must be classes!"));
                 return (model, errors);
             }
 
@@ -519,7 +505,7 @@ namespace EppNet.SourceGen
 
             if (symbol == null)
             {
-                errors.Add(new AnalysisError(DescTypeResolverError, node, "Failed to resolve symbol information."));
+                errors.Add(new AnalysisDiagnostic(DescTypeResolverError, node, "Failed to resolve symbol information."));
                 return (model, errors);
             }
 
@@ -534,7 +520,7 @@ namespace EppNet.SourceGen
             // If we didn't locate it, indicate we're missing a singleton
             if (singletonSymbol == null)
             {
-                errors.Add(new AnalysisError(DescTypeResolverError, node, "Resolvers must define a public static singleton field or property \"Instance\""));
+                errors.Add(new AnalysisDiagnostic(DescTypeResolverError, node, "Resolvers must define a public static singleton field or property \"Instance\""));
                 return (model, errors);
             }
 
@@ -559,7 +545,7 @@ namespace EppNet.SourceGen
             }
 
             if (model == null)
-                errors.Add(new AnalysisError(DescTypeResolverError, node, $"Resolvers must inherit from \"{TypeResolverFullGenericName}\""));
+                errors.Add(new AnalysisDiagnostic(DescTypeResolverError, node, $"Resolvers must inherit from \"{TypeResolverFullGenericName}\""));
 
             return (model, errors);
         }

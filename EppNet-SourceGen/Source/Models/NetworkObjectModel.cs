@@ -14,7 +14,10 @@ namespace EppNet.SourceGen.Models
     /// <summary>
     /// Stores information about a particular network type resolver
     /// </summary>
-    public readonly struct NetworkObjectModel(INamedTypeSymbol symbol, int distType, EquatableList<string> baseNetObjectsFQNs, EquatableDictionary<string, EquatableList<NetworkMethodModel>> methodDict) : IEquatable<NetworkObjectModel>
+    public readonly struct NetworkObjectModel(INamedTypeSymbol symbol, 
+        int distType, 
+        EquatableList<string> baseNetObjectsFQNs, 
+        EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>> methodDict) : IEquatable<NetworkObjectModel>
     {
         public string Name { get; } = symbol.Name;
 
@@ -39,7 +42,7 @@ namespace EppNet.SourceGen.Models
 
         public int Distribution { get; } = distType;
 
-        public EquatableDictionary<string, EquatableList<NetworkMethodModel>> Methods { get; } = methodDict;
+        public EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>> Methods { get; } = methodDict;
 
         public override bool Equals(object obj) =>
             obj is NetworkObjectModel model &&

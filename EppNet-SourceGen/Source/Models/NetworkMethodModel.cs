@@ -16,17 +16,6 @@ namespace EppNet.SourceGen.Models
 
         public string Name { get; } = symbol.Name;
 
-        public string Namespace { get; } = symbol.ContainingNamespace.Name;
-
-        public string FullNamespace
-        {
-            get
-            {
-                string fullName = symbol.ToDisplayString();
-                return fullName.Substring(0, fullName.Length - Name.Length - 1);
-            }
-        }
-
         public EquatableList<NetworkParameterTypeModel> Parameters { get; } = parameters;
 
         public override bool Equals(object obj)
@@ -35,7 +24,6 @@ namespace EppNet.SourceGen.Models
 
         public bool Equals(NetworkMethodModel other) =>
             Name == other.Name &&
-            Namespace == other.Namespace &&
             Parameters == other.Parameters;
 
         public override string ToString()
@@ -57,7 +45,6 @@ namespace EppNet.SourceGen.Models
 
         public override int GetHashCode() =>
             Name.GetHashCode() ^
-            Namespace.GetHashCode() ^
             Parameters.GetHashCode();
 
         public static bool operator ==(NetworkMethodModel left, NetworkMethodModel right) =>

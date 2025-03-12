@@ -7,13 +7,18 @@ using System.Drawing;
 namespace EppNet.Objects
 {
 
-    [NetworkObject(Dist = Distribution.Client)]
+    [NetworkObject(Dist = Distribution.Shared)]
     public partial class MyBaseObject : INetworkObject
     {
 
         [NetworkMethod]
         public void Goodbye() { }
 
+        [NetworkMethod]
+        public void YetAnotherMethod() { }
+
+        [NetworkMethod]
+        public void Hello(float b) { }
     }
 
     [NetworkObject(Dist = Distribution.Server)]
@@ -22,7 +27,7 @@ namespace EppNet.Objects
         public long ID { set; get; }
 
         [NetworkMethod]
-        public void Hello((MyBaseObject, decimal) a)
+        public void Hello(int a)
         {
 
         }

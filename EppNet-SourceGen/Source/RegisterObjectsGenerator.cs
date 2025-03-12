@@ -9,10 +9,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 using static EppNet.SourceGen.Globals;
 
@@ -44,11 +47,26 @@ namespace EppNet.SourceGen
                 .ForAttributeWithMetadataName(
                     NetObjectAttrFullName,
                     predicate: static (node, _) => node is ClassDeclarationSyntax,
-                    transform: (ctx, ct) => TryCreateNetObject(ctx.TargetNode as CSharpSyntaxNode, ctx.SemanticModel, null, ct)
+                    transform: (ctx, ct) => ((ctx.TargetNode as CSharpSyntaxNode), ctx.SemanticModel)
                 )
-                .Where(static o => o.Item1 is not null)
+                .Where(static t => t.Item1 is not null)
                 .Collect()
-                .Select(static (list, _) => list.ToDictionary(o => o!.Item1.Value.FullyQualifiedName, o => o!.Item1.Value));
+                .Combine(resolvers)
+                .Select(static ((ImmutableArray<(CSharpSyntaxNode, SemanticModel)>, Dictionary<string, string>) contents, CancellationToken ct) =>
+                {
+                    ImmutableArray<(CSharpSyntaxNode, SemanticModel)> array = contents.Item1;
+                    Dictionary<string, NetworkObjectModel> objects = new();
+
+                    foreach ((CSharpSyntaxNode node, SemanticModel semModel) in array)
+                    {
+                        NetworkObjectModel? model = TryCreateNetObject(node, semModel, contents.Item2, ct).Item1;
+
+                        if (model.HasValue)
+                            objects[model.Value.FullyQualifiedName] = model.Value;
+                    }
+
+                    return objects;
+                });
 
             context.RegisterSourceOutput(netObjects.Combine(resolvers), static (SourceProductionContext spc, (Dictionary<string, NetworkObjectModel>, Dictionary<string, string>) b) =>
             {
@@ -62,32 +80,60 @@ namespace EppNet.SourceGen
 
                     StringBuilder availableMethods = new();
 
-                    foreach (KeyValuePair<string, EquatableList<NetworkMethodModel>> kvp2 in model.Methods)
+                    Dictionary<string, EquatableHashSet<NetworkMethodModel>> fullMethods = new();
+                    List<string> hierarchy = new(model.NetObjectHierarchy);
+                    hierarchy.Add(fqn);
+
+                    bool invalid = false;
+
+                    foreach (string fullyQualifiedAncestorName in hierarchy)
                     {
-                        EquatableList<NetworkMethodModel> methods = kvp2.Value;
+                        if (!objs.TryGetValue(fullyQualifiedAncestorName, out NetworkObjectModel ancestor))
+                        {
+                            invalid = true;
+                            break;
+                        }
+                        
+                        foreach (KeyValuePair<string, EquatableHashSet<NetworkMethodModel>> ancKvp in ancestor.Methods)
+                        {
+                            string methodName = ancKvp.Key;
+
+                            if (!fullMethods.TryGetValue(methodName, out EquatableHashSet<NetworkMethodModel> myMethods))
+                                fullMethods[methodName] = ancKvp.Value;
+                            else
+                                myMethods.UnionWith(ancKvp.Value);
+                        }
+                    }
+
+                    if (invalid)
+                        continue;
+
+                    foreach (KeyValuePair<string, EquatableHashSet<NetworkMethodModel>> kvp2 in fullMethods)
+                    {
+                        EquatableHashSet<NetworkMethodModel> methods = kvp2.Value;
 
                         foreach (NetworkMethodModel method in methods)
                             availableMethods.AppendLine($"// - {method.ToString()}");
                     }
 
                     if (availableMethods.Length == 0)
-                        availableMethods.Append($"// no methods found?!?! HELLO!? Methods.Count: {model.Methods.Count}");
+                        availableMethods.Append($"// no methods found?!?! HELLO!? Methods.Count: {fullMethods.Count}");
 
-                    StringBuilder hierarchy = new();
+                    StringBuilder hierarchyBuilder = new();
 
                     if (model.NetObjectHierarchy == null)
-                        hierarchy.AppendLine("// - System.Object");
+                        hierarchyBuilder.AppendLine("// - System.Object");
                     else
                     {
-                        foreach (string bFQN in model.NetObjectHierarchy)
-                            hierarchy.AppendLine($"// - {bFQN}");
+                        for (int i = 0; i < hierarchy.Count - 1; i++)
+                            hierarchyBuilder.AppendLine($"// - {hierarchy[i]}");
                     }
 
                     StringBuilder builder = new($$"""
                         // <auto-generated/>
                         // full {{model.FullNamespace}}
                         // hierarchy:
-                        {{hierarchy.ToString()}}
+                        {{hierarchyBuilder.ToString()}}
                         // available methods:
                         {{availableMethods.ToString()}}
                         // dist: {{model.Distribution}}

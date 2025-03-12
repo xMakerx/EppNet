@@ -42,9 +42,9 @@ namespace EppNet.Source.Analysis
                     if (!Globals.HasAttribute(classNode, Globals.NetTypeResolverAttr))
                         return;
 
-                    (ResolverModel? model, List<AnalysisError> errors) = Globals.TryCreateResolver(snac.Node as CSharpSyntaxNode, snac.SemanticModel, snac.CancellationToken);
+                    (ResolverModel? model, List<AnalysisDiagnostic> errors) = Globals.TryCreateResolver(snac.Node as CSharpSyntaxNode, snac.SemanticModel, snac.CancellationToken);
 
-                    foreach (AnalysisError error in errors)
+                    foreach (AnalysisDiagnostic error in errors)
                         snac.ReportDiagnostic(error.CreateDiagnostic());
 
                     if (model.HasValue && errors.Count == 0)
@@ -59,10 +59,10 @@ namespace EppNet.Source.Analysis
                     if (!Globals.HasAttribute(classNode, Globals.NetObjectAttr))
                         return;
 
-                    (NetworkObjectModel? netModel, List<AnalysisError> errors) = Globals.TryCreateNetObject(
+                    (NetworkObjectModel? netModel, List<AnalysisDiagnostic> errors) = Globals.TryCreateNetObject(
                         classNode, snac.SemanticModel, Resolvers, snac.CancellationToken);
 
-                    foreach (AnalysisError error in errors)
+                    foreach (AnalysisDiagnostic error in errors)
                         snac.ReportDiagnostic(error.CreateDiagnostic());
 
                     if (netModel.HasValue && errors.Count == 0)
@@ -78,10 +78,10 @@ namespace EppNet.Source.Analysis
                     if (methodNode is not null && !Globals.HasAttribute(methodNode, Globals.NetMethodAttr))
                         return;
 
-                    (NetworkMethodModel? model, List<AnalysisError> errors)
+                    (NetworkMethodModel? model, List<AnalysisDiagnostic> errors)
                         = Globals.TryCreateNetMethod(methodNode, snac.SemanticModel, Resolvers, snac.CancellationToken);
 
-                    foreach (AnalysisError error in errors)
+                    foreach (AnalysisDiagnostic error in errors)
                         snac.ReportDiagnostic(error.CreateDiagnostic());
 
                 }, SyntaxKind.MethodDeclaration);

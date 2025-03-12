@@ -14,7 +14,7 @@ using System.Linq;
 namespace EppNet.SourceGen.Errors
 {
 
-    public class AnalysisError
+    public class AnalysisDiagnostic
     {
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace EppNet.SourceGen.Errors
         /// </summary>
         public readonly Location[] Locations;
 
-        public AnalysisError(DiagnosticDescriptor descriptor, CSharpSyntaxNode context, string message, params Location[] locations)
+        public AnalysisDiagnostic(DiagnosticDescriptor descriptor, CSharpSyntaxNode context, string message, params Location[] locations)
         {
             this.DiagnosticDescriptor = descriptor;
             this.Context = context;
@@ -45,7 +45,7 @@ namespace EppNet.SourceGen.Errors
             this.Locations = locations;
         }
 
-        public AnalysisError(DiagnosticDescriptor descriptor, CSharpSyntaxNode context, string message, IEnumerable<Location> locations)
+        public AnalysisDiagnostic(DiagnosticDescriptor descriptor, CSharpSyntaxNode context, string message, IEnumerable<Location> locations)
         {
             this.DiagnosticDescriptor = descriptor;
             this.Context = context;

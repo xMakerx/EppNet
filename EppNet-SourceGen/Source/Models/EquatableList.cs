@@ -36,9 +36,12 @@ namespace EppNet.SourceGen.Models
         }
 
         public override bool Equals(object obj) =>
-            Equals(obj as EquatableList<T>);
+            obj is not null &&
+            obj is EquatableList<T> other &&
+            Equals(other);
 
-        public override int GetHashCode() => 
+        public override int GetHashCode() =>
+            this.Count == 0 ? 0 :
             this.Select(item => item?.GetHashCode() ?? 0)
             .Aggregate((x, y) => x ^ y);
 

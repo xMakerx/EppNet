@@ -40,7 +40,9 @@ namespace EppNet.SourceGen.Models
             Equals(obj as EquatableDictionary<TKey, TValue>);
 
         public override int GetHashCode() =>
-            this.Select(item => item.GetHashCode()).Aggregate((x, y) => x ^ y);
+            this.Count == 0 ? 0 :
+            this.Select(item => item.GetHashCode())
+            .Aggregate((x, y) => x ^ y);
 
         public static bool operator ==(EquatableDictionary<TKey, TValue> a, EquatableDictionary<TKey, TValue> b) =>
             ReferenceEquals(a, b) || a is not null && b is not null && a.Equals(b);
