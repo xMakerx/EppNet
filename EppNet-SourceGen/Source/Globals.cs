@@ -17,6 +17,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
+using static System.Reflection.Metadata.Ecma335.MethodBodyStreamEncoder;
+
 namespace EppNet.SourceGen
 {
 
@@ -119,13 +121,9 @@ namespace EppNet.SourceGen
         public static bool HasAttribute(ClassDeclarationSyntax classNode, string attrName)
         {
             foreach (var attrList in classNode.AttributeLists)
-            {
                 foreach (var attr in attrList.Attributes)
-                {
-                    if (attr.Name.ToString() == attrName)
+                    if (attr.Name is IdentifierNameSyntax id && id.Identifier.Text == attrName)
                         return true;
-                }
-            }
 
             return false;
         }
@@ -133,13 +131,9 @@ namespace EppNet.SourceGen
         public static bool HasAttribute(MethodDeclarationSyntax methodNode, string attrName)
         {
             foreach (var attrList in methodNode.AttributeLists)
-            {
                 foreach (var attr in attrList.Attributes)
-                {
-                    if (attr.Name.ToString() == attrName)
+                    if (attr.Name is IdentifierNameSyntax id && id.Identifier.Text == attrName)
                         return true;
-                }
-            }
 
             return false;
         }
@@ -161,7 +155,7 @@ namespace EppNet.SourceGen
         {
             if (SupportedTypes.Contains(typeName))
                 return (true, false);
-            else if (resolverDict?.ContainsKey(typeName) == true)
+            else if (resolverDict is not null && resolverDict.ContainsKey(typeName))
                 return (true, false);
             else
             {
@@ -195,9 +189,7 @@ namespace EppNet.SourceGen
             NetworkParameterTypeModel? model = null;
             ITypeSymbol typeSymbol = semModel.GetTypeInfo(type, cancelToken).Type;
 
-            cancelToken.ThrowIfCancellationRequested();
-
-            if (typeSymbol == null)
+            if (cancelToken.IsCancellationRequested || typeSymbol == null)
                 return (model, null);
 
             if (typeSymbol.TypeKind == TypeKind.Enum)
@@ -214,7 +206,7 @@ namespace EppNet.SourceGen
 
             if (type is GenericNameSyntax genericName)
             {
-                string baseTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{genericName.Identifier.Text}";
+                string baseTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 (bool isValidType, bool isNetObj) = IsValidTypeName(type, semModel, baseTypeName, resolverDict);
 
                 if (!isValidType)
@@ -253,7 +245,7 @@ namespace EppNet.SourceGen
             }
             else
             {
-                string fullTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
+                string fullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 (bool isValidType, bool isNetObj) = IsValidTypeName(type, semModel, fullTypeName, resolverDict);
 
                 if (!isValidType)
@@ -285,9 +277,8 @@ namespace EppNet.SourceGen
 
             var namedArg = attrData!.NamedArguments.FirstOrDefault(arg => arg.Key == "Dist");
 
-            if (!namedArg.Equals(default(KeyValuePair<string, TypedConstant>)) &&
-                namedArg.Value.Value is int namedDistType)
-                distType = namedDistType;
+            if (attrData.NamedArguments.FirstOrDefault(arg => arg.Key == "Dist") is { Value.Value: int namedDistType })
+                return (namedDistType, attrData);
 
             return (distType, attrData);
         }
@@ -304,7 +295,8 @@ namespace EppNet.SourceGen
             NetworkObjectModel? model = null;
             List<AnalysisDiagnostic> errors = [];
 
-            cancelToken.ThrowIfCancellationRequested();
+            if (cancelToken.IsCancellationRequested)
+                return (model, errors);
 
             if (node is not ClassDeclarationSyntax classNode)
                 errors.Add(new AnalysisDiagnostic(DescNetObjError, node, "Network Objects must be classes!"));
@@ -338,13 +330,12 @@ namespace EppNet.SourceGen
                 // Let's ascend the hierarchy
                 while (true)
                 {
-                    cancelToken.ThrowIfCancellationRequested();
                     int tDistType = GetDistribution(tSymbol).Item1;
 
                     if (tDistType != -1)
                     {
                         // This is a network object
-                        string baseClassName = $"{tSymbol.ContainingNamespace.ToDisplayString()}.{tSymbol.Name}";
+                        string baseClassName = tSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                         baseNetObjs.Add(baseClassName);
 
                         AttributeSyntax context = distData.Item2.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
@@ -360,6 +351,9 @@ namespace EppNet.SourceGen
                     baseNetObjs?.Reverse();
                     break;
                 }
+
+                if (cancelToken.IsCancellationRequested)
+                    return (model, errors);
 
                 // Step 4: Let's locate network methods
                 (EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>> myMethods, List<AnalysisDiagnostic> methodErrors) = 
@@ -377,11 +371,9 @@ namespace EppNet.SourceGen
         public static (NetworkMethodModel?, List<AnalysisDiagnostic>) TryCreateNetMethod(MethodDeclarationSyntax methodNode, 
             SemanticModel semModel, IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
-            cancelToken.ThrowIfCancellationRequested();
-
             // Ensure the method has our attribute. If it doesn't...
             // we do not care
-            if (methodNode == null || !HasAttribute(methodNode, NetMethodAttr))
+            if (cancelToken.IsCancellationRequested || methodNode == null || !HasAttribute(methodNode, NetMethodAttr))
                 return (null, null);
 
             List<AnalysisDiagnostic> errors = [];
@@ -425,9 +417,6 @@ namespace EppNet.SourceGen
 
             foreach (ParameterSyntax paramNode in methodNode.ParameterList.Parameters)
             {
-                // Don't get too far without polling token
-                cancelToken.ThrowIfCancellationRequested();
-
                 TypeSyntax type = paramNode.Type;
 
                 (NetworkParameterTypeModel? typeModel, TypeSyntax typeArg) = TryCreateParameterModel(type, semModel, resolverDict, cancelToken);
@@ -435,7 +424,7 @@ namespace EppNet.SourceGen
                 if (!typeModel.HasValue)
                 {
                     ITypeSymbol typeSymbol = semModel.GetTypeInfo(typeArg, cancelToken).Type;
-                    string typeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
+                    string typeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
                     errors.Add(new AnalysisDiagnostic(DescNetMethodError, typeArg, 
                         $"\"{typeName}\" is not a valid network type or network object. Do you have a resolver?", methodNode.GetLocation()));
@@ -445,6 +434,9 @@ namespace EppNet.SourceGen
             }
 
             NetworkMethodModel? model = null;
+
+            if (cancelToken.IsCancellationRequested)
+                return (model, errors);
 
             if (errors.Count == 0)
             {
@@ -459,13 +451,17 @@ namespace EppNet.SourceGen
             SemanticModel semModel, IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
 
-            cancelToken.ThrowIfCancellationRequested();
+            if (cancelToken.IsCancellationRequested)
+                return (null, null);
 
             EquatableDictionary<string, EquatableHashSet<NetworkMethodModel>> methodsDict = new();
             List<AnalysisDiagnostic> allDiags = [];
 
-            foreach (MethodDeclarationSyntax methodNode in classNode.Members.OfType<MethodDeclarationSyntax>())
+            foreach (var member in classNode.Members)
             {
+                if (member is not MethodDeclarationSyntax methodNode)
+                    continue;
+
                 (NetworkMethodModel? model, List<AnalysisDiagnostic> diags) =
                     TryCreateNetMethod(methodNode, semModel, resolverDict, cancelToken);
 
@@ -493,7 +489,8 @@ namespace EppNet.SourceGen
             ResolverModel? model = null;
             List<AnalysisDiagnostic> errors = [];
 
-            cancelToken.ThrowIfCancellationRequested();
+            if (cancelToken.IsCancellationRequested)
+                return (model, errors);
 
             if (node is not ClassDeclarationSyntax classNode)
             {
