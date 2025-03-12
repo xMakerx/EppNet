@@ -118,11 +118,21 @@ namespace EppNet.SourceGen
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
+        private static string GetAttributeName(AttributeSyntax attr)
+        {
+            return attr.Name switch
+            {
+                IdentifierNameSyntax id => id.Identifier.Text,
+                QualifiedNameSyntax q => q.Right.Identifier.Text,
+                _ => attr.Name.ToString()
+            };
+        }
+
         public static bool HasAttribute(ClassDeclarationSyntax classNode, string attrName)
         {
             foreach (var attrList in classNode.AttributeLists)
                 foreach (var attr in attrList.Attributes)
-                    if (attr.Name is IdentifierNameSyntax id && id.Identifier.Text == attrName)
+                    if (GetAttributeName(attr) == attrName)
                         return true;
 
             return false;
@@ -132,7 +142,7 @@ namespace EppNet.SourceGen
         {
             foreach (var attrList in methodNode.AttributeLists)
                 foreach (var attr in attrList.Attributes)
-                    if (attr.Name is IdentifierNameSyntax id && id.Identifier.Text == attrName)
+                    if (GetAttributeName(attr) == attrName)
                         return true;
 
             return false;
