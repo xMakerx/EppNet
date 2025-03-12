@@ -17,8 +17,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-using static System.Reflection.Metadata.Ecma335.MethodBodyStreamEncoder;
-
 namespace EppNet.SourceGen
 {
 
