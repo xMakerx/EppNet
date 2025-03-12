@@ -2,17 +2,27 @@
 using EppNet.Data;
 
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace EppNet.Objects
 {
 
+    [NetworkObject(Dist = Distribution.Client)]
+    public partial class MyBaseObject : INetworkObject
+    {
+
+        [NetworkMethod]
+        public void Goodbye() { }
+
+    }
+
     [NetworkObject(Dist = Distribution.Server)]
-    public partial class MyTestObject : INetworkObject
+    public partial class MyTestObject : MyBaseObject
     {
         public long ID { set; get; }
 
         [NetworkMethod]
-        public void Hello(int a)
+        public void Hello((MyBaseObject, decimal) a)
         {
 
         }

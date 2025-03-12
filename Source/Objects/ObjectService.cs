@@ -9,7 +9,6 @@ using EppNet.Commands;
 using EppNet.Logging;
 using EppNet.Registers;
 using EppNet.Services;
-using EppNet.Sim;
 using EppNet.Utilities;
 
 using System;
@@ -391,14 +390,14 @@ namespace EppNet.Objects
             }
 
             // Let's set our state to deleted.
-            slot.State = EnumObjectState.Deleted;
+            slot.Object.State.Set(EnumObjectState.Deleted);
 
             // Let's reset ticks left until deletion (if agent is valid)
             if (slot.Object != null)
-                slot.Object.TicksUntilDeletion = -1;
+                slot.Object.TicksUntilDeletion.Set(-1);
 
             // Raise our event that an object was deleted
-            OnObjectDeleted?.Invoke(new(this, slot));
+            OnObjectDeleted?.Invoke(new(slot, this));
 
             // Running user deletion code shouldn't brick the entire object manager.
             // This is wrapped with a try-catch to handle if something else goes wrong

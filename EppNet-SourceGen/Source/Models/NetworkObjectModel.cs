@@ -11,31 +11,10 @@ using System;
 namespace EppNet.SourceGen.Models
 {
 
-    [Flags]
-    public enum NetworkObjectAnalysisError
-    {
-        None                = 0,
-
-        /// <summary>
-        /// Located definition is not partial
-        /// </summary>
-        NotPartial          = 1 << 0,
-
-        /// <summary>
-        /// Located definition does not implement INetworkObject
-        /// </summary>
-        LacksInheritance    = 1 << 1,
-
-        /// <summary>
-        /// Is not a class
-        /// </summary>
-        NotClass            = 1 << 2,
-    }
-
     /// <summary>
     /// Stores information about a particular network type resolver
     /// </summary>
-    public readonly struct NetworkObjectModel(ISymbol symbol, EquatableList<NetworkMethodModel> methods) : IEquatable<NetworkObjectModel>
+    public readonly struct NetworkObjectModel(INamedTypeSymbol symbol, int distType, EquatableList<string> baseNetObjectsFQNs, EquatableDictionary<string, EquatableList<NetworkMethodModel>> methodDict) : IEquatable<NetworkObjectModel>
     {
         public string Name { get; } = symbol.Name;
 
@@ -51,8 +30,16 @@ namespace EppNet.SourceGen.Models
         }
 
         public string FullyQualifiedName { get; } = $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
+        
+        /// <summary>
+        /// The hierarchy of network objects where the first element is the first network object in the tree
+        /// that doesn't inherit from another network object.
+        /// </summary>
+        public EquatableList<string> NetObjectHierarchy { get; } = baseNetObjectsFQNs;
 
-        public EquatableList<NetworkMethodModel> Methods { get; } = methods;
+        public int Distribution { get; } = distType;
+
+        public EquatableDictionary<string, EquatableList<NetworkMethodModel>> Methods { get; } = methodDict;
 
         public override bool Equals(object obj) =>
             obj is NetworkObjectModel model &&
@@ -62,15 +49,23 @@ namespace EppNet.SourceGen.Models
             Name == other.Name &&
             Namespace == other.Namespace &&
             FullNamespace == other.FullNamespace &&
+            FullyQualifiedName == other.FullyQualifiedName &&
+            NetObjectHierarchy == other.NetObjectHierarchy &&
             Methods == other.Methods;
 
-        public override string ToString() =>
-            $"{FullyQualifiedName} Methods: {Methods.Count}";
+        public override string ToString()
+        {
+            if (NetObjectHierarchy.Count > 0)
+                return $"{FullNamespace}({NetObjectHierarchy[0]}) Methods: {Methods.Count}";
+
+            return $"{FullNamespace} Methods: {Methods.Count}";
+        }
 
         public override int GetHashCode() =>
             Name.GetHashCode() ^
             Namespace.GetHashCode() ^
             FullyQualifiedName.GetHashCode() ^
+            (NetObjectHierarchy != null ? NetObjectHierarchy.GetHashCode() : 1) ^
             Methods.GetHashCode();
 
         public static bool operator ==(NetworkObjectModel left, NetworkObjectModel right) => left.Equals(right);

@@ -7,14 +7,17 @@
 using Microsoft.CodeAnalysis;
 
 using System;
+using System.Text;
 
 namespace EppNet.SourceGen.Models
 {
 
-    public readonly struct NetworkParameterTypeModel(ISymbol symbol, EquatableList<NetworkParameterTypeModel> subtypes, string underlyingType = null, bool isNetObject = false)
+    public readonly struct NetworkParameterTypeModel(ISymbol symbol, 
+        EquatableList<NetworkParameterTypeModel> subtypes, 
+        string underlyingType = null, 
+        bool isNetObject = false)
         : IEquatable<NetworkParameterTypeModel>
     {
-
         public string Name { get; } = symbol.Name;
         public string Namespace { get; } = symbol.ContainingNamespace.Name;
         public string FullyQualifiedName { get; } = $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
@@ -39,8 +42,26 @@ namespace EppNet.SourceGen.Models
             // let's not include this so we don't rerun the pipeline TypeAsWritten == other.TypeAsWritten &&
             IsNetObject == other.IsNetObject;
 
-        public override string ToString() =>
-            FullyQualifiedName;
+        public override string ToString()
+        {
+            if (Subtypes != null && Subtypes.Count > 0)
+            {
+                StringBuilder builder = new($"{FullyQualifiedName}<");
+                
+                for (int i = 0; i < Subtypes.Count; i++)
+                {
+                    builder.Append(Subtypes[i].ToString());
+
+                    if (i + 1 < Subtypes.Count)
+                        builder.Append(", ");
+                }
+
+                builder.Append(">");
+                return builder.ToString();
+            }
+
+            return FullyQualifiedName;
+        }
 
         public override int GetHashCode() =>
             Name.GetHashCode() ^

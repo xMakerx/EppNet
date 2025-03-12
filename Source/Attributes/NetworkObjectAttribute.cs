@@ -19,6 +19,8 @@ namespace EppNet.Attributes
     public class NetworkObjectAttribute : Attribute
     {
 
+        const string Empty = "";
+
         /// <summary>
         /// Specify a creator method for generating a new instance of this object.<br/>
         /// This should specify the name of an accessible static method that returns the type<br/>
@@ -38,12 +40,15 @@ namespace EppNet.Attributes
 
         public Distribution Dist;
 
-        public NetworkObjectAttribute()
+        public NetworkObjectAttribute(string creatorMethodName = Empty, 
+            string destructorMethodName = Empty, 
+            bool isGlobal = false, 
+            Distribution dist = Distribution.Shared)
         {
-            this.Creator = string.Empty;
-            this.Destructor = string.Empty;
-            this.Global = false;
-            this.Dist = Distribution.Shared;
+            this.Creator = creatorMethodName;
+            this.Destructor = destructorMethodName;
+            this.Global = isGlobal;
+            this.Dist = dist;
         }
 
     }

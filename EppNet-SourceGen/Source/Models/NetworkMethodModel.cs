@@ -11,32 +11,6 @@ using System.Text;
 
 namespace EppNet.SourceGen.Models
 {
-
-    [Flags]
-    public enum NetworkMethodAnalysisError
-    {
-        None = 0,
-
-        NotMethod = 1 << 0,
-
-        /// <summary>
-        /// Not declared in a class with a NetworkObject attribute
-        /// </summary>
-        NotNetworkObjectClass = 1 << 1,
-
-        Inaccessible = 1 << 2,
-
-        /// <summary>
-        /// Flags are invalid
-        /// </summary>
-        InvalidFlags = 1 << 3,
-
-        /// <summary>
-        /// A parameter type is missing a resolver
-        /// </summary>
-        MissingResolver = 1 << 4
-    }
-
     public readonly struct NetworkMethodModel(ISymbol symbol, EquatableList<NetworkParameterTypeModel> parameters) : IEquatable<NetworkMethodModel>
     {
 
@@ -68,18 +42,16 @@ namespace EppNet.SourceGen.Models
         {
             StringBuilder builder = new($"{Name}(");
 
-            /*foreach ()
-
-            for (int i = 0; i < Parameters.Length; i++)
+            for (int i = 0; i < Parameters.Count; i++)
             {
-                string type = ParameterTypes[i];
+                NetworkParameterTypeModel type = Parameters[i];
                 builder.Append(type);
 
-                if (i + 1 < ParameterTypes.Length)
+                if (i + 1 < Parameters.Count)
                     builder.Append(", ");
             }
 
-            builder.Append(")");*/
+            builder.Append(")");
             return builder.ToString();
         }
 

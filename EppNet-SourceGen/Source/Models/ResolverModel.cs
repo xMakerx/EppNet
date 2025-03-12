@@ -11,16 +11,6 @@ using System;
 namespace EppNet.SourceGen.Models
 {
 
-    [Flags]
-    public enum ResolverAnalysisError
-    {
-        None = 0,
-        NoAttribute      = 1 << 0,
-        LacksInheritance = 1 << 1,
-        LacksSingleton   = 1 << 2,
-        NotClass         = 1 << 3,
-    }
-
     /// <summary>
     /// Stores information about a particular network type resolver
     /// </summary>
@@ -50,10 +40,16 @@ namespace EppNet.SourceGen.Models
         public override string ToString() =>
             $"{Name}<{ResolvedTypeFullName}>";
 
-        public override int GetHashCode() => Name.GetHashCode() ^ Namespace.GetHashCode() ^ ResolvedTypeFullName.GetHashCode();
+        public override int GetHashCode() =>
+            Name.GetHashCode() ^ 
+            Namespace.GetHashCode() ^
+            ResolvedTypeFullName.GetHashCode();
 
-        public static bool operator ==(ResolverModel left, ResolverModel right) => left.Equals(right);
-        public static bool operator !=(ResolverModel left, ResolverModel right) => !left.Equals(right);
+        public static bool operator ==(ResolverModel left, ResolverModel right) =>
+            left.Equals(right);
+
+        public static bool operator !=(ResolverModel left, ResolverModel right) =>
+            !left.Equals(right);
     }
 
 }

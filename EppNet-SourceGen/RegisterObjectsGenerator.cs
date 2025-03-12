@@ -6,8 +6,11 @@
 using EppNet.SourceGen.Models;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -24,57 +27,70 @@ namespace EppNet.SourceGen
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
 
+            ConcurrentDictionary<string, string> resolverDict = new();
+
             // Let's locate our resolvers
-            IncrementalValuesProvider<ResolverModel?> resolverProvider = context.SyntaxProvider
+            var resolvers = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     NetTypeResolverAttrFullName,
                     predicate: static (node, _) => node is ClassDeclarationSyntax,
-                    transform: static (ctx, ct) => LocateResolver(ctx.TargetNode, ctx.SemanticModel, ct).Item1
-                );
-
-            var resolvers = resolverProvider
+                    transform: static (ctx, ct) => TryCreateResolver(ctx.TargetNode as CSharpSyntaxNode, ctx.SemanticModel, ct).Item1
+                )
                 .Where(static r => r is not null)
                 .Collect()
-                .Select(static (list, _) => list.ToDictionary(r => r.Value.ResolvedTypeFullName, r => r.Value.Name));
+                .Select(static (list, _) => list.ToDictionary(r => r!.Value.ResolvedTypeFullName, r => r!.Value.Name));
 
             var netObjects = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     NetObjectAttrFullName,
                     predicate: static (node, _) => node is ClassDeclarationSyntax,
-                    transform: static (ctx, ct) => LocateNetObject(ctx.TargetNode, ctx.SemanticModel, ct)
+                    transform: (ctx, ct) => TryCreateNetObject(ctx.TargetNode as CSharpSyntaxNode, ctx.SemanticModel, null, ct)
                 )
-                //.Combine(resolvers)
                 .Where(static o => o.Item1 is not null)
                 .Collect()
-                .Select(static (list, _) => list.ToDictionary(o => o.Item1.Value.FullyQualifiedName, o => o.Item1));
+                .Select(static (list, _) => list.ToDictionary(o => o!.Item1.Value.FullyQualifiedName, o => o!.Item1.Value));
 
-            var combined = netObjects.Combine(resolvers);
-
-            var netMethods = context.SyntaxProvider
-                .ForAttributeWithMetadataName(
-                    NetMethodAttrFullName,
-                    predicate: static (node, _) => node is MethodDeclarationSyntax,
-                    transform: static (ctx, ct) => (ctx, ct)
-                )
-                .Combine(combined)
-                .Select(static (pair, _) =>
-                {
-                    var ((ctx, ct), (netObjects, resolvers)) = pair;
-                    return LocateNetMethod(ctx.TargetNode, ctx.SemanticModel, resolvers, netObjects, ct);
-                });
-
-            context.RegisterSourceOutput(netObjects, static (spc, objs) =>
+            context.RegisterSourceOutput(netObjects.Combine(resolvers), static (SourceProductionContext spc, (Dictionary<string, NetworkObjectModel>, Dictionary<string, string>) b) =>
             {
 
-                foreach (NetworkObjectModel? obj in objs.Values)
-                {
-                    if (!obj.HasValue)
-                        return;
+                (Dictionary<string, NetworkObjectModel> objs, Dictionary<string, string> resolverDict) = b;
 
-                    NetworkObjectModel model = obj.Value;
+                foreach (KeyValuePair<string, NetworkObjectModel> kvp in objs)
+                {
+                    string fqn = kvp.Key;
+                    NetworkObjectModel model = kvp.Value;
+
+                    StringBuilder availableMethods = new();
+
+                    foreach (KeyValuePair<string, EquatableList<NetworkMethodModel>> kvp2 in model.Methods)
+                    {
+                        EquatableList<NetworkMethodModel> methods = kvp2.Value;
+
+                        foreach (NetworkMethodModel method in methods)
+                            availableMethods.AppendLine($"// - {method.ToString()}");
+                    }
+
+                    if (availableMethods.Length == 0)
+                        availableMethods.Append($"// no methods found?!?! HELLO!? Methods.Count: {model.Methods.Count}");
+
+                    StringBuilder hierarchy = new();
+
+                    if (model.NetObjectHierarchy == null)
+                        hierarchy.AppendLine("// - System.Object");
+                    else
+                    {
+                        foreach (string bFQN in model.NetObjectHierarchy)
+                            hierarchy.AppendLine($"// - {bFQN}");
+                    }
+
                     StringBuilder builder = new($$"""
                         // <auto-generated/>
                         // full {{model.FullNamespace}}
+                        // hierarchy:
+                        {{hierarchy.ToString()}}
+                        // available methods:
+                        {{availableMethods.ToString()}}
+                        // dist: {{model.Distribution}}
 
                         using EppNet.Logging;
                         using EppNet.Node;

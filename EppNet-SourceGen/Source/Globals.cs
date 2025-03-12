@@ -4,14 +4,17 @@
 /// Authors: Maverick Liberty
 //////////////////////////////////////////////
 
+using EppNet.SourceGen.Errors;
 using EppNet.SourceGen.Models;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace EppNet.SourceGen
@@ -140,29 +143,63 @@ namespace EppNet.SourceGen
 
             return false;
         }
-        
 
-        // Checks if the specified type name is valid
-        // (IsValid, IsNetObject)
-        public static (bool, bool) IsValidTypeName(string typeName, IDictionary<string, string> resolverDict,
-            IDictionary<string, NetworkObjectModel?> objDict)
+        /// <summary>
+        /// Checks if the specified fully qualified type name is valid; meaning:<br/>
+        /// 1. It's listed under <see cref="SupportedTypes"/>; or<br/>
+        /// 2. It has a registered resolver; or<br/>
+        /// 3. It is a registered network object.
+        /// </summary>
+        /// <param name="typeSyntax"></param>
+        /// <param name="semModel"></param>
+        /// <param name="typeName"></param>
+        /// <param name="resolverDict"></param>
+        /// <returns>A tuple denoting if the type is valid and if it's a network object<br/>
+        /// (IsValid, IsNetObject)</returns>
+        public static (bool, bool) IsValidTypeName(TypeSyntax typeSyntax, SemanticModel semModel, string typeName, 
+            IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
-
             if (SupportedTypes.Contains(typeName))
                 return (true, false);
-
-            if (resolverDict.ContainsKey(typeName))
+            else if (resolverDict != null && resolverDict.ContainsKey(typeName))
                 return (true, false);
+            else
+            {
+                // Let's determine if the type is a network object
+                INamedTypeSymbol typeSymbol = semModel.GetSymbolInfo(typeSyntax).Symbol as INamedTypeSymbol ??
+                    semModel.GetTypeInfo(typeSyntax).Type as INamedTypeSymbol;
 
-            if (objDict.ContainsKey(typeName))
-                return (true, true);
+                // Invalid if null
+                if (typeSymbol == null)
+                    return (false, false);
+
+                SyntaxReference synRef = typeSymbol.DeclaringSyntaxReferences.FirstOrDefault();
+
+                // Invalid if null
+                if (synRef == null)
+                    return (false, false);
+
+                if (synRef.GetSyntax() is ClassDeclarationSyntax classNode)
+                {
+                    // Let's not go very far and only check for the net object attribute
+                    if (HasAttribute(classNode, NetObjectAttr))
+                        return (true, true);
+
+                    if (resolverDict == null && HasAttribute(classNode, NetTypeResolverAttr))
+                    {
+                        // This could very well be a valid resolver
+                        if (TryCreateResolver(typeSyntax, semModel, cancelToken).Item1.HasValue)
+                            return (true, false);
+                    }
+                }
+            }
 
             return (false, false);
         }
 
-        public static (NetworkParameterTypeModel?, TypeSyntax) ExamineType(TypeSyntax type, SemanticModel semModel,
+        public static (NetworkParameterTypeModel?, TypeSyntax) TryCreateParameterModel(TypeSyntax type, SemanticModel semModel,
             IDictionary<string, string> resolverDict,
-            IDictionary<string, NetworkObjectModel?> objDict, CancellationToken cancelToken = default)
+            CancellationToken cancelToken = default)
         {
             // We want to:
             // 1) Examine the type to see if it's supported.
@@ -187,12 +224,12 @@ namespace EppNet.SourceGen
             }
 
             if (type is ArrayTypeSyntax arrayType)
-                return ExamineType(arrayType.ElementType, semModel, resolverDict, objDict, cancelToken);
+                return TryCreateParameterModel(arrayType.ElementType, semModel, resolverDict, cancelToken);
 
             if (type is GenericNameSyntax genericName)
             {
                 string baseTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{genericName.Identifier.Text}";
-                (bool isValidType, bool isNetObj) = IsValidTypeName(baseTypeName, resolverDict, objDict);
+                (bool isValidType, bool isNetObj) = IsValidTypeName(type, semModel, baseTypeName, resolverDict);
 
                 if (!isValidType)
                     return (model, type);
@@ -200,7 +237,7 @@ namespace EppNet.SourceGen
                 EquatableList<NetworkParameterTypeModel> subtypes = new();
                 foreach (TypeSyntax typeArg in genericName.TypeArgumentList.Arguments)
                 {
-                    var result = ExamineType(typeArg, semModel, resolverDict, objDict, cancelToken);
+                    var result = TryCreateParameterModel(typeArg, semModel, resolverDict, cancelToken);
 
                     // Let's ensure the result is valid
                     if (result.Item1 == null)
@@ -217,7 +254,7 @@ namespace EppNet.SourceGen
                 foreach (TupleElementSyntax tupleArg in tuple.Elements)
                 {
                     TypeSyntax typeArg = tupleArg.Type;
-                    var result = ExamineType(typeArg, semModel, resolverDict, objDict, cancelToken);
+                    var result = TryCreateParameterModel(typeArg, semModel, resolverDict, cancelToken);
 
                     // Let's ensure the result is valid
                     if (result.Item1 == null)
@@ -231,7 +268,7 @@ namespace EppNet.SourceGen
             else
             {
                 string fullTypeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
-                (bool isValidType, bool isNetObj) = IsValidTypeName(fullTypeName, resolverDict, objDict);
+                (bool isValidType, bool isNetObj) = IsValidTypeName(type, semModel, fullTypeName, resolverDict);
 
                 if (!isValidType)
                     return (model, type);
@@ -242,138 +279,249 @@ namespace EppNet.SourceGen
             return (model, null);
         }
 
-        public static (NetworkMethodModel?, NetworkMethodAnalysisError, ParameterSyntax, TypeSyntax) LocateNetMethod(SyntaxNode node, SemanticModel semModel, 
-            IDictionary<string, string> resolverDict,
-            IDictionary<string, NetworkObjectModel?> objDict, CancellationToken cancelToken = default)
+        /// <summary>
+        /// Locates the distribution type from a specified <see cref="INamedTypeSymbol"/><br/>
+        /// Returns -1 if the provided symbol does not have the <see cref="NetObjectAttrFullName"/> attribute.
+        /// </summary>
+        /// <param name="symbol"></param>
+        /// <returns></returns>
+        private static (int, AttributeData) GetDistribution(INamedTypeSymbol symbol)
         {
+            AttributeData attrData = symbol.GetAttributes().FirstOrDefault(
+                attr => attr.AttributeClass?.ToDisplayString() == NetObjectAttrFullName);
 
+            // If attribute not found, return -1
+            if (attrData == null)
+                return (-1, null);
+
+            int distType = attrData!.ConstructorArguments.Length > 0 &&
+                attrData!.ConstructorArguments[3].Value is int dist ? dist : 0;
+
+            var namedArg = attrData!.NamedArguments.FirstOrDefault(arg => arg.Key == "Dist");
+
+            if (!namedArg.Equals(default(KeyValuePair<string, TypedConstant>)) &&
+                namedArg.Value.Value is int namedDistType)
+                distType = namedDistType;
+
+            return (distType, attrData);
+        }
+
+        public static (NetworkObjectModel?, List<AnalysisError>) TryCreateNetObject(CSharpSyntaxNode node, SemanticModel semModel,
+            IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
+        {
             // We want to:
-            // 1) Ensure the method is accessible (public)
-            // 2) Ensure the method is part of a class decorated with a NetworkObject attribute
-            // 3) Ensure the parameter types have a network resolver
+            // 1) Ensure the class derives from INetworkObject
+            // 2) Ensure the class is partial
+            // 3) Examine the base class to ensure distribution types are compatible
+            // 4) Try to create models of located network methods
 
-            NetworkMethodModel? model = null;
-            NetworkMethodAnalysisError error = NetworkMethodAnalysisError.None;
+            NetworkObjectModel? model = null;
+            List<AnalysisError> errors = [];
 
             cancelToken.ThrowIfCancellationRequested();
 
-            if (cancelToken.IsCancellationRequested || node is not MethodDeclarationSyntax methodNode)
-                return (model, NetworkMethodAnalysisError.NotMethod, null, null);
+            if (node is not ClassDeclarationSyntax classNode)
+                errors.Add(new AnalysisError(DescNetObjError, node, "Network Objects must be classes!"));
+            else
+            {
+                INamedTypeSymbol symbol = semModel.GetDeclaredSymbol(classNode);
 
+                if (symbol == null)
+                {
+                    errors.Add(new AnalysisError(DescNetObjError, node, "Network Objects must be classes!"));
+                    return (model, errors);
+                }
+
+                // Step 1: Ensure class is partial
+                if (!classNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+                    errors.Add(new AnalysisError(DescNetObjError, node, "Network Objects must be partial classes!"));
+
+                // Step 2: Ensure class derives from INetworkObject
+                if (!symbol.AllInterfaces.Any(s => s.Name == NetworkObjectInterfaceName))
+                    errors.Add(new AnalysisError(DescNetObjError, node, $"Network Objects must inherit from {NetworkObjectInterfaceName}!"));
+
+                (int, AttributeData) distData = GetDistribution(symbol);
+                int distType = distData.Item1;
+
+                // Step 3: Examine base classes to check for network objects and ensure distr type compatibility
+                INamedTypeSymbol baseSymbol = symbol.BaseType;
+
+                INamedTypeSymbol tSymbol = baseSymbol;
+                List<string> baseNetObjs = [];
+
+                // Let's ascend the hierarchy
+                while (true)
+                {
+                    cancelToken.ThrowIfCancellationRequested();
+                    int tDistType = GetDistribution(tSymbol).Item1;
+
+                    if (tDistType != -1)
+                    {
+                        // This is a network object
+                        string baseClassName = $"{tSymbol.ContainingNamespace.ToDisplayString()}.{tSymbol.Name}";
+                        baseNetObjs.Add(baseClassName);
+
+                        AttributeSyntax context = distData.Item2.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+
+                        if (!(tDistType == 0 || (tDistType == distType)))
+                            errors.Add(new AnalysisError(DescNetObjError, context, $"Distribution type is incompatible with base class \"{baseClassName}\"!"));
+
+                        tSymbol = tSymbol.BaseType;
+                        continue;
+                    }
+
+                    // This is not a network object. We're done with our traversal
+                    baseNetObjs?.Reverse();
+                    break;
+                }
+
+                // Step 4: Let's locate network methods
+                (EquatableDictionary<string, EquatableList<NetworkMethodModel>> myMethods, List<AnalysisError> methodErrors) = 
+                    TryAndLocateNetMethods(classNode, semModel, resolverDict, cancelToken);
+
+                errors.AddRange(methodErrors);
+
+                if (errors.Count == 0)
+                    model = new NetworkObjectModel(symbol, distType, new(baseNetObjs), myMethods);
+            }
+
+            return (model, errors);
+        }
+
+        public static (NetworkMethodModel?, List<AnalysisError>) TryCreateNetMethod(MethodDeclarationSyntax methodNode, 
+            SemanticModel semModel, IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
+        {
+            cancelToken.ThrowIfCancellationRequested();
+
+            // Ensure the method has our attribute. If it doesn't...
+            // we do not care
+            if (methodNode == null || !HasAttribute(methodNode, NetMethodAttr))
+                return (null, null);
+
+            List<AnalysisError> errors = [];
             IMethodSymbol symbol = semModel.GetDeclaredSymbol(methodNode);
 
             if (symbol == null)
-                return (model, NetworkMethodAnalysisError.NotMethod, null, null);
+                return (null, [new AnalysisError(DescNetMethodError, methodNode, "Failed to resolve symbol information.")]);
 
-            // Step 1: Ensure the method is accessible
-            if (!methodNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword)))
-                error = NetworkMethodAnalysisError.Inaccessible;
+            // Step 1: Ensure the method is accessible and doesn't have invalid modifiers
+            bool accessible = false;
+            List<Location> invalidTokenLocations = null;
 
-            // Step 2: Ensure the method is part of a class decorated with a NetworkObject attribute
-            ClassDeclarationSyntax classNode = methodNode.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+            foreach (SyntaxToken token in methodNode.Modifiers)
+            {
+                if (token.IsKind(SyntaxKind.PublicKeyword))
+                    accessible = true;
 
-            if (classNode != null && !HasAttribute(classNode, NetObjectAttr))
-                error |= NetworkMethodAnalysisError.NotNetworkObjectClass;
+                // Let's check for invalid modifiers
+                if (token.IsKind(SyntaxKind.ProtectedKeyword) ||
+                    token.IsKind(SyntaxKind.InternalKeyword) ||
+                    token.IsKind(SyntaxKind.PrivateKeyword) ||
+                    token.IsKind(SyntaxKind.AbstractKeyword) ||
+                    token.IsKind(SyntaxKind.AsyncKeyword))
+                {
+                    if (invalidTokenLocations == null)
+                        invalidTokenLocations = [];
 
-            // Step 3: Ensure the parameters types have a network resolver
+                    invalidTokenLocations.Add(token.GetLocation());
+                }
+
+            }
+
+            if (!accessible || invalidTokenLocations != null)
+                errors.Add(new AnalysisError(DescNetMethodError, methodNode,
+                    "Methods must be public, non-abstract, and synchronous!",
+                    invalidTokenLocations));
+
+            // Step 3: Ensure the parameters types have a network resolver or are
+            // network objects
             EquatableList<NetworkParameterTypeModel> parameters = new();
 
             foreach (ParameterSyntax paramNode in methodNode.ParameterList.Parameters)
             {
+                // Don't get too far without polling token
+                cancelToken.ThrowIfCancellationRequested();
+
                 TypeSyntax type = paramNode.Type;
 
-                (NetworkParameterTypeModel? typeModel, TypeSyntax typeArg) = ExamineType(type, semModel, resolverDict, objDict, cancelToken);
+                (NetworkParameterTypeModel? typeModel, TypeSyntax typeArg) = TryCreateParameterModel(type, semModel, resolverDict, cancelToken);
 
                 if (!typeModel.HasValue)
                 {
-                    // Type is invalid.
-                    return (model, error | NetworkMethodAnalysisError.MissingResolver, paramNode, typeArg);
-                }
+                    ITypeSymbol typeSymbol = semModel.GetTypeInfo(typeArg, cancelToken).Type;
+                    string typeName = $"{typeSymbol.ContainingNamespace.ToDisplayString()}.{typeSymbol.Name}";
 
-                parameters.Add(typeModel.Value);
+                    errors.Add(new AnalysisError(DescNetMethodError, typeArg, 
+                        $"\"{typeName}\" is not a valid network type or network object. Do you have a resolver?", methodNode.GetLocation()));
+                }
+                else
+                    parameters.Add(typeModel.Value);
             }
 
-            model = new NetworkMethodModel(symbol, parameters);
+            NetworkMethodModel? model = null;
 
-            INamedTypeSymbol classSymbol = semModel.GetDeclaredSymbol(classNode);
-            string className = $"{classSymbol.ContainingNamespace.ToDisplayString()}.{classSymbol.Name}";
-
-            if (!objDict.TryGetValue(className, out NetworkObjectModel? netModel))
-                error |= NetworkMethodAnalysisError.NotNetworkObjectClass;
-            else
+            if (errors.Count == 0)
             {
-                NetworkObjectModel objModel = netModel.Value;
-                bool added = false;
-
-                for (int i = 0; i < objModel.Methods.Count; i++)
-                {
-                    NetworkMethodModel methodModel = objModel.Methods[i];
-
-                    if (methodModel.Equals(model))
-                    {
-                        objModel.Methods[i] = model.Value;
-                        added = true;
-                        break;
-                    }
-                }
-
-                if (!added)
-                    objModel.Methods.Add(model.Value);
+                // If we didn't encounter any errors, let's create the model
+                model = new(symbol, parameters);
             }
 
-            return (model, error, null, null);
+            return (model, errors);
         }
 
-        public static (NetworkObjectModel?, NetworkObjectAnalysisError) LocateNetObject(SyntaxNode node, SemanticModel semModel,
-            CancellationToken cancelToken = default)
+        public static (EquatableDictionary<string, EquatableList<NetworkMethodModel>>, List<AnalysisError>) TryAndLocateNetMethods(ClassDeclarationSyntax classNode, 
+            SemanticModel semModel, IDictionary<string, string> resolverDict, CancellationToken cancelToken = default)
         {
-            // We want to:
-            // 1) Ensure the class inherits from INetworkObject
-            // 2) Ensure the class is partial
-            NetworkObjectModel? model = null;
-            NetworkObjectAnalysisError error = NetworkObjectAnalysisError.None;
 
             cancelToken.ThrowIfCancellationRequested();
 
-            if (cancelToken.IsCancellationRequested || node is not ClassDeclarationSyntax classNode)
-                return (model, NetworkObjectAnalysisError.NotClass);
+            EquatableDictionary<string, EquatableList<NetworkMethodModel>> methodsDict = new();
+            List<AnalysisError> allErrors = [];
 
-            INamedTypeSymbol symbol = semModel.GetDeclaredSymbol(classNode);
+            foreach (MethodDeclarationSyntax methodNode in classNode.Members.OfType<MethodDeclarationSyntax>())
+            {
+                (NetworkMethodModel? model, List<AnalysisError> errors) =
+                    TryCreateNetMethod(methodNode, semModel, resolverDict, cancelToken);
 
-            if (symbol == null)
-                return (model, error);
+                if (model.HasValue)
+                {
+                    string methodName = methodNode.Identifier.Text;
+                    if (methodsDict.TryGetValue(methodName, out EquatableList<NetworkMethodModel> list))
+                        list.Add(model.Value);
+                    else
+                        methodsDict[methodName] = [model.Value];
+                }
 
-            // Step 1: Ensure class is partial
-            if (!classNode.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-                error |= NetworkObjectAnalysisError.NotPartial;
+                allErrors.AddRange(errors);
+            }
 
-            // Step 2: Ensure class inherits from INetworkObject
-            if (!symbol.AllInterfaces.Any(s => s.Name == NetworkObjectInterfaceName))
-                error |= NetworkObjectAnalysisError.LacksInheritance;
-
-            if (error == NetworkObjectAnalysisError.None)
-                model = new(symbol, []);
-
-            return (model, error);
+            return (methodsDict, allErrors);
         }
         
-        public static (ResolverModel?, ResolverAnalysisError) LocateResolver(SyntaxNode node, SemanticModel semModel, CancellationToken cancelToken = default)
+        public static (ResolverModel?, List<AnalysisError>) TryCreateResolver(CSharpSyntaxNode node, SemanticModel semModel, 
+            CancellationToken cancelToken = default)
         {
             // We want to:
             // 1) Ensure the class inherits from Resolver<T>
             // 2) Ensure the class has a public singleton symbol defined at the top
             ResolverModel? model = null;
-            ResolverAnalysisError error = ResolverAnalysisError.None;
+            List<AnalysisError> errors = [];
 
             cancelToken.ThrowIfCancellationRequested();
 
-            if (cancelToken.IsCancellationRequested || node is not ClassDeclarationSyntax classNode)
-                return (model, ResolverAnalysisError.NotClass);
+            if (node is not ClassDeclarationSyntax classNode)
+            {
+                errors.Add(new AnalysisError(DescTypeResolverError, node, "Network Resolvers must be classes!"));
+                return (model, errors);
+            }
 
             INamedTypeSymbol symbol = semModel.GetDeclaredSymbol(classNode);
 
             if (symbol == null)
-                return (model, error);
+            {
+                errors.Add(new AnalysisError(DescTypeResolverError, node, "Failed to resolve symbol information."));
+                return (model, errors);
+            }
 
             // Step 1: Ensure class has singleton field/property named Instance
             ISymbol singletonSymbol = symbol.GetMembers("Instance").FirstOrDefault(m =>
@@ -383,9 +531,12 @@ namespace EppNet.SourceGen
                 (m is IPropertySymbol prop && prop.Type.Name == symbol.Name))
             );
 
-            // If we didn't locate it, return an error'd out ResolverModel
+            // If we didn't locate it, indicate we're missing a singleton
             if (singletonSymbol == null)
-                error = ResolverAnalysisError.LacksSingleton;
+            {
+                errors.Add(new AnalysisError(DescTypeResolverError, node, "Resolvers must define a public static singleton field or property \"Instance\""));
+                return (model, errors);
+            }
 
             // Step 2: Ensure class inherits from Resolver<T>
             INamedTypeSymbol baseTypeSymbol = symbol.BaseType;
@@ -408,16 +559,11 @@ namespace EppNet.SourceGen
             }
 
             if (model == null)
-            {
-                // We didn't locate the base type.
-                error |= ResolverAnalysisError.LacksInheritance;
-            }
+                errors.Add(new AnalysisError(DescTypeResolverError, node, $"Resolvers must inherit from \"{TypeResolverFullGenericName}\""));
 
-            return (model, error);
+            return (model, errors);
         }
 
     }
-
-
 
 }
