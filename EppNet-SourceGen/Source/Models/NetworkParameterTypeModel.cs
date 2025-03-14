@@ -37,7 +37,8 @@ namespace EppNet.SourceGen.Models
             FullyQualifiedName == other.FullyQualifiedName &&
             Subtypes == other.Subtypes &&
             UnderlyingTypeFullyQualifiedName == other.UnderlyingTypeFullyQualifiedName &&
-            IsNetObject == other.IsNetObject;
+            IsNetObject == other.IsNetObject ^
+            IsTuple == other.IsTuple;
 
         public override string ToString()
         {
@@ -66,7 +67,8 @@ namespace EppNet.SourceGen.Models
             FullyQualifiedName.GetHashCode() ^
             ((Subtypes != null) ? Subtypes.GetHashCode() : 1) ^
             ((UnderlyingTypeFullyQualifiedName != null) ? UnderlyingTypeFullyQualifiedName.GetHashCode() : 1) ^
-            IsNetObject.GetHashCode();
+            IsNetObject.GetHashCode() ^
+            IsTuple.GetHashCode();
 
         public static bool operator ==(NetworkParameterTypeModel left, NetworkParameterTypeModel right) =>
             left.Equals(right);
