@@ -19,8 +19,8 @@ namespace EppNet.SourceGen.Models
         : IEquatable<NetworkParameterTypeModel>
     {
         public string Name { get; } = symbol.Name;
-        public string Namespace { get; } = symbol.ContainingNamespace.Name;
-        public string FullyQualifiedName { get; } = $"{symbol.ContainingNamespace.ToDisplayString()}.{symbol.Name}";
+        public string Namespace { get; } = symbol.ContainingNamespace?.Name ?? string.Empty;
+        public string FullyQualifiedName { get; } = symbol.GetFullyQualifiedName();
         public string UnderlyingTypeFullyQualifiedName { get; } = underlyingType;
 
         public string TypeAsWritten { get; } = symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);

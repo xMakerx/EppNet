@@ -1,9 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageId>EppNet</PackageId>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Maverick Liberty</Authors>
+    <Description>A high-performance networking library powered by ENet.</Description>
+    <PackageTags>Networking, UDP, ENet, Multiplayer, GameDev</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/EppNet-Networking/EppNet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/EppNet-Networking/EppNet</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
     <TargetFramework>netstandard2.1</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>EppNet</RootNamespace>
-	<LangVersion>9.0</LangVersion>
+	  <LangVersion>9.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="packages\Microsoft.NET.Test.Sdk.17.10.0\**" />

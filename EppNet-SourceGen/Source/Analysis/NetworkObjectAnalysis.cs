@@ -22,12 +22,17 @@ namespace EppNet.Source.Analysis
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NetworkObjectAnalysis : DiagnosticAnalyzer
     {
-
-        public static ConcurrentDictionary<string, string> Resolvers = new();
-        public static ConcurrentDictionary<string, NetworkObjectModel> Objects = new();
+        public static ExecutionContext Context { get; } = new ExecutionContext(true);
 
         public override void Initialize(AnalysisContext context)
         {
+
+            // Let's setup our resolvers dictionary
+            Context.Resolvers = new ConcurrentDictionary<string, string>();
+
+            ConcurrentQueue<(ClassDeclarationSyntax, SemanticModel)> objects = new();
+            ConcurrentQueue<(MethodDeclarationSyntax, SemanticModel)> methods = new();
+
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
@@ -42,13 +47,13 @@ namespace EppNet.Source.Analysis
                     if (!Globals.HasAttribute(classNode, Globals.NetTypeResolverAttr))
                         return;
 
-                    (ResolverModel? model, List<AnalysisDiagnostic> errors) = Globals.TryCreateResolver(snac.Node as CSharpSyntaxNode, snac.SemanticModel, snac.CancellationToken);
+                    (ResolverModel? model, List<AnalysisDiagnostic> diagnostics) = Globals.TryCreateResolver(true, classNode, snac.SemanticModel, snac.CancellationToken);
 
-                    foreach (AnalysisDiagnostic error in errors)
-                        snac.ReportDiagnostic(error.CreateDiagnostic());
+                    foreach (AnalysisDiagnostic diag in diagnostics)
+                        snac.ReportDiagnostic(diag.CreateDiagnostic());
 
-                    if (model.HasValue && errors.Count == 0)
-                        Resolvers[model.Value.ResolvedTypeFullName] = model.Value.Name;
+                    if (model.HasValue && diagnostics.Count == 0)
+                        Context.Resolvers[model.Value.ResolvedTypeFullName] = model.Value.Name;
 
                 }, SyntaxKind.ClassDeclaration);
 
@@ -59,14 +64,7 @@ namespace EppNet.Source.Analysis
                     if (!Globals.HasAttribute(classNode, Globals.NetObjectAttr))
                         return;
 
-                    (NetworkObjectModel? netModel, List<AnalysisDiagnostic> errors) = Globals.TryCreateNetObject(
-                        classNode, snac.SemanticModel, Resolvers, snac.CancellationToken);
-
-                    foreach (AnalysisDiagnostic error in errors)
-                        snac.ReportDiagnostic(error.CreateDiagnostic());
-
-                    if (netModel.HasValue && errors.Count == 0)
-                        Objects[netModel.Value.FullyQualifiedName] = netModel.Value;
+                    objects.Enqueue((classNode, snac.SemanticModel));
 
                 }, SyntaxKind.ClassDeclaration);
 
@@ -78,13 +76,40 @@ namespace EppNet.Source.Analysis
                     if (methodNode is not null && !Globals.HasAttribute(methodNode, Globals.NetMethodAttr))
                         return;
 
-                    (NetworkMethodModel? model, List<AnalysisDiagnostic> errors)
-                        = Globals.TryCreateNetMethod(methodNode, snac.SemanticModel, Resolvers, snac.CancellationToken);
+                    // Don't recalculate the methods of a network object
+                    if (methodNode.Parent is not null &&
+                        methodNode.Parent is ClassDeclarationSyntax classNode &&
+                        Globals.HasAttribute(classNode, Globals.NetObjectAttr))
+                        return;
 
-                    foreach (AnalysisDiagnostic error in errors)
-                        snac.ReportDiagnostic(error.CreateDiagnostic());
+                    methods.Enqueue((methodNode, snac.SemanticModel));
 
                 }, SyntaxKind.MethodDeclaration);
+
+                compContext.RegisterCompilationEndAction(snac =>
+                {
+
+                    while (objects.Count > 0)
+                    {
+                        objects.TryDequeue(out var result);
+                        (ClassDeclarationSyntax classNode, SemanticModel semanticModel) = result;
+
+                        (NetworkObjectModel? netModel, List<AnalysisDiagnostic> diagnostics) = Globals.TryCreateNetObject(
+                            Context, classNode, semanticModel);
+
+                        foreach (AnalysisDiagnostic diag in diagnostics)
+                            snac.ReportDiagnostic(diag.CreateDiagnostic());
+                    }
+
+                    while (methods.Count > 0)
+                    {
+                        methods.TryDequeue(out var result);
+                        (MethodDeclarationSyntax methodNode, SemanticModel semanticModel) = result;
+
+                        foreach (AnalysisDiagnostic diag in Globals.TryCreateNetMethod(Context, methodNode, semanticModel).Item2)
+                            snac.ReportDiagnostic(diag.CreateDiagnostic());
+                    }
+                });
             });
 
         }

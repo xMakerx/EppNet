@@ -28,11 +28,14 @@ namespace EppNet.SourceGen.Models
 
         public override string ToString()
         {
-            StringBuilder builder = new($"{Name}(");
+            int paramCount = Parameters?.Count ?? 0;
+            StringBuilder builder = new($"Parameters: {paramCount} {Name}(");
 
             for (int i = 0; i < Parameters.Count; i++)
             {
                 NetworkParameterTypeModel type = Parameters[i];
+                int subtypeCount = type.Subtypes?.Count ?? 0;
+                builder.Append($"st:{subtypeCount} ");
                 builder.Append(type);
 
                 if (i + 1 < Parameters.Count)

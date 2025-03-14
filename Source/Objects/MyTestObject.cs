@@ -15,10 +15,16 @@ namespace EppNet.Objects
         public void Goodbye() { }
 
         [NetworkMethod]
-        public void YetAnotherMethod() { }
+        public void TupleMethod((bool, Distribution) b) { }
 
         [NetworkMethod]
-        public void Hello(float b) { }
+        public void YetAnotherMethod(int b) { }
+
+        [NetworkMethod]
+        public void Hello(float[] b) { }
+
+        [NetworkMethod]
+        public void Test((bool, Distribution) t, List<MyTestObject> a, MyTestObject[] arr, Dictionary<Str8, int> b) { }
     }
 
     [NetworkObject(Dist = Distribution.Server)]
@@ -34,6 +40,9 @@ namespace EppNet.Objects
 
         [NetworkMethod]
         public void Method(Distribution a) { }
+
+        [NetworkMethod]
+        public void Greenbeans() { }
     }
 
     public static class LOL
