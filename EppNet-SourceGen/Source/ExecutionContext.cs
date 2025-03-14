@@ -69,7 +69,7 @@ namespace EppNet.SourceGen
             if (_typeNames.TryGetValue(typeSymbol, out var typeName))
                 return typeName;
 
-            typeName = typeSymbol.GetFullyQualifiedName();
+            typeName = typeSymbol.ToDisplayString(Globals.DisplayFormat);
             _typeNames.TryAdd(typeSymbol, typeName);
 
             return GetString(typeName);

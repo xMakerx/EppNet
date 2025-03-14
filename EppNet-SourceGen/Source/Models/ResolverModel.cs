@@ -26,7 +26,7 @@ namespace EppNet.SourceGen.Models
         /// <summary>
         /// The fully qualified name of the type this resolver resolves.
         /// </summary>
-        public string ResolvedTypeFullName { get; } = typeSymbol.GetFullyQualifiedName();
+        public string ResolvedTypeFullName { get; } = typeSymbol.ToDisplayString(Globals.DisplayFormat);
 
         public override bool Equals(object obj) =>
             obj is ResolverModel model &&

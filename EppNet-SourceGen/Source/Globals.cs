@@ -144,19 +144,6 @@ namespace EppNet.SourceGen
         public static readonly List<AnalysisDiagnostic> EmptyDiagnostics = [];
         public static readonly EquatableList<NetworkParameterTypeModel> EmptyParameterTypes = [];
 
-        public static string GetFullyQualifiedName(this ISymbol typeSymbol)
-        {
-            string displayName = typeSymbol.ToDisplayString(DisplayFormat);
-
-            if (typeSymbol is INamedTypeSymbol namedSymbol && namedSymbol.IsTupleType)
-            {
-                int bracket = displayName.IndexOf('<');
-                displayName = (bracket != -1 ?  displayName.Substring(0, bracket) : displayName);
-            }
-
-            return displayName;
-        }
-
         private static string GetAttributeName(AttributeSyntax attr)
         {
             return attr.Name switch
@@ -303,7 +290,7 @@ namespace EppNet.SourceGen
                     subtypes.Add(result.Item1.Value);
                 }
 
-                model = new NetworkParameterTypeModel(typeSymbol, subtypes, null, isNetObject: false);
+                model = new NetworkParameterTypeModel(typeSymbol, subtypes, null, isNetObject: false, isTuple: true);
                 context.CacheType(type, context.GetTypeName(typeSymbol), true, false);
             }
             else

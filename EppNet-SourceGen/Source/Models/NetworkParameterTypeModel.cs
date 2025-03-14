@@ -15,19 +15,17 @@ namespace EppNet.SourceGen.Models
     public readonly struct NetworkParameterTypeModel(ISymbol symbol, 
         EquatableList<NetworkParameterTypeModel> subtypes, 
         string underlyingType = null, 
-        bool isNetObject = false)
+        bool isNetObject = false,
+        bool isTuple = false)
         : IEquatable<NetworkParameterTypeModel>
     {
         public string Name { get; } = symbol.Name;
         public string Namespace { get; } = symbol.ContainingNamespace?.Name ?? string.Empty;
-        public string FullyQualifiedName { get; } = symbol.GetFullyQualifiedName();
+        public string FullyQualifiedName { get; } = symbol.ToDisplayString(Globals.DisplayFormat);
         public string UnderlyingTypeFullyQualifiedName { get; } = underlyingType;
-
-        public string TypeAsWritten { get; } = symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
-
         public EquatableList<NetworkParameterTypeModel> Subtypes { get; } = subtypes;
-
         public bool IsNetObject { get; } = isNetObject;
+        public bool IsTuple { get; } = isTuple;
 
         public override bool Equals(object obj) =>
             obj is NetworkParameterTypeModel model &&
@@ -39,12 +37,11 @@ namespace EppNet.SourceGen.Models
             FullyQualifiedName == other.FullyQualifiedName &&
             Subtypes == other.Subtypes &&
             UnderlyingTypeFullyQualifiedName == other.UnderlyingTypeFullyQualifiedName &&
-            // let's not include this so we don't rerun the pipeline TypeAsWritten == other.TypeAsWritten &&
             IsNetObject == other.IsNetObject;
 
         public override string ToString()
         {
-            if (Subtypes != null && Subtypes.Count > 0)
+            if (!isTuple && Subtypes != null && Subtypes.Count > 0)
             {
                 StringBuilder builder = new($"{FullyQualifiedName}<");
                 
