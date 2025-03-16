@@ -26,10 +26,6 @@ namespace EppNet.Source.Analysis
 
         public override void Initialize(AnalysisContext context)
         {
-
-            // Let's setup our resolvers dictionary
-            Context.Resolvers = new ConcurrentDictionary<string, string>();
-
             ConcurrentQueue<(ClassDeclarationSyntax, SemanticModel)> objects = new();
             ConcurrentQueue<(MethodDeclarationSyntax, SemanticModel)> methods = new();
 
@@ -53,7 +49,7 @@ namespace EppNet.Source.Analysis
                         snac.ReportDiagnostic(diag.CreateDiagnostic());
 
                     if (model.HasValue && diagnostics.Count == 0)
-                        Context.Resolvers[model.Value.ResolvedTypeFullName] = model.Value.Name;
+                        Context.Resolvers.TryAdd(model.Value.ResolvedTypeFullName, model.Value.Name);
 
                 }, SyntaxKind.ClassDeclaration);
 

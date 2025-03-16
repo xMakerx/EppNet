@@ -3,13 +3,11 @@
 /// Date: March 12, 2025
 /// Authors: Maverick Liberty
 //////////////////////////////////////////////
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 
 namespace EppNet.SourceGen
 {
@@ -21,7 +19,7 @@ namespace EppNet.SourceGen
         /// </summary>
         public bool IsAnalysis;
 
-        public IDictionary<string, string> Resolvers;
+        public ConcurrentDictionary<string, string> Resolvers;
 
         private ConcurrentDictionary<string, string> _stringPool;
 
@@ -32,7 +30,7 @@ namespace EppNet.SourceGen
         public ExecutionContext(bool isAnalysis)
         {
             this.IsAnalysis = isAnalysis;
-            this.Resolvers = null;
+            this.Resolvers = isAnalysis ? new ConcurrentDictionary<string, string>() : null;
             this._stringPool = new();
             this._typesCache = new();
             this._typeNames = new(SymbolEqualityComparer.Default);
