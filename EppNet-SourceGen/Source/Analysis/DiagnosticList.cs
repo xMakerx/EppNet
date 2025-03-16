@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EppNet.SourceGen.Errors
+namespace EppNet.SourceGen.Analysis
 {
 
     /// <summary>

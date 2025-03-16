@@ -4,7 +4,7 @@
 /// Authors: Maverick Liberty
 //////////////////////////////////////////////
 
-using EppNet.SourceGen.Errors;
+using EppNet.SourceGen.Analysis;
 using EppNet.SourceGen.Models;
 
 using Microsoft.CodeAnalysis;

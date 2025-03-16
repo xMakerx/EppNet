@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EppNet.SourceGen.Errors
+namespace EppNet.SourceGen.Analysis
 {
 
     public class AnalysisDiagnostic

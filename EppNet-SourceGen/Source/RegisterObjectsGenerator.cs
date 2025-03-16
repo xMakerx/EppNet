@@ -47,7 +47,7 @@ namespace EppNet.SourceGen
                 .ForAttributeWithMetadataName(
                     NetObjectAttrFullName,
                     predicate: static (node, _) => node is ClassDeclarationSyntax,
-                    transform: (ctx, ct) => ((ctx.TargetNode as CSharpSyntaxNode), ctx.SemanticModel)
+                    transform: (ctx, ct) => (ctx.TargetNode as CSharpSyntaxNode, ctx.SemanticModel)
                 )
                 .Where(static t => t.Item1 is not null)
                 .Collect()
@@ -55,9 +55,11 @@ namespace EppNet.SourceGen
                 .Select(static ((ImmutableArray<(CSharpSyntaxNode, SemanticModel)>, Dictionary<string, string>) contents, CancellationToken ct) =>
                 {
                     ImmutableArray<(CSharpSyntaxNode, SemanticModel)> array = contents.Item1;
-                    Dictionary<string, NetworkObjectModel> objects = new();
-                    ExecutionContext context = new(false);
-                    context.Resolvers = contents.Item2;
+                    Dictionary<string, NetworkObjectModel> objects = [];
+                    ExecutionContext context = new(false)
+                    {
+                        Resolvers = new(contents.Item2)
+                    };
 
                     foreach ((CSharpSyntaxNode node, SemanticModel semModel) in array)
                     {

@@ -4,8 +4,6 @@
 /// Authors: Maverick Liberty
 //////////////////////////////////////////////
 
-using EppNet.SourceGen;
-using EppNet.SourceGen.Errors;
 using EppNet.SourceGen.Models;
 
 using Microsoft.CodeAnalysis;
@@ -17,7 +15,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace EppNet.Source.Analysis
+namespace EppNet.SourceGen.Analysis
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NetworkObjectAnalysis : DiagnosticAnalyzer
